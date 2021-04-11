@@ -1,0 +1,11 @@
+(source_address == connection_address)  :src_is_con_addr
+(source_address != connection_address)  :src_is_not_con_addr
+(SeqNo_of_PDU == SeqNoSend)             :seq_snd_match
+(SeqNo_of_PDU != SeqNoSend)             :seq_snd_mismatch
+(SeqNo_of_PDU == SeqNoRcv)              :seq_rcv_match
+(SeqNo_of_PDU == ((SeqNoRcv – 1)&Fh))   :seq_rcv_wrap_match
+(SeqNo_of_PDU != SeqNoRcv), (SeqNo_of_PDU != ((SeqNoRcv-1)&Fh)) :seq_rcv_mismatch
+(rep_count < max_rep_count )            :rep_ok
+(rep_count >= max_rep_count )           :rep_max
+IAK = OK                                :iak_ok
+IAK = NOT OK                            :iak_not_ok

@@ -1,0 +1,34 @@
+E00     :ind, :t_connect,   :src_is_con_addr
+E01     :ind, :t_connect,   :src_is_not_con_addr
+
+E02     :ind, :t_discon,    :src_is_con_addr
+E03     :ind, :t_discon,    :src_is_not_con_addr
+
+E04     :ind, :t_data_con,  :src_is_con_addr, :seq_rcv_match
+E05     :ind, :t_data_con,  :src_is_con_addr, :seq_rcv_wrap_match
+E06     :ind, :t_data_con,  :src_is_con_addr, :seq_rcv_mismatch
+E07     :ind, :t_data_con,  :src_is_not_con_addr
+
+E08     :ind, :t_ack,       :src_is_con_addr, :seq_snd_match
+E09     :ind, :t_ack,       :src_is_con_addr, :seq_snd_mismatch 
+E10     :ind, :t_ack,       :src_is_not_con_addr
+E11     :ind, :t_nak,       :src_is_con_addr, :seq_snd_mismatch
+E11b    :ind, :t_nak,       :src_is_con_addr
+E12     :ind, :t_nak,       :src_is_con_addr, :seq_snd_match, :rep_ok
+E13     :ind, :t_nak,       :src_is_con_addr, :seq_snd_match, :rep_max
+E14     :ind, :t_nak,       :src_is_not_con_addr
+
+E15     :req, :t_data_con
+E25     :req, :t_connect
+E26     :req, :t_discon
+
+E16     :timeout, :connection
+E17     :timeout, :ack, :rep_ok
+E18     :timeout, :ack, :rep_max
+
+E19     :con, :t_connect :iak_ok
+E20     :con, :t_connect :iak_not_ok
+E21     :con, :t_discon
+E22     :con, :t_data_con
+E23     :con, :t_ack
+E24     :con, :t_nak

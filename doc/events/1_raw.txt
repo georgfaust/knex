@@ -1,0 +1,28 @@
+E00     N_DATA_INDIVIDUAL_ind, T_CONNECT_REQ_PDU (source_address == connection_address)
+E01     N_DATA_INDIVIDUAL_ind, T_CONNECT_REQ_PDU (source_address != connection_address)
+E02     N_DATA_INDIVIDUAL_ind, T_DISCONNECT_REQ_PDU (source_address == connection_address)
+E03     N_DATA_INDIVIDUAL_ind, T_DISCONNECT_REQ_PDU (source_address != connection_address)
+E04     N_DATA_INDIVIDUAL_ind, T_DATA_CONNECTED_REQ_PDU (source_address == connection_address) and (SeqNo_of_PDU == SeqNoRcv)
+E05     N_DATA_INDIVIDUAL_ind, T_DATA_CONNECTED_REQ_PDU (source_address == connection_address) and (SeqNo_of_PDU == ((SeqNoRcv –1)&Fh))
+E06     N_DATA_INDIVIDUAL_ind, T_DATA_CONNECTED_REQ_PDU (source_address == connection_address) and (SeqNo_of_PDU != SeqNoRcv) and (SeqNo_of_PDU !=((SeqNoRcv-1)&Fh))
+E07     N_DATA_INDIVIDUAL_ind, T_DATA_CONNECTED_REQ_PDU (source_address != connection_address)
+E08     N_DATA_INDIVIDUAL_ind, T_ACK_PDU (source_address == connection_address) and (SeqNo_of_PDU == SeqNoSend)
+E09     N_DATA_INDIVIDUAL_ind, T_ACK_PDU (source_address == connection_address) and (SeqNo_of_PDU != SeqNoSend) 
+E10     N_DATA_INDIVIDUAL_ind, T_ACK_PDU (source_address != connection_address)
+E11     N_DATA_INDIVIDUAL_ind, T_NAK_PDU (source_address == connection_address) and (SeqNo_of_PDU != SeqNoSend)
+E11b    N_DATA_INDIVIDUAL_ind, T_NAK_PDU (source_address == connection_address)
+E12     N_DATA_INDIVIDUAL_ind, T_NAK_PDU (source_address == connection_address) and (SeqNo_of_PDU == SeqNoSend) and (rep_count < max_rep_count )
+E13     N_DATA_INDIVIDUAL_ind, T_NAK_PDU (source_address == connection_address) and (SeqNo_of_PDU == SeqNoSend) and (rep_count >= max_rep_count )
+E14     N_DATA_INDIVIDUAL_ind, T_NAK_PDU (source_address != connection_address)
+E15     T_DATA_CONNECTED_req
+E16     CONNECTION_TIME_OUT_ind
+E17     ACKNOWLEDGE_TIME_OUT_ind (rep_count < max_rep_count)
+E18     ACKNOWLEDGE_TIME_OUT_ind (rep_count >= max_rep_count)
+E19     N_DATA_INDIVIDUAL_con T_CONNECT_REQ_PDU IAK = OK
+E20     N_DATA_INDIVIDUAL_con T_CONNECT_REQ_PDU IAK = NOT OK
+E21     N_DATA_INDIVIDUAL_con T_DISCONNECT_REQ_PDU
+E22     N_DATA_INDIVIDUAL_con T_DATA_CONNECTED_REQ_PDU
+E23     N_DATA_INDIVIDUAL_con T_ACK_PDU
+E24     N_DATA_INDIVIDUAL_con T_NACK_PDU
+E25     T_CONNECT_req
+E26     T_DISCONNECT_req

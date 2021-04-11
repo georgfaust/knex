@@ -1,0 +1,260 @@
+# TODO klaeren
+
+- 3/4/1 - 3.3.3 
+    - RCon statt LCon? typo?
+    - :transmit nicht set? ganzen LCon handling fehlt?
+
+- multiple connection (conneciton number list) vs 5.5.1.2 Connect from a remote Device during an existing Connection (can't connect if connected) 
+--> jede con braucht eigene SM, muss man das haben? selbst ETS kann das nicht, oder?
+--> A8 harcoded con numer 0
+
+- confirmation IAK OK/NOK ???
+
+- E19 - A13 "should not be entered ausser internal error" wird aber in 5.5.1.4 benutzt
+
+- was heisst CLIENT ONLY ??? ETS?
+
+- mix profile.eprof -e Knx.proftest
+
+- werden die con immer in SM mit A0 gefressen oder gehen die trotzdem weiter hoch?
+
+- State should not be entered except in case of an internal error. ???
+--> damit E19 und E20 immer error:
+    E19 N_DATA_INDIVIDUAL_con T_CONNECT_REQ_PDU
+    IAK = OK
+    (CLIENT ONLY)
+    E20 N_DATA_INDIVIDUAL_con T_CONNECT_REQ_PDU
+    IAK = NOT OK (CLIENT ONLY)
+
+- style 3
+    # TODO lt state table style 3 ist {:o_idle, :e07, :o_idle, :a00} richtig,
+    #       passt aber nicht zu 5.5.2.4
+
+
+
+
+ @moduledoc """
+
+    ## configuration flags
+      U - Response Update enable
+      T - Transmit enable
+      I - Value Read on initialization (TODO)
+      W - Write enable
+      R - Read enable
+      C - Communication enable
+    [see 3/5/1 - 4.12.5.2.4.1.2]
+
+    ## RAM-flags / communication flags / group object state
+
+    a group object may be in one of these states:
+      :update
+      :read_request
+      :write_request
+      :error
+
+    TODO: wie wird :update handled? Am einfachsten waere es einfach direkt events ueber pubsub rauszusenden,
+      dann brauchen wir :update nicht.
+
+    NOTE: contrary to 3/4/1 - 3.2 the trasnmitting-state is omitted.
+    there is just one transmitting flag for the group-object-server.
+    the transmitting state of a GO is known because the currently transmitting GO is also saved.
+
+    ## server behavior
+
+    The Group Object Server handles the following four cases [3/4/1 - 3.3.1]
+
+    the application wants
+      1. to read the Group Object's value {:req, :group_value_read, asap}
+        - C+T set -> set :read_request
+        - else -> set :error
+      2. to write the Group Object's value {:req, :group_value_write, asap, value}
+        a) set value of asap to value
+        b) - C+T set -> set :write_request
+           - else -> set :error
+    or the Group Object service has received from the application layer
+      3. a request to read the Group Object’s value {:ind, :group_value_read, tsap1}
+        a) assoc-table: for tsap1 find first asap with C+R set
+        b) - found one
+              - assoc-table: find the first tsap2 with C+R set for asap (tsap2 may be != tsap1)
+              - yield a {:req, :group_value_resp, tsap2, value}
+           - found none -> do nothing
+      4. an update on the Group Object's value ...
+      4.1 ... by {:ind, :group_value_write, tsap, value}
+        a) assoc-table: for tsap find all asaps with C+W set
+          - for all found -> set value, set :update
+          - found none -> do nothing
+      4.2. ... by {:ind, :group_value_response, tsap, value}
+        like (a) but check for C+U
+
+    ### transmitting
+
+    when
+    - a :request_x flag is set
+    - or a local confirmation is received
+    the server tries to transmit a message:
+
+    1. the first GO with a set :read_request or :write_request is found
+      a) found one:
+        - assoc table: find the first tsap associated
+        - server-state: set :transmitting and store asap
+        - yield a {:al, :req, :group_value_write | :group_value_resp, tsap, value}
+          (NOTE: conf flags are already checked before setting ram-flag)
+        - handle that impulse like an update from the bus (updating all asap accociated to tsap)
+      b) found none:
+        - do nothing
+    2. clear :request-flag
+
+    ### local confirmation
+
+    when a local confirmation (Lcon) is received the go-state (ram-flags) is updated
+    according to the Lcon-status:
+      - :ok -> clear ram-flags
+      - :error -> set :error
+    the asap of the confirmation should be the same as the one stored in the server-state.
+    server-state/:transmitting is cleared.
+
+
+
+
+
+
+    NOTE: some tests in 8/3/7 assume, that read_request maintained when going into error-state, these tests have to be adjusted.
+
+
+    #######
+
+    3.1.1
+
+    consider this assoc table
+
+        tsap | asap
+        2    | 0
+        1    | 1    read-diabled
+        3    | 2    read-enabled
+        1    | 2    read-enabled
+        1    | 3    read-enabled
+
+      receive a read-ind, tsap 1
+        - the first asap tsap 1 with read-enabled is asap 2
+        - value of asap 2 is read
+        - the first tsap for asap 2 with read-enabled is tsap 3
+        - respond to tsap 3 with the read value
+
+    "If a transmission is requested (read response or write) via an ASAP, the Application Layer shall take the
+    TSAP from the Group Object Association Table, shall update all the ASAPs with the same TSAP and
+    shall generate an A_GroupValue-Service-Request."
+
+    ??? so no conf-flags are considered?
+
+
+   
+  # TODO endianess ??
+  # see https://hexdocs.pm/elixir/Kernel.SpecialForms.html#%3C%3C%3E%3E/1-modifiers
+
+
+  # TODO PRIOS app layer
+
+  #   def a_restart_pdu({@restart_resp, @restart_master, err_code, proc_time}),
+  #   do:
+  #     {:system,
+  #      <<@restart::4, @restart_resp::1, 0::4, @restart_master::1, err_code::8, proc_time::16>>}
+
+  # def a_restart_pdu({@restart_write, @restart_basic}),
+  #   do: {:low, <<@restart::4, @restart_write::1, 0::4, @restart_basic::1>>}
+
+  # def a_restart_pdu({@restart_write, @restart_master, erase_code, ch_number}),
+  #   do:
+  #     {:system,
+  #      <<@restart::4, @restart_write::1, 0::4, @restart_master::1, erase_code::8, ch_number::8>>}
+
+
+  """
+
+    @type pid_t ::
+          :pid_object_type
+          | :pid_object_name
+          | :pid_load_state_control
+          | :pid_run_state_control
+          | :pid_table_reference
+          | :pid_serial
+          | :pid_manufacturer_id
+          | :pid_prog_version
+          | :pid_device_control
+          | :pid_order_info
+          | :pid_pei_type
+          | :pid_port_configuration
+          | :pid_version
+          | :pid_error_code
+          | :pid_routing_count
+          | :pid_prog_mode
+          | :pid_max_apdu_length
+          | :pid_subnet_addr
+          | :pid_device_addr
+          | :pid_hardware_type
+          | :pid_device_descriptor
+          | :pid_channel_01_param
+          | :pid_channel_02_param
+          | :pid_channel_03_param
+          | :pid_channel_04_param
+          | :pid_channel_05_param
+          | :pid_channel_06_param
+          | :pid_channel_07_param
+          | :pid_channel_08_param
+          | :pid_channel_09_param
+          | :pid_channel_10_param
+          | :pid_channel_11_param
+          | :pid_channel_12_param
+          | :pid_channel_13_param
+          | :pid_channel_14_param
+          | :pid_channel_15_param
+          | :pid_channel_16_param
+          | :pid_channel_17_param
+          | :pid_channel_18_param
+          | :pid_channel_19_param
+          | :pid_channel_20_param
+          | :pid_channel_21_param
+          | :pid_channel_22_param
+          | :pid_channel_23_param
+          | :pid_channel_24_param
+          | :pid_channel_25_param
+          | :pid_channel_26_param
+          | :pid_channel_27_param
+          | :pid_channel_28_param
+          | :pid_channel_29_param
+          | :pid_channel_30_param
+          | :pid_channel_31_param
+          | :pid_channel_32_param
+
+
+
+
+
+  @type access_lvl :: non_neg_integer()
+  @type one_based_prop_index :: non_neg_integer()
+  @type zero_based_prop_index :: non_neg_integer()
+  @type prop_value :: non_neg_integer()
+
+  @spec write_prop([t()], access_lvl(),
+          prop_id: PidPdt.pid(),
+          count: non_neg_integer(),
+          start: non_neg_integer(),
+          data: [prop_value()]
+        ) ::
+          {:ok, [t()], one_based_prop_index(), t()} | {:error, atom()}
+
+  @spec read_prop([t()], access_lvl(),
+          prop_id: PidPdt.pid(),
+          count: non_neg_integer(),
+          start: non_neg_integer()
+        ) ::
+          {:ok, one_based_prop_index(), [prop_value()]} | {:error, atom()}
+
+  @spec get_prop([t()], PidPdt.pid(), one_based_prop_index()) ::
+          {:ok, zero_based_prop_index(), t()} | {:error, atom()}
+
+  @spec get_prop_index([t()], PidPdt.pid() | 0, one_based_prop_index()) ::
+          {:ok, zero_based_prop_index()} | {:error, atom()}
+  
+  @spec get_prop_index([t()], PidPdt.pid() | 0, one_based_prop_index()) ::
+          {:ok, zero_based_prop_index()} | {:error, atom()}
+  
