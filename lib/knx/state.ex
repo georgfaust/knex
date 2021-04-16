@@ -13,7 +13,8 @@ defmodule Knx.State do
           objects: map(),
           pending_effects: [Knx.impulse_t()],
           hops: any(),
-          addr_tab: any()
+          addr_tab: any(),
+          auth: KNX.Auth.t()
         }
 
   @derive {Inspect, only: [:addr, :c_addr, :handler, :pending_effects]}
@@ -30,5 +31,6 @@ defmodule Knx.State do
             objects: %{},
             pending_effects: [],
             hops: 6,
-            addr_tab: nil
+            addr_tab: nil,
+            auth: nil
 end
