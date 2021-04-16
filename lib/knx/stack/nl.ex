@@ -1,3 +1,4 @@
+
 defmodule Knx.Stack.Nl do
   # TODO duplication -- Abhilfe: macro? guard?
   @addr_t_ind 0

@@ -222,7 +222,7 @@ defmodule Knx.Stack.Al do
         {:mem, :user_mem_bit_write, [number, address, data]}
 
       <<@user_manu_info_read::10>> ->
-        {:io, :user_manu_info_read, []}
+        {:todo, :user_manu_info_read, []}
 
       <<@user_manu_info_resp::10, manu_id, manu_specific::16>> ->
         {:todo, :user_manu_info_resp, [manu_id, manu_specific]}
@@ -258,13 +258,13 @@ defmodule Knx.Stack.Al do
         {:auth, :auth_request, [key]}
 
       <<@auth_resp::10, level>> ->
-        {:user, :auth_resp, [level]}
+        {:todo, :auth_resp, [level]}
 
       <<@key_write::10, level, key::32>> ->
         {:auth, :key_write, [level, key]}
 
       <<@key_resp::10, level>> ->
-        {:auth, :key_resp, [level]}
+        {:todo, :key_resp, [level]}
 
       <<@prop_read::10, o_idx, pid, elems::4, start::12>> ->
         {:io, :prop_read, [o_idx, pid, elems, start]}

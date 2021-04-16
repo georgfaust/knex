@@ -1,5 +1,5 @@
 defmodule Knx.Ail.AddrTab do
-  # tsaps are 1-based, add an invalid entry at index 0
+  # [X] tsaps are 1-based, add an invalid entry at index 0
   @make_table_one_based [-1]
 
   alias Knx.Mem
