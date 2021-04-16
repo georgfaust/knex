@@ -21,7 +21,8 @@ defmodule Knx do
           timer: &append_effect/2,
           driver: &append_effect/2,
           user: &append_effect/2,
-          logger: &append_effect/2
+          logger: &append_effect/2,
+          todo: &append_effect/2
         },
         target
       )

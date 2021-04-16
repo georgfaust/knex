@@ -4,23 +4,23 @@ defmodule Knx.Auth do
 
   @invalid_key -1
   @delete_key 0xFF_FF_FF_FF
-  @anonymous_key 0xFF_FF_FF_FF
+  @anon_key 0xFF_FF_FF_FF
   @unauthorized 0xFF
-  @default_level 3
+  @default_lvl 3
 
   @moduledoc """
 
-  purpose                        | audience         | access level
+  purpose                        | audience         | access lvl
   ----------------------------------------------------------------
-  read access                    | runtime          | level 3
-  end-user adjustable parameters | controller       | level 3
-  configuration                  | ETS              | level 2
-  product manufacturer           | DevEdit/TransApp | level 1
-  system manufacturer            | DevEdit/TransApp | level 0
+  read access                    | runtime          | lvl 3
+  end-user adjustable parameters | controller       | lvl 3
+  configuration                  | ETS              | lvl 2
+  product manufacturer           | DevEdit/TransApp | lvl 1
+  system manufacturer            | DevEdit/TransApp | lvl 0
 
   """
-  defstruct keys: [0, 0, 0, @anonymous_key],
-            access_lvl: @default_level
+  defstruct keys: [0, 0, 0, @anon_key],
+            access_lvl: @default_lvl
 
   @me __MODULE__
 
@@ -39,36 +39,36 @@ defmodule Knx.Auth do
     {%{state | auth: auth}, [{:al, :req, %F{apci: :auth_response, data: [auth.access_lvl]}}]}
   end
 
-  def handle({:auth, :ind, %F{apci: :key_write, data: [level, key]}},
+  def handle({:auth, :ind, %F{apci: :key_write, data: [lvl, key]}},
         %S{auth: %@me{} = auth} = state
       ) do
-    {auth, level} = key_write(auth, key, level)
-    {%{state | auth: auth}, [{:al, :req, %F{apci: :key_response, data: [level]}}]}
+    {auth, lvl} = key_write(auth, key, lvl)
+    {%{state | auth: auth}, [{:al, :req, %F{apci: :key_response, data: [lvl]}}]}
   end
 
-  def de_auth(%@me{} = auth), do: %@me{auth | access_lvl: @default_level}
+  def de_auth(%@me{} = auth), do: %@me{auth | access_lvl: @default_lvl}
 
   # ----
 
-  defp key_write(%@me{access_lvl: access_lvl} = auth, _, level) when access_lvl > level,
+  defp key_write(%@me{access_lvl: access_lvl} = auth, _, lvl) when access_lvl > lvl,
     do: {auth, @unauthorized}
 
-  defp key_write(%@me{} = auth, @delete_key, level),
-    do: {set_key(auth, @invalid_key, level), level}
+  defp key_write(%@me{} = auth, @delete_key, lvl),
+    do: {set_key(auth, @invalid_key, lvl), lvl}
 
-  defp key_write(%@me{} = auth, key, level),
-    do: {set_key(auth, key, level), level}
+  defp key_write(%@me{} = auth, key, lvl),
+    do: {set_key(auth, key, lvl), lvl}
 
   defp auth(%@me{keys: keys} = auth, key) do
-    level =
+    lvl =
       case Enum.find_index(keys, fn k -> k == key end) do
-        nil -> @default_level
-        level -> level
+        nil -> @default_lvl
+        lvl -> lvl
       end
 
-    %@me{auth | access_lvl: level}
+    %@me{auth | access_lvl: lvl}
   end
 
-  defp set_key(%@me{keys: keys} = auth, key, level),
-    do: %@me{auth | keys: List.replace_at(keys, level, key)}
+  defp set_key(%@me{keys: keys} = auth, key, lvl),
+    do: %@me{auth | keys: List.replace_at(keys, lvl, key)}
 end

@@ -168,7 +168,7 @@ defmodule KnxTest do
       assert {
                [
                  {:timer, :restart, :connection},
-                 {:user, :ind, %F{apci: :auth_resp, data: [@auth_level]}},
+                 {:todo, :ind, %F{apci: :auth_resp, data: [@auth_level]}},
                  {:driver, :transmit, @tx_ack_frm}
                ],
                %S{handler: :o_idle}
