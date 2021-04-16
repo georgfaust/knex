@@ -25,25 +25,25 @@ defmodule Knx.Auth do
   @me __MODULE__
 
   def handle({:auth, :req, %F{apci: :auth_request} = frame}, %S{}) do
-    [:al, :req, frame]
+    [{:al, :req, frame}]
   end
 
   def handle({:auth, :req, %F{apci: :key_write} = frame}, %S{}) do
-    [:al, :req, frame]
+    [{:al, :req, frame}]
   end
 
   def handle({:auth, :ind, %F{apci: :auth_request, data: [key]}},
         %S{auth: %@me{} = auth} = state
       ) do
     auth = auth(auth, key)
-    {%{state | auth: auth}, [:al, :req, %F{apci: :auth_response, data: [auth.access_lvl]}]}
+    {%{state | auth: auth}, [{:al, :req, %F{apci: :auth_response, data: [auth.access_lvl]}}]}
   end
 
   def handle({:auth, :ind, %F{apci: :key_write, data: [level, key]}},
         %S{auth: %@me{} = auth} = state
       ) do
     {auth, level} = key_write(auth, key, level)
-    {%{state | auth: auth}, [:al, :req, %F{apci: :key_response, data: [level]}]}
+    {%{state | auth: auth}, [{:al, :req, %F{apci: :key_response, data: [level]}}]}
   end
 
   def de_auth(%@me{} = auth), do: %@me{auth | access_lvl: @default_level}
