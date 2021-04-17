@@ -1,6 +1,8 @@
 defmodule Knx.Ail.Device do
   alias Knx.Ail.Property
 
+  def get_object_index(), do: 0
+
   # TODO Auth --- unklar, aber gehe davon aus, dass jeweils die Rechte auf dem IO ausschlaggebend sind
   #   auch wenn nicht direkt uber data-primitives zugegriffen wird
 
