@@ -8,7 +8,7 @@ defmodule Knx.Ail.AssocTab do
     do: Enum.filter(assoc_tab, fn {tsap_, _} -> tsap_ == tsap end)
 
   def load(mem, ref) do
-    {:ok, _, table} = Mem.read_table(mem, ref, 4)
+    {:ok, _, table} = Mem.read_table(mem, 4, ref)
     for <<tsap::16, asap::16 <- table>>, do: {tsap, asap}
   end
 end
