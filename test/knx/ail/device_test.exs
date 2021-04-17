@@ -13,6 +13,17 @@ defmodule Knx.Ail.DeviceTest do
 
   @device_props Helper.get_device_props(1)
 
+  test "get_max_apdu_length" do
+    assert <<0, 15>> == Device.get_max_apdu_length(@device_props)
+  end
+
+  test "verify?" do
+    no_verify_props = Helper.get_device_props(1, false)
+    assert false == Device.verify?(no_verify_props)
+    verify_props = Helper.get_device_props(1, true)
+    assert true == Device.verify?(verify_props)
+  end
+
   test "get_desc" do
     assert <<@desc::16>> == Device.get_desc(@device_props)
   end
