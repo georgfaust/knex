@@ -195,6 +195,13 @@ defmodule Knx.Ail.Property do
     data
   end
 
+  # TODO HACK
+  def read_prop_value_decoded(props, pid_atom) do
+    [pdt: pdt_atom, id: pid] = get_pid(pid_atom)
+    {:ok, _, data} = read_prop(props, 0, pid: pid, elems: 1, start: 1)
+    decode_into_list(pid, pdt_atom, data)
+  end
+
   def write_prop_value(props, pid_atom, data) do
     [pdt: _, id: pid] = get_pid(pid_atom)
     {:ok, props, _} = write_prop(props, 0, pid: pid, elems: 1, start: 1, data: data)
@@ -299,13 +306,14 @@ defmodule Knx.Ail.Property do
         @pid_device_control,
         _,
         <<_::4, safe_state::1, verify::1, ia_dup::1, user_stopped::1>>
-      ),
-      do: %{
-        safe_state: safe_state == 1,
-        verify_mode: verify == 1,
-        ia_duplication: ia_dup == 1,
-        user_stopped: user_stopped == 1
-      }
+      ) do
+    %{
+      safe_state: safe_state == 1,
+      verify_mode: verify == 1,
+      ia_duplication: ia_dup == 1,
+      user_stopped: user_stopped == 1
+    }
+  end
 
   def decode(@pid_prog_mode, _, <<_::7, prog_mode::1>>), do: prog_mode
   def decode(_, :pdt_char, <<char::signed-8>>), do: char

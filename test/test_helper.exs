@@ -13,6 +13,12 @@ defmodule Helper do
   @subnet_addr 0xFF
   @device_addr 0xFF
   @desc 0x07B0
+  @device_control %{
+    safe_state: false,
+    verify_mode: false,
+    ia_duplication: false,
+    user_stopped: false
+  }
 
   # frames
   @addr_t_ind 0
@@ -35,13 +41,14 @@ defmodule Helper do
     >>
   end
 
-  def get_device_props(prog_mode) do
+  def get_device_props(prog_mode, verify \\ false) do
+    device_control = %{@device_control | verify_mode: verify}
     [
       P.new(:pid_object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_serial, [@serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_manufacturer_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_device_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_device_control, [device_control], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_order_info, [0x0815], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_routing_count, [3], max: 1, write: false, r_lvl: 3, w_lvl: 0),

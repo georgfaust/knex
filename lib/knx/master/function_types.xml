@@ -1,0 +1,62 @@
+<FunctionTypes>
+    <FunctionType Text="custom" Id="FT-0" Number="0"/>
+    <FunctionType Text="switchable light" Id="FT-1" Number="1">
+    <FunctionPoint Id="FP-1_DR-1" Text="switching" DatapointType="DPST-1-1" Role="DR-1" Characteristics="central"/>
+    <FunctionPoint Id="FP-1_DR-2" Text="status" DatapointType="DPST-1-1" Role="DR-2"/>
+    </FunctionType>
+    <FunctionType Text="dimmable light" Id="FT-2" Number="2" Status="deprecated">
+    <FunctionPoint Id="FP-2_DR-1" Text="switching" DatapointType="DPST-1-1" Role="DR-1" Characteristics="central"/>
+    <FunctionPoint Id="FP-2_DR-3" Text="dimming" DatapointType="DPST-3-7" Role="DR-3" Characteristics="central"/>
+    <FunctionPoint Id="FP-2_DR-4" Text="value" DatapointType="DPST-5-1" Role="DR-4" Characteristics="central"/>
+    <FunctionPoint Id="FP-2_DR-2" Text="status" DatapointType="DPST-1-1" Role="DR-2"/>
+    </FunctionType>
+    <FunctionType Text="sun protection" Id="FT-3" Number="3" Status="deprecated">
+    <FunctionPoint Id="FP-3_DR-5" Text="movement" DatapointType="DPST-1-8" Role="DR-5" Characteristics="central"/>
+    <FunctionPoint Id="FP-3_DR-6" Text="step/stop" DatapointType="DPST-1-7" Role="DR-6" Characteristics="central"/>
+    <FunctionPoint Id="FP-3_DR-7" Text="wind alert" DatapointType="DPST-1-5" Role="DR-7" Characteristics="shared"/>
+    <FunctionPoint Id="FP-3_DR-8" Text="rain alert" DatapointType="DPST-1-5" Role="DR-8" Characteristics="shared"/>
+    </FunctionType>
+    <FunctionType Text="heating radiator" Id="FT-4" Number="4" Status="deprecated">
+    <FunctionPoint Id="FP-4_DR-9" Text="current temperature" DatapointType="DPST-9-1" Role="DR-9"/>
+    <FunctionPoint Id="FP-4_DR-10" Text="setpoint temperature" DatapointType="DPST-9-1" Role="DR-10"/>
+    <FunctionPoint Id="FP-4_DR-11" Text="variable" DatapointType="DPST-5-1" Role="DR-11"/>
+    <FunctionPoint Id="FP-4_DR-12" Text="operation mode" DatapointType="DPST-20-102" Role="DR-12" Characteristics="central"/>
+    <FunctionPoint Id="FP-4_DR-13" Text="window contact" DatapointType="DPST-1-19" Role="DR-13"/>
+    </FunctionType>
+    <FunctionType Text="heating floor" Id="FT-5" Number="5" Status="deprecated">
+    <FunctionPoint Id="FP-5_DR-9" Text="current temperature" DatapointType="DPST-9-1" Role="DR-9"/>
+    <FunctionPoint Id="FP-5_DR-10" Text="setpoint temperature" DatapointType="DPST-9-1" Role="DR-10"/>
+    <FunctionPoint Id="FP-5_DR-11" Text="variable" DatapointType="DPST-5-1" Role="DR-11"/>
+    <FunctionPoint Id="FP-5_DR-12" Text="operation mode" DatapointType="DPST-20-102" Role="DR-12" Characteristics="central"/>
+    <FunctionPoint Id="FP-5_DR-13" Text="window contact" DatapointType="DPST-1-19" Role="DR-13"/>
+    </FunctionType>
+    <FunctionType Text="dimmable light" Id="FT-6" Number="6">
+    <FunctionPoint Id="FP-6_DR-1" Text="switching" DatapointType="DPST-1-1" Role="DR-1" Characteristics="central"/>
+    <FunctionPoint Id="FP-6_DR-3" Text="dimming" DatapointType="DPST-3-7" Role="DR-3" Characteristics="central"/>
+    <FunctionPoint Id="FP-6_DR-14" Text="value" DatapointType="DPST-5-1" Role="DR-14" Characteristics="central"/>
+    <FunctionPoint Id="FP-6_DR-2" Text="status" DatapointType="DPST-1-1" Role="DR-2"/>
+    <FunctionPoint Id="FP-6_DR-4" Text="dimming value" DatapointType="DPST-5-1" Role="DR-4"/>
+    </FunctionType>
+    <FunctionType Text="sun protection" Id="FT-7" Number="7">
+    <FunctionPoint Id="FP-7_DR-5" Text="movement" DatapointType="DPST-1-8" Role="DR-5" Characteristics="central"/>
+    <FunctionPoint Id="FP-7_DR-6" Text="step/stop" DatapointType="DPST-1-7" Role="DR-6" Characteristics="central"/>
+    <FunctionPoint Id="FP-7_DR-7" Text="wind alert" DatapointType="DPST-1-5" Role="DR-7" Characteristics="shared"/>
+    <FunctionPoint Id="FP-7_DR-8" Text="rain alert" DatapointType="DPST-1-5" Role="DR-8" Characteristics="shared"/>
+    <FunctionPoint Id="FP-7_DR-15" Text="blinds position" DatapointType="DPST-5-1" Role="DR-15"/>
+    <FunctionPoint Id="FP-7_DR-16" Text="slat position" DatapointType="DPST-5-1" Role="DR-16"/>
+    </FunctionType>
+    <FunctionType Text="heating (switching variable)" Id="FT-8" Number="8">
+    <FunctionPoint Id="FP-8_DR-9" Text="current temperature" DatapointType="DPST-9-1" Role="DR-9"/>
+    <FunctionPoint Id="FP-8_DR-10" Text="setpoint temperature" DatapointType="DPST-9-1" Role="DR-10"/>
+    <FunctionPoint Id="FP-8_DR-17" Text="switching variable" DatapointType="DPST-1-1" Role="DR-17"/>
+    <FunctionPoint Id="FP-8_DR-12" Text="operation mode" DatapointType="DPST-20-102" Role="DR-12" Characteristics="central"/>
+    <FunctionPoint Id="FP-8_DR-13" Text="window contact" DatapointType="DPST-1-19" Role="DR-13"/>
+    </FunctionType>
+    <FunctionType Text="heating (continuous variable)" Id="FT-9" Number="9">
+    <FunctionPoint Id="FP-9_DR-9" Text="current temperature" DatapointType="DPST-9-1" Role="DR-9"/>
+    <FunctionPoint Id="FP-9_DR-10" Text="setpoint temperature" DatapointType="DPST-9-1" Role="DR-10"/>
+    <FunctionPoint Id="FP-9_DR-11" Text="continuous variable" DatapointType="DPST-5-1" Role="DR-11"/>
+    <FunctionPoint Id="FP-9_DR-12" Text="operation mode" DatapointType="DPST-20-102" Role="DR-12" Characteristics="central"/>
+    <FunctionPoint Id="FP-9_DR-13" Text="window contact" DatapointType="DPST-1-19" Role="DR-13"/>
+    </FunctionType>
+    </FunctionTypes>
