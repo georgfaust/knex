@@ -3,6 +3,7 @@ defmodule Knx.Mem do
 
   alias Knx.Frame, as: F
   alias Knx.State, as: S
+  alias Knx.Ail.Device
 
   def handle({:mem, :req, %F{apci: :mem_read} = frame}, %S{}) do
     [{:al, :req, frame}]
@@ -14,29 +15,48 @@ defmodule Knx.Mem do
 
   def handle(
         {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
-        %S{mem: mem}
+        %S{mem: mem, objects: objects}
       ) do
-    case read(mem, number, addr) do
-      {:ok, data} -> [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
+
+    {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
+    <<_, max_apdu_length>> = Device.get_max_apdu_length(device_props)
+
+    with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
+      {:ok, data} <- read(mem, number, addr)
+    do
+      [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
+    else
       # [XV]
+      {:error, :max_apdu_exceeded} -> []
+      # [XVI]
       {:error, :area_invalid} -> [{:al, :req, %F{apci: :mem_resp, data: [0, addr, <<>>]}}]
     end
   end
 
   def handle(
         {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
-        %S{mem: mem} = state
+        %S{mem: mem, objects: objects} = state
       ) do
-    case write(mem, addr, data) do
-      {:ok, mem} -> (
-        # [XVI]
-        {_ok, data} = read(mem, number, addr)
+
+    {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
+    <<_, max_apdu_length>> = Device.get_max_apdu_length(device_props)
+
+    with :ok <- validate(Device.verify?(device_props), :no_verify),
+      :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
+      {:ok, mem} <- write(mem, addr, data),
+      # [XVII]
+      {:ok, ^data} <- read(mem, number, addr)
+    do
         {
           %{state | mem: mem},
           [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
         }
-      )
-      # [XVII]
+    else
+      # [XVIII]
+      {:error, :no_verify} -> []
+      # [XIX]
+      {:error, :max_apdu_exceeded} -> []
+      # [XX]
       {:error, :area_invalid} -> [{:al, :req, %F{apci: :mem_resp, data: [0, addr, <<>>]}}]
     end
   end

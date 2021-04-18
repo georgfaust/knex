@@ -71,16 +71,30 @@ XIV: |
   [3/3/7:3.5.1]
 
 XV: |
-  If the remote application process has a problem, e.g. address space unreachable 
-  or protected or an illegal number of octets are requested, then the parameter number 
-  of the A_Memory_Response-PDU shall be zero and shall contain no data.
+  [...] the remote Application Layer shall ignore the A_Memory_Read.ind if the value of 
+  the parameter “number” is greater than Maximum APDU Length – 3.
   [3/3/7:3.5.3]
 
 XVI: |
+  If the remote application process has a problem, e.g. address space unreachable 
+  or protected or an illegal number of octets are requested, then the parameter number 
+  of the A_Memory_Response-PDU shall be zero and shall contain no data.
+  [3/3/7:3.5.3]  
+
+XVII: |
   The value of the associated memory area shall be explicitly read back after writing to it.
   [3/3/7:3.5.4]
 
-XVII: |
+XVIII: |
+  With inactive Verify Mode the remote application process shall not respond.
+  [3/3/7:3.5.4]
+
+XIX: |
+  [...] the remote Application Layer shall ignore the A_Memory_Read.ind if the value of 
+  the parameter “number” is greater than Maximum APDU Length – 3.
+  [3/3/7:3.5.4]
+
+XX: |
   If the remote application process has a problem, e.g. address space unreachable 
   or protected or an illegal number of octets are requested, then the parameter number 
   of the A_Memory_Response-PDU shall be zero and shall contain no data.
