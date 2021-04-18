@@ -15,7 +15,7 @@ defmodule Knx.Ail.GoTab do
   end
 
   def load(mem, ref) do
-    {:ok, _, table} = Mem.read_table(mem, 2, ref)
+    {:ok, _, table} = Mem.read_table(mem, ref, 2)
 
     for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
     |> Enum.with_index(1)

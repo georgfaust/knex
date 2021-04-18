@@ -61,9 +61,9 @@ defmodule Knx.Mem do
     end
   end
 
-  def read_table(mem, number, addr) do
+  def read_table(mem, addr, entry_size) do
     with {:ok, <<length::size(2)-unit(8)>>} <- read(mem, 2, addr),
-         {:ok, <<table::bytes>>} <- read(mem, length * number, addr + 2) do
+         {:ok, <<table::bytes>>} <- read(mem, length * entry_size, addr + 2) do
       {:ok, length, table}
     end
   end
