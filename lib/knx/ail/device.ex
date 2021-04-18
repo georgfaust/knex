@@ -16,17 +16,18 @@ defmodule Knx.Ail.Device do
   end
 
   def prog_mode?(props),
-    do: <<1>> == Property.read_prop_value(props, :pid_prog_mode)
+    do: 1 == Property.read_prop_value(props, :pid_prog_mode)
 
   def serial_matches?(props, other_serial) do
-    <<other_serial::48>> == Property.read_prop_value(props, :pid_serial)
+    other_serial == Property.read_prop_value(props, :pid_serial)
   end
 
   def get_max_apdu_length(props),
     do: Property.read_prop_value(props, :pid_max_apdu_length)
 
   def verify?(props) do
-    [%{verify_mode: verify}] = Property.read_prop_value_decoded(props, :pid_device_control)
-    verify
+    %{verify_mode: verify_mode} =
+      Property.read_prop_value(props, :pid_device_control)
+    verify_mode
   end
 end

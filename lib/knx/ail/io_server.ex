@@ -115,7 +115,7 @@ defmodule Knx.Ail.IoServer do
   end
 
   defp serve(props, _, %F{apci: :device_desc_read, service: service, apdu: [0 = desc_type]}) do
-    al_req_impulse(:device_desc_resp, service, [desc_type, Device.get_desc(props)])
+    al_req_impulse(:device_desc_resp, service, [desc_type, <<Device.get_desc(props)::16>>])
   end
 
   defp serve(_props, _, %F{apci: :device_desc_read, service: _service, apdu: [_desc_type]}) do
