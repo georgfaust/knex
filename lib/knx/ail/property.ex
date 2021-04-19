@@ -169,11 +169,11 @@ defmodule Knx.Ail.Property do
     end
   end
 
-  def read_prop(props, access_lvl, pid: pid, elems: elems, start: start) do
+  def read_prop(props, access_lvl, encode? \\ true, pid: pid, elems: elems, start: start) do
     with {:ok, prop_index, _, %@me{pdt: pdt_atom} = prop} <- get_prop(props, pid),
          :ok <- authorize(access_lvl, prop.r_lvl),
          {:ok, values} <- read_prop_(prop, elems, start),
-         data <- encode_list(pid, pdt_atom, values) do
+         data <- if(encode?, do: encode_list(pid, pdt_atom, values), else: values) do
       {:ok, one_based(prop_index), data}
     end
   end
@@ -191,15 +191,8 @@ defmodule Knx.Ail.Property do
 
   def read_prop_value(props, pid_atom) do
     [pdt: _, id: pid] = get_pid(pid_atom)
-    {:ok, _, data} = read_prop(props, 0, pid: pid, elems: 1, start: 1)
-    data
-  end
-
-  # TODO HACK
-  def read_prop_value_decoded(props, pid_atom) do
-    [pdt: pdt_atom, id: pid] = get_pid(pid_atom)
-    {:ok, _, data} = read_prop(props, 0, pid: pid, elems: 1, start: 1)
-    decode_into_list(pid, pdt_atom, data)
+    {:ok, _, values} = read_prop(props, 0, false, pid: pid, elems: 1, start: 1)
+    hd(values)
   end
 
   def write_prop_value(props, pid_atom, data) do

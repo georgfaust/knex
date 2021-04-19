@@ -19,7 +19,7 @@ defmodule Knx.Mem do
       ) do
 
     {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
-    <<_, max_apdu_length>> = Device.get_max_apdu_length(device_props)
+    max_apdu_length = Device.get_max_apdu_length(device_props)
 
     with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
       {:ok, data} <- read(mem, number, addr)
@@ -39,7 +39,7 @@ defmodule Knx.Mem do
       ) do
 
     {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
-    <<_, max_apdu_length>> = Device.get_max_apdu_length(device_props)
+    max_apdu_length = Device.get_max_apdu_length(device_props)
 
     with :ok <- validate(Device.verify?(device_props), :no_verify),
       :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),

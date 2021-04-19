@@ -150,7 +150,7 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       assert props
-      assert <<0xBEEF::16>> == P.read_prop_value(props, :pid_manufacturer_id)
+      assert 0xBEEF == P.read_prop_value(props, :pid_manufacturer_id)
     end
 
     test "(invalid pid) ???" do
@@ -167,8 +167,8 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       assert props
-      assert <<@new_subnet_addr>> == P.read_prop_value(props, :pid_subnet_addr)
-      assert <<@new_device_addr>> == P.read_prop_value(props, :pid_device_addr)
+      assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
+      assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
     end
 
     test "when prog mode inactive, addr properties are not changed" do
@@ -201,8 +201,8 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       assert props
-      assert <<@new_subnet_addr>> == P.read_prop_value(props, :pid_subnet_addr)
-      assert <<@new_device_addr>> == P.read_prop_value(props, :pid_device_addr)
+      assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
+      assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
     end
 
     test "when serial does not match, addr properties are not changed" do

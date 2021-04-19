@@ -14,7 +14,7 @@ defmodule Knx.Ail.DeviceTest do
   @device_props Helper.get_device_props(1)
 
   test "get_max_apdu_length" do
-    assert <<0, 15>> == Device.get_max_apdu_length(@device_props)
+    assert 15 == Device.get_max_apdu_length(@device_props)
   end
 
   test "verify?" do
@@ -25,7 +25,7 @@ defmodule Knx.Ail.DeviceTest do
   end
 
   test "get_desc" do
-    assert <<@desc::16>> == Device.get_desc(@device_props)
+    assert @desc == Device.get_desc(@device_props)
   end
 
   test "prog_mode?" do
@@ -39,7 +39,7 @@ defmodule Knx.Ail.DeviceTest do
 
   test "set_address" do
     props = Device.set_address(@device_props, @new_ind_addr)
-    assert <<@new_subnet_addr>> == P.read_prop_value(props, :pid_subnet_addr)
-    assert <<@new_device_addr>> == P.read_prop_value(props, :pid_device_addr)
+    assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
+    assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
   end
 end
