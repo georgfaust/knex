@@ -1,3 +1,10 @@
+# datapints aus master
+
+problem trennen in de/encode und namen
+
+## de/encode
+
+
 # TODO klaeren
 
 - 3/4/1 - 3.3.3 
