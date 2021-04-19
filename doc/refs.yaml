@@ -69,3 +69,34 @@ XIV: |
   The transport layer services T_Connect.ind and T_Disconnect.ind are mapped transparently 
   to A_Connect.ind and A_Disconnect.ind service and passed to the user of Application Layer.
   [3/3/7:3.5.1]
+
+XV: |
+  [...] the remote Application Layer shall ignore the A_Memory_Read.ind if the value of 
+  the parameter “number” is greater than Maximum APDU Length – 3.
+  [3/3/7:3.5.3]
+
+XVI: |
+  If the remote application process has a problem, e.g. address space unreachable 
+  or protected or an illegal number of octets are requested, then the parameter number 
+  of the A_Memory_Response-PDU shall be zero and shall contain no data.
+  [3/3/7:3.5.3]  
+
+XVII: |
+  The value of the associated memory area shall be explicitly read back after writing to it.
+  [3/3/7:3.5.4]
+
+XVIII: |
+  With inactive Verify Mode the remote application process shall not respond.
+  [3/3/7:3.5.4]
+
+XIX: |
+  [...] the remote Application Layer shall ignore the A_Memory_Read.ind if the value of 
+  the parameter “number” is greater than Maximum APDU Length – 3.
+  [3/3/7:3.5.4]
+
+XX: |
+  If the remote application process has a problem, e.g. address space unreachable 
+  or protected or an illegal number of octets are requested, then the parameter number 
+  of the A_Memory_Response-PDU shall be zero and shall contain no data.
+  [3/3/7:3.5.4]
+ 
