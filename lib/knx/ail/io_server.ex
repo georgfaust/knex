@@ -26,21 +26,21 @@ defmodule Knx.Ail.IoServer do
   def handle({:io, _, %F{apdu: [o_idx | _]} = frame}, state),
     do: load_and_serve(o_idx, frame, state)
 
-  def handle(_, state), do: {[], %S{state | objects: nil}}
+  def handle(_, state), do: {[], state}
 
   defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl, objects: objects} = state) do
     {:ok, props} = Map.fetch(objects, o_idx)
 
     {impulses, props} =
       case serve(props, access_lvl, frame) do
-        nil -> {[], nil}
-        {nil, props} -> {[], props}
-        {impulse, props} -> {[impulse], props}
-        impulse -> {[impulse], nil}
+        nil -> {[], props}
+        {nil, nil} -> {[], props}
+        {nil, new_props} -> {[], new_props}
+        {impulse, new_props} -> {[impulse], new_props}
+        impulse -> {[impulse], props}
       end
 
-    objects = if props, do: Map.put(objects, o_idx, props)
-    {impulses, %S{state | objects: objects}}
+    {impulses, %S{state | objects: Map.put(objects, o_idx, props)}}
   end
 
   # --------------------------------------

@@ -49,14 +49,13 @@ defmodule Knx.Ail.IoServerTest do
   @manu_prop_resp [0, @pid_manufacturer_id, 1, 1, <<0xAFFE::16>>]
   @manu_prop_write_resp [0, @pid_manufacturer_id, 1, 1, <<0xBEEF::16>>]
 
-  test "silently drops unknown requests, sets state.objects to nil" do
-    assert {[], %S{objects: nil}} = IoServer.handle({:io, :req, %F{}}, @state_1)
+  test "silently drops unknown requests" do
+    assert {[], @state_1} = IoServer.handle({:io, :req, %F{}}, @state_1)
   end
 
   describe "responds to prop_desc_read" do
     test "(existing pid) with a prop_desc_resp" do
-      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @manu_prop_desc_resp}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @manu_prop_desc_resp}}], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{
@@ -67,9 +66,9 @@ defmodule Knx.Ail.IoServerTest do
                )
     end
 
+    @tag :current
     test "(existing index) with a prop_desc_resp" do
-      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @manu_prop_desc_resp}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @manu_prop_desc_resp}}], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{
@@ -81,8 +80,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "(invalid pid) with an error-prop_desc_resp" do
-      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @error_pid_prop_desc_resp}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @error_pid_prop_desc_resp}}], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{
@@ -94,8 +92,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "(invalid index) with an error-prop_desc_resp" do
-      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @error_idx_prop_desc_resp}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @error_idx_prop_desc_resp}}], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{
@@ -109,7 +106,7 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "responds to prop_read" do
     test "(valid pid) with a prop_resp" do
-      assert {[{:al, :req, %F{apci: :prop_resp, apdu: @manu_prop_resp}}], %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :prop_resp, apdu: @manu_prop_resp}}], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{
@@ -172,7 +169,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "when prog mode inactive, addr properties are not changed" do
-      assert {[], %S{objects: nil}} =
+      assert {[], @state_2} =
                IoServer.handle(
                  {:io, :req, %F{apci: :ind_addr_write, apdu: [@new_ind_addr]}},
                  @state_2
@@ -182,13 +179,12 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "handles an ind_addr_read" do
     test "when prog mode active by responding with an ind_addr_resp" do
-      assert {[{:al, :req, %F{apci: :ind_addr_resp}}], %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :ind_addr_resp}}], @state_1} =
                IoServer.handle({:io, :req, %F{apci: :ind_addr_read}}, @state_1)
     end
 
     test "when prog mode inactive, nothing happens" do
-      assert {[], %S{objects: nil}} =
-               IoServer.handle({:io, :req, %F{apci: :ind_addr_read}}, @state_2)
+      assert {[], @state_2} = IoServer.handle({:io, :req, %F{apci: :ind_addr_read}}, @state_2)
     end
   end
 
@@ -206,7 +202,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "when serial does not match, addr properties are not changed" do
-      assert {[], %S{objects: nil}} =
+      assert {[], @state_1} =
                IoServer.handle(
                  {:io, :req,
                   %F{apci: :ind_addr_serial_write, apdu: [@other_serial, @new_ind_addr]}},
@@ -217,8 +213,7 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "handles an ind_addr_serial_read" do
     test "when serial matches by responding with an ind_addr_serial_resp" do
-      assert {[{:al, :req, %F{apci: :ind_addr_serial_resp, apdu: [@serial, 0]}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :ind_addr_serial_resp, apdu: [@serial, 0]}}], @state_1} =
                IoServer.handle(
                  {:io, :req, %F{apci: :ind_addr_serial_read, apdu: [@serial]}},
                  @state_1
@@ -226,7 +221,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "when serial does not match, nothing happens" do
-      assert {[], %S{objects: nil}} =
+      assert {[], @state_1} =
                IoServer.handle(
                  {:io, :req, %F{apci: :ind_addr_serial_read, apdu: [@other_serial]}},
                  @state_1
@@ -236,8 +231,7 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "handles an device_desc_read" do
     test "with desc_type=0 by responding with an " do
-      assert {[{:al, :req, %F{apci: :device_desc_resp, apdu: [0, <<@desc::16>>]}}],
-              %S{objects: nil}} =
+      assert {[{:al, :req, %F{apci: :device_desc_resp, apdu: [0, <<@desc::16>>]}}], @state_1} =
                IoServer.handle(
                  {:io, :req, %F{apci: :device_desc_read, apdu: [0]}},
                  @state_1
