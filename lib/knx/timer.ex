@@ -1,4 +1,12 @@
 defmodule Knx.Timer do
+  @moduledoc """
+  start_link:
+    callback_pid: send impulse like {target, :timeout, timer} to this pid
+    timeouts: [{:target, :timer_name} => timeout_ms, ...]
+      eg: [{:tlsm, :ack} => 3000, {:tlsm, :connection} => 6000]
+
+
+  """
   defstruct timeouts: %{},
             timer_pids: %{},
             callback_pid: nil

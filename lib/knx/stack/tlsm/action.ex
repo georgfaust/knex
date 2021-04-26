@@ -35,7 +35,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | c_addr: src, s_seq: 0, r_seq: 0},
       [
-        {:timer, :start, :connection},
+        {:timer, :start, {:tlsm, :connection}},
         {:al, :ind, %F{src: src, service: :t_connect}}
       ]
     }
@@ -48,7 +48,7 @@ defmodule Knx.Stack.Tlsm.Action do
       [
         {:tl, :req, %F{service: :t_ack, dest: c_addr, seq: r_seq}},
         {:al, :ind, frame},
-        {:timer, :restart, :connection}
+        {:timer, :restart, {:tlsm, :connection}}
       ]
     }
   end
@@ -57,7 +57,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       state,
       [
-        {:timer, :restart, :connection},
+        {:timer, :restart, {:tlsm, :connection}},
         {:tl, :req, %F{service: :t_ack, dest: c_addr, seq: seq}}
       ]
     }
@@ -67,7 +67,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       state,
       [
-        {:timer, :restart, :connection},
+        {:timer, :restart, {:tlsm, :connection}},
         {:tl, :req, %F{service: :t_nak, dest: c_addr, seq: seq}}
       ]
     }
@@ -77,8 +77,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | c_addr: nil},
       [
-        {:timer, :stop, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :stop, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:al, :ind, %F{service: :t_discon, src: c_addr}}
       ]
     }
@@ -88,8 +88,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       state,
       [
-        {:timer, :stop, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :stop, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:al, :ind, %F{service: :t_discon}},
         {:tl, :req, %F{service: :t_discon, dest: c_addr, seq: 0}}
       ]
@@ -100,8 +100,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | stored_frame: frame, rep: 0},
       [
-        {:timer, :restart, :connection},
-        {:timer, :start, :ack},
+        {:timer, :restart, {:tlsm, :connection}},
+        {:timer, :start, {:tlsm, :ack}},
         {:tl, :req, %F{frame | service: :t_data_con, dest: c_addr, seq: s_seq}}
       ]
     }
@@ -113,8 +113,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | stored_frame: nil},
       [
-        {:timer, :restart, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :restart, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:al, :conf, stored_frame}
       ] ++ recalled_frame
     }
@@ -124,8 +124,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | rep: rep + 1},
       [
-        {:timer, :restart, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :restart, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:tl, :req, stored_frame}
       ]
     }
@@ -151,7 +151,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | c_addr: dest, s_seq: 0, r_seq: 0},
       [
-        {:timer, :start, :connection},
+        {:timer, :start, {:tlsm, :connection}},
         {:tl, :req, %F{dest: dest, service: :t_connect}}
       ]
     }
@@ -170,8 +170,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       state,
       [
-        {:timer, :stop, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :stop, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:al, :conf, %F{service: :t_discon}},
         {:tl, :req, %F{service: :t_discon, dest: c_addr, seq: 0}}
       ]
@@ -182,8 +182,8 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       state,
       [
-        {:timer, :stop, :connection},
-        {:timer, :stop, :ack},
+        {:timer, :stop, {:tlsm, :connection}},
+        {:timer, :stop, {:tlsm, :ack}},
         {:al, :conf, %F{service: :t_discon, src: c_addr}}
       ]
     }

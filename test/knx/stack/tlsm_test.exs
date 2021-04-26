@@ -33,7 +33,7 @@ defmodule KnxTest do
     test "5.5.1.1 - Connect from a remote Device" do
       assert {
                [
-                 {:timer, :start, :connection},
+                 {:timer, :start, {:tlsm, :connection}},
                  {:user, :ind, {:t_connect, _}}
                ],
                %S{c_addr: @remote_addr, handler: :o_idle}
@@ -63,8 +63,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, _}}
                  ],
                  %S{handler: :closed}
@@ -79,7 +79,7 @@ defmodule KnxTest do
     test "5.5.1.4(5) Connect from the local User to a (non)existing Device" do
       assert {
                [
-                 {:timer, :start, :connection},
+                 {:timer, :start, {:tlsm, :connection}},
                  {:driver, :transmit, @tx_connect_frm}
                ],
                %S{handler: :o_idle}
@@ -99,8 +99,8 @@ defmodule KnxTest do
       # 5.5.1.5
       assert {
                [
-                 {:timer, :stop, :connection},
-                 {:timer, :stop, :ack},
+                 {:timer, :stop, {:tlsm, :connection}},
+                 {:timer, :stop, {:tlsm, :ack}},
                  {:user, :ind, {:t_discon, _}}
                ],
                %S{handler: :closed}
@@ -115,8 +115,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, _}},
                    {:driver, :transmit, @tx_disconn_frm}
                  ],
@@ -132,8 +132,8 @@ defmodule KnxTest do
     test "5.5.1.8 Disconnect from the local User without an existing Connection" do
       assert {
                [
-                 {:timer, :stop, :connection},
-                 {:timer, :stop, :ack},
+                 {:timer, :stop, {:tlsm, :connection}},
+                 {:timer, :stop, {:tlsm, :ack}},
                  {:user, :conf, {:t_discon, _}}
                ],
                %S{handler: :closed}
@@ -148,8 +148,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, _}},
                    {:driver, :transmit, @tx_disconn_frm}
                  ],
@@ -167,7 +167,7 @@ defmodule KnxTest do
     test "5.5.2.1 Reception of a correct N_Data_Individual" do
       assert {
                [
-                 {:timer, :restart, :connection},
+                 {:timer, :restart, {:tlsm, :connection}},
                  {:todo, :ind, %F{apci: :auth_resp, data: [@auth_level]}},
                  {:driver, :transmit, @tx_ack_frm}
                ],
@@ -183,7 +183,7 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :restart, :connection},
+                   {:timer, :restart, {:tlsm, :connection}},
                    {:driver, :transmit, @tx_ack_frm}
                  ],
                  %S{handler: ^handler}
@@ -199,7 +199,7 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :restart, :connection},
+                   {:timer, :restart, {:tlsm, :connection}},
                    {:driver, :transmit, @tx_nak_frm}
                  ],
                  %S{handler: ^handler}
@@ -231,8 +231,8 @@ defmodule KnxTest do
     test "5.5.3.1 T_DATA-Request from the local User" do
       assert {
                [
-                 {:timer, :restart, :connection},
-                 {:timer, :start, :ack},
+                 {:timer, :restart, {:tlsm, :connection}},
+                 {:timer, :start, {:tlsm, :ack}},
                  {:driver, :transmit, @tx_datacon_frm}
                ],
                %S{handler: :o_wait}
@@ -252,8 +252,8 @@ defmodule KnxTest do
 
       assert {
                [
-                 {:timer, :restart, :connection},
-                 {:timer, :stop, :ack},
+                 {:timer, :restart, {:tlsm, :connection}},
+                 {:timer, :stop, {:tlsm, :ack}},
                  {:user, :conf, %F{}}
                ],
                %S{handler: :o_idle}
@@ -278,8 +278,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, _}},
                    {:driver, :transmit, @tx_disconn_frm}
                  ],
@@ -316,8 +316,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, _}},
                    {:driver, :transmit, @tx_disconn_frm}
                  ],
@@ -333,8 +333,8 @@ defmodule KnxTest do
     test "5.5.3.5 Reception of T_NAK_PDU with correct Sequence Number" do
       assert {
                [
-                 {:timer, :restart, :connection},
-                 {:timer, :stop, :ack},
+                 {:timer, :restart, {:tlsm, :connection}},
+                 {:timer, :stop, {:tlsm, :ack}},
                  {:driver, :transmit, @tx_datacon_frm}
                ],
                %S{handler: :o_wait}
@@ -360,8 +360,8 @@ defmodule KnxTest do
       Enum.each([:o_idle, :o_wait], fn handler ->
         assert {
                  [
-                   {:timer, :stop, :connection},
-                   {:timer, :stop, :ack},
+                   {:timer, :stop, {:tlsm, :connection}},
+                   {:timer, :stop, {:tlsm, :ack}},
                    {:user, :ind, {:t_discon, nil}},
                    {:driver, :transmit, @tx_disconn_frm}
                  ],
