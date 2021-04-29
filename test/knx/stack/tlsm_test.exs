@@ -16,6 +16,7 @@ defmodule KnxTest do
   @t_nak <<0b11::2, @seq::4, 0b11::2>>
   @t_connect <<0b1000_0000::8>>
   @t_discon <<0b1000_0001::8>>
+  @auth_resp 0b1111_010010
   @data_con <<0b01::2, @seq::4, @data::bits>>
 
   @tx_connect_frm Helper.get_frame(
@@ -301,29 +302,28 @@ defmodule KnxTest do
                  ]
                )
 
-      # TODO malformed ???
-      # assert {
-      #          [
-      #            {:timer, :restart, {:tlsm, :connection}},
-      #            {:timer, :stop, {:tlsm, :ack}},
-      #            {:user, :conf, %F{}}
-      #          ],
-      #          %S{handler: :o_idle}
-      #        } =
-      #          Knx.handle_impulses(
-      #            %S{
-      #              c_addr: @remote_addr,
-      #              addr: @own_addr,
-      #              handler: :o_wait,
-      #              stored_frame: %F{
-      #                dest: @remote_addr,
-      #                service: :t_data_con,
-      #                apci: :auth_resp,
-      #                data: [@auth_level]
-      #              }
-      #            },
-      #            [{:dl, :ind, @rx_ack_frm}]
-      #          )
+      assert {
+               [
+                 {:timer, :restart, {:tlsm, :connection}},
+                 {:timer, :stop, {:tlsm, :ack}},
+                 {:todo, :conf, %F{}}
+               ],
+               %S{handler: :o_idle}
+             } =
+               Knx.handle_impulses(
+                 %S{
+                   c_addr: @remote_addr,
+                   addr: @own_addr,
+                   handler: :o_wait,
+                   stored_frame: %F{
+                     dest: @remote_addr,
+                     service: :t_data_con,
+                     apci: :auth_resp,
+                     data: <<@auth_resp::10, @auth_level>>
+                   }
+                 },
+                 [{:dl, :ind, @rx_ack_frm}]
+               )
     end
 
     test "5.5.3.2 Reception of a T_ACK_PDU with wrong Sequence Number" do

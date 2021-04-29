@@ -180,9 +180,7 @@ defmodule Knx.Ail.CoreTest do
              )
 
     # conf recalls deferred impulse
-    # !!!
     assert {[
-              {:user, :conf, %F{}},
               {:driver, :transmit, @group_write_frm_dest_5_data_1}
             ],
             %S{} = state} =
