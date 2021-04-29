@@ -17,11 +17,13 @@ defmodule Knx.Mem do
         {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
         %S{mem: mem, objects: objects}
       ) do
+
     {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
     max_apdu_length = Device.get_max_apdu_length(device_props)
 
     with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
-         {:ok, data} <- read(mem, number, addr) do
+      {:ok, data} <- read(mem, number, addr)
+    do
       [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
     else
       # [XV]
@@ -35,18 +37,20 @@ defmodule Knx.Mem do
         {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
         %S{mem: mem, objects: objects} = state
       ) do
+
     {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
     max_apdu_length = Device.get_max_apdu_length(device_props)
 
     with :ok <- validate(Device.verify?(device_props), :no_verify),
-         :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
-         {:ok, mem} <- write(mem, addr, data),
-         # [XVII]
-         {:ok, ^data} <- read(mem, number, addr) do
-      {
-        %{state | mem: mem},
-        [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
-      }
+      :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
+      {:ok, mem} <- write(mem, addr, data),
+      # [XVII]
+      {:ok, ^data} <- read(mem, number, addr)
+    do
+        {
+          %{state | mem: mem},
+          [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
+        }
     else
       # [XVIII]
       {:error, :no_verify} -> []
@@ -76,7 +80,6 @@ defmodule Knx.Mem do
 
   defp write(mem, addr, data) do
     number = byte_size(data)
-
     with :ok <- validate(area_valid?(mem, number, addr), :area_invalid) do
       {:ok, binary_insert(mem, addr, data, number)}
     end
