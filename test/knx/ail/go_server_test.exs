@@ -8,10 +8,11 @@ defmodule Knx.Ail.GoServerTest do
 
   @assoc_tab Helper.get_assoc_tab()
   @go_tab Helper.get_go_tab()
+  @go_values Helper.get_go_values()
   @cache %{
     go_tab: @go_tab,
     assoc_tab: @assoc_tab,
-    go_values: %{}
+    go_values: @go_values
   }
 
   setup do
@@ -81,7 +82,7 @@ defmodule Knx.Ail.GoServerTest do
     assert {
              %S{},
              [
-               {:user, :go_value, {3, 0}},
+               {:user, :go_value, {3, <<0::6>>}},
                {:al, :req, %F{apci: :group_resp, tsap: 3}}
              ]
            } =

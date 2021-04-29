@@ -61,13 +61,13 @@ defmodule Knx.Ail.GoServer do
     case get_first(assoc_tab, go_tab, :readable, tsap: tsap) do
       {:ok, {_, go}} ->
         {:ok, {resp_tsap, _}} = get_first(assoc_tab, go_tab, :readable, asap: go.asap)
-        go_value = Map.get(values, go.asap, 0)
+        go_value = Map.fetch!(values, go.asap)
 
         state
         |> update_tsap(assoc_tab, go_tab, resp_tsap, go_value)
         |> transmit(
           {:al, :req,
-           %F{apci: :group_resp, tsap: resp_tsap, data: go_value, service: :t_data_group}}
+           %F{apci: :group_resp, tsap: resp_tsap, data: [go_value], service: :t_data_group}}
         )
 
       :error ->

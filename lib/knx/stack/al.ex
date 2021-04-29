@@ -152,14 +152,7 @@ defmodule Knx.Stack.Al do
   def handle({:al, prim, %F{data: data, service: service} = frame}, _) do
     with {next, apci, data_decoded} <- decode(data),
          :ok <- validate(service in @allowed_t_services[apci], :disallowed_t_service) do
-      impulses = [{next, prim, %{frame | apci: apci, data: data_decoded}}]
-      impulses
-      # # TODO HACK
-      # if prim == :conf do
-      #   impulses ++ [{:user, :conf, frame}]
-      # else
-      #   impulses
-      # end
+      [{next, prim, %{frame | apci: apci, data: data_decoded}}]
     else
       {:error, reason} -> [{:logger, :error, reason}]
     end

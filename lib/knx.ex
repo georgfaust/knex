@@ -1,6 +1,5 @@
 defmodule Knx do
   alias Knx.State, as: S
-  alias Knx.Timer
   alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
   alias Knx.Ail.GoServer, as: GO
   alias Knx.Ail.IoServer, as: IO

@@ -29,6 +29,15 @@ defmodule Helper do
     6 => %GO{asap: 6, transmits: true, readable: true, updatable: true}
   }
 
+  @go_values %{
+    1 => <<0::6>>,
+    2 => <<0::6>>,
+    3 => <<0::6>>,
+    4 => <<0::6>>,
+    5 => <<0::6>>,
+    6 => <<0::6>>
+  }
+
   # IO
   @serial 0x112233445566
   @subnet_addr 0xFF
@@ -46,6 +55,7 @@ defmodule Helper do
   def get_assoc_tab(), do: @assoc_tab
   def get_go_tab(), do: @go_tab
   def get_addr_tab(), do: @addr_tab
+  def get_go_values(), do: @go_values
 
   # frames
   @hops 6

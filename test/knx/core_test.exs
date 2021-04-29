@@ -9,12 +9,13 @@ defmodule Knx.Ail.CoreTest do
   @addr_tab Helper.get_addr_tab()
   @assoc_tab Helper.get_assoc_tab()
   @go_tab Helper.get_go_tab()
+  @go_values Helper.get_go_values()
 
   @cache %{
     addr_tab: @addr_tab,
     go_tab: @go_tab,
     assoc_tab: @assoc_tab,
-    go_values: %{}
+    go_values: @go_values
   }
 
   @own_addr 100
@@ -182,9 +183,7 @@ defmodule Knx.Ail.CoreTest do
     # conf recalls deferred impulse
     assert {[
               {:driver, :transmit, @group_write_frm_dest_5_data_1}
-            ],
-            %S{} = state} =
-             Knx.handle_impulses(state, [{:dl, :conf, @group_write_frm_dest_5_data_1}])
+            ], %S{}} = Knx.handle_impulses(state, [{:dl, :conf, @group_write_frm_dest_5_data_1}])
 
     assert {[], %S{}} =
              Knx.handle_impulses(
@@ -196,19 +195,17 @@ defmodule Knx.Ail.CoreTest do
              )
   end
 
-  # TODO go_values muessen als binary gespeichert werden.
-  #   user muss dann per API/datapoints decoden.
-  # test "group_read.ind" do
-  #   assert {[
-  #             {:user, :go_value, {3, 0}},
-  #             {:driver, :transmit, @group_resp_frm_dest_3_data_0}
-  #           ],
-  #           %S{}} =
-  #            Knx.handle_impulses(
-  #              %S{addr: @own_addr},
-  #              [{:dl, :ind, @group_read_frm_dest_3}]
-  #            )
-  # end
+  test "group_read.ind" do
+    assert {[
+              {:user, :go_value, {3, <<0::6>>}},
+              {:driver, :transmit, @group_resp_frm_dest_3_data_0}
+            ],
+            %S{}} =
+             Knx.handle_impulses(
+               %S{addr: @own_addr},
+               [{:dl, :ind, @group_read_frm_dest_3}]
+             )
+  end
 
   test "group_write.ind" do
     # TODO testen mit mehr assocs auf einem tsap

@@ -1,7 +1,6 @@
 defmodule Knx.Stack.Tlsm.Event do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
-  alias Knx.Stack.Tl
 
   def get_event(:ind, :t_connect, %F{src: addr}, %S{c_addr: addr}), do: :e00
   def get_event(:ind, :t_connect, _, _), do: :e01
