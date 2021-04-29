@@ -6,6 +6,7 @@ defmodule KnxTest do
 
   @own_addr 100
   @remote_addr 200
+  @addr_t_ind 0
   @seq 0
   @auth_level 0
   @data <<0b1111_010010::10, @auth_level>>
@@ -17,16 +18,66 @@ defmodule KnxTest do
   @t_discon <<0b1000_0001::8>>
   @data_con <<0b01::2, @seq::4, @data::bits>>
 
-  @tx_connect_frm Helper.get_frame(src: @own_addr, dest: @remote_addr, data: @t_connect)
-  @rx_connect_frm Helper.get_frame(src: @remote_addr, dest: @own_addr, data: @t_connect)
-  @tx_disconn_frm Helper.get_frame(src: @own_addr, dest: @remote_addr, data: @t_discon)
-  @rx_disconn_frm Helper.get_frame(src: @remote_addr, dest: @own_addr, data: @t_discon)
-  @tx_datacon_frm Helper.get_frame(src: @own_addr, dest: @remote_addr, data: @data_con)
-  @rx_datacon_frm Helper.get_frame(src: @remote_addr, dest: @own_addr, data: @data_con)
-  @tx_ack_frm Helper.get_frame(src: @own_addr, dest: @remote_addr, data: @t_ack)
-  @rx_ack_frm Helper.get_frame(src: @remote_addr, dest: @own_addr, data: @t_ack)
-  @tx_nak_frm Helper.get_frame(src: @own_addr, dest: @remote_addr, data: @t_nak)
-  @rx_nak_frm Helper.get_frame(src: @remote_addr, dest: @own_addr, data: @t_nak)
+  @tx_connect_frm Helper.get_frame(
+                    src: @own_addr,
+                    dest: @remote_addr,
+                    addr_t: @addr_t_ind,
+                    data: @t_connect
+                  )
+  @rx_connect_frm Helper.get_frame(
+                    src: @remote_addr,
+                    dest: @own_addr,
+                    addr_t: @addr_t_ind,
+                    data: @t_connect
+                  )
+  @tx_disconn_frm Helper.get_frame(
+                    src: @own_addr,
+                    dest: @remote_addr,
+                    addr_t: @addr_t_ind,
+                    data: @t_discon
+                  )
+  @rx_disconn_frm Helper.get_frame(
+                    src: @remote_addr,
+                    dest: @own_addr,
+                    addr_t: @addr_t_ind,
+                    data: @t_discon
+                  )
+  @tx_datacon_frm Helper.get_frame(
+                    src: @own_addr,
+                    dest: @remote_addr,
+                    addr_t: @addr_t_ind,
+                    data: @data_con
+                  )
+  @rx_datacon_frm Helper.get_frame(
+                    src: @remote_addr,
+                    dest: @own_addr,
+                    addr_t: @addr_t_ind,
+                    data: @data_con
+                  )
+  @tx_ack_frm Helper.get_frame(
+                src: @own_addr,
+                dest: @remote_addr,
+                addr_t: @addr_t_ind,
+                data: @t_ack
+              )
+  @rx_ack_frm Helper.get_frame(
+                src: @remote_addr,
+                dest: @own_addr,
+                addr_t: @addr_t_ind,
+                data: @t_ack
+              )
+  @tx_nak_frm Helper.get_frame(
+                src: @own_addr,
+                dest: @remote_addr,
+                addr_t: @addr_t_ind,
+                data: @t_nak
+              )
+  @rx_nak_frm Helper.get_frame(
+                src: @remote_addr,
+                dest: @own_addr,
+                addr_t: @addr_t_ind,
+                data: @t_nak
+              )
 
   # 03.03.04 - Transport Layer - 5.5 State Diagrams
   describe "5.5.1 Connect and Disconnect" do

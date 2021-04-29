@@ -417,9 +417,11 @@ defmodule Knx.Stack.Al do
   def a_group_read_pdu(),
     do: <<@group_read::10>>
 
+  # TODO: different sizes of resp-PDU have to be handled
   def a_group_resp_pdu([data]),
     do: <<@group_resp::4, data::bits>>
 
+  # TODO: different sizes of write-PDU have to be handled
   def a_group_write_pdu([data]),
     do: <<@group_write::4, data::bits>>
 
