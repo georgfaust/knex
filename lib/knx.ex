@@ -2,6 +2,9 @@ defmodule Knx do
   alias Knx.State, as: S
   alias Knx.Timer
   alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
+  alias Knx.Ail.GoServer, as: GO
+  alias Knx.Ail.IoServer, as: IO
+  alias Knx.Mem
 
   @type impulse_t :: Knx.Stack.impulse_t() | Timer.impulse_t()
 
@@ -18,6 +21,9 @@ defmodule Knx do
           tl: &Tl.handle/2,
           tlsm: &Tlsm.handle/2,
           al: &Al.handle/2,
+          go: &GO.handle/2,  # TODO
+          io: &IO.handle/2,  # TODO
+          mem: &Mem.handle/2,  # TODO
           timer: &append_effect/2,
           driver: &append_effect/2,
           user: &append_effect/2,

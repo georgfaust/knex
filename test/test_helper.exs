@@ -21,10 +21,9 @@ defmodule Helper do
   }
 
   # frames
-  @addr_t_ind 0
   @hops 6
 
-  def get_frame(src: src, dest: dest, data: data) do
+  def get_frame(src: src, dest: dest, addr_t: addr_t, data: data) do
     len = byte_size(data) - 1
 
     <<
@@ -34,7 +33,7 @@ defmodule Helper do
       0::2,
       src::16,
       dest::16,
-      @addr_t_ind::1,
+      addr_t::1,
       @hops::3,
       len::4,
       data::bits

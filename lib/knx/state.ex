@@ -8,7 +8,7 @@ defmodule Knx.State do
           handler: Knx.Stack.Tlsm.Sm.handler_t(),
           stored_frame: Knx.Frame.t() | nil,
           deferred_frames: [Knx.Frame.t()],
-          timer_pid: pid() | nil,
+          timer_pid: pid() | nil,   # now part of shell state
           access_lvl: non_neg_integer(),
           objects: map(),
           pending_effects: [Knx.impulse_t()],
@@ -27,7 +27,7 @@ defmodule Knx.State do
             handler: :closed,
             stored_frame: nil,
             deferred_frames: [],
-            timer_pid: nil,
+            timer_pid: nil,   # now part of shell state
             access_lvl: 0,
             objects: %{},
             pending_effects: [],
