@@ -1,4 +1,3 @@
-
 defmodule Knx.Stack.Nl do
   # TODO duplication -- Abhilfe: macro? guard?
   @addr_t_ind 0
@@ -9,8 +8,6 @@ defmodule Knx.Stack.Nl do
 
   alias Knx.State, as: S
   alias Knx.Frame, as: F
-
-  @spec handle(Knx.impulse_t(), S.t()) :: [Knx.impulse_t()]
 
   def handle({:nl, :req, %F{hops: :hops_unlimited} = frame}, %S{addr: addr}),
     do: [{:dl, :req, %F{frame | src: addr, hops: @hops_unlimited}}]

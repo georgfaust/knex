@@ -4,26 +4,6 @@ defmodule Knx.Stack.Tlsm.Action do
 
   # TODO bei disconnect stored und deferred loeschen
 
-  @type action_t ::
-          :a00
-          | :a01
-          | :a02
-          | :a03
-          | :a04
-          | :a05
-          | :a06
-          | :a07
-          | :a08
-          | :a09
-          | :a10
-          | :a11
-          | :a12
-          | :a13
-          | :a14
-          | :a15
-
-  @spec action(action_t(), S.t(), F.t()) :: {S.t(), [Knx.impulse_t()]}
-
   def action(:a00, %S{} = state, _) do
     {
       state,

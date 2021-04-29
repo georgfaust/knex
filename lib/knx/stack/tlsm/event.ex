@@ -3,44 +3,6 @@ defmodule Knx.Stack.Tlsm.Event do
   alias Knx.Frame, as: F
   alias Knx.Stack.Tl
 
-  @type event_t ::
-          :e00
-          | :e01
-          | :e02
-          | :e03
-          | :e04
-          | :e05
-          | :e06
-          | :e07
-          | :e08
-          | :e09
-          | :e10
-          | :e11
-          | :e12
-          | :e13
-          | :e14
-          | :e15
-          | :e16
-          | :e17
-          | :e18
-          | :e19
-          | :e20
-          | :e21
-          | :e22
-          | :e23
-          | :e24
-          | :e25
-          | :e26
-          | :e27
-
-  @spec get_event(
-          Knx.Stack.primitive_t() | :timeout,
-          Tl.service_t() | :ack | :connection,
-          F.t(),
-          S.t()
-        ) ::
-          event_t()
-
   def get_event(:ind, :t_connect, %F{src: addr}, %S{c_addr: addr}), do: :e00
   def get_event(:ind, :t_connect, _, _), do: :e01
 

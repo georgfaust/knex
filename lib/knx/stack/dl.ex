@@ -5,8 +5,6 @@ defmodule Knx.Stack.Dl do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
-  # @spec handle(Knx.impulse_t(), S.t()) :: [Knx.impulse_t()]
-
   def handle({:dl, :req, %F{data: data} = frame}, %S{}),
     do: [{:driver, :transmit, frame(frame, byte_size(data) - 1)}]
 

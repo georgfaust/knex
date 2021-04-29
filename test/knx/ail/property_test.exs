@@ -42,7 +42,6 @@ defmodule Knx.Ail.PropertyTest do
 
     assert {:ok, 1, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 3)
     assert {:error, :nothing_read} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 4)
-
   end
 
   test "write_prop" do

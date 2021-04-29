@@ -6,8 +6,6 @@ defmodule Knx do
   alias Knx.Ail.IoServer, as: IO
   alias Knx.Mem
 
-  @type impulse_t :: Knx.Stack.impulse_t() | Timer.impulse_t()
-
   def append_effect(effect, %S{pending_effects: pending_effects} = state) do
     {%S{state | pending_effects: pending_effects ++ [effect]}, []}
   end
@@ -21,9 +19,12 @@ defmodule Knx do
           tl: &Tl.handle/2,
           tlsm: &Tlsm.handle/2,
           al: &Al.handle/2,
-          go: &GO.handle/2,  # TODO
-          io: &IO.handle/2,  # TODO
-          mem: &Mem.handle/2,  # TODO
+          # TODO
+          go: &GO.handle/2,
+          # TODO
+          io: &IO.handle/2,
+          # TODO
+          mem: &Mem.handle/2,
           timer: &append_effect/2,
           driver: &append_effect/2,
           user: &append_effect/2,
@@ -46,7 +47,6 @@ defmodule Knx do
 
   def handle_impulses(%S{pending_effects: effects} = state, []),
     do: {effects, %S{state | pending_effects: []}}
-
 
   def proftest do
     Enum.each(1..1_000_000, fn _ ->

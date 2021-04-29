@@ -3,8 +3,6 @@ defmodule Knx.Stack.Tlsm do
   alias Knx.Frame, as: F
   alias Knx.Stack.Tlsm.{Sm, Action, Event}
 
-  @spec handle(Knx.impulse_t(), S.t()) :: {S.t(), [Knx.impulse_t()]}
-
   def handle({:tlsm, primitive, %F{service: :t_data_group} = frame}, %S{} = state) do
     next =
       case primitive do

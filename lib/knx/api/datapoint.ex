@@ -82,6 +82,7 @@ defmodule Knx.Datapoint do
   def decode(<<_::7, prog_mode::1>>, "5.60001") do
     {:ok, prog_mode}
   end
+
   # TODO warum??
   def decode(<<0::6>>, <<"5.", _::binary>>), do: {:ok, 0}
   def decode(<<number::8>>, <<"5.", _::binary>>), do: {:ok, number}

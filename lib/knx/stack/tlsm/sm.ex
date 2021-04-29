@@ -36,13 +36,6 @@ defmodule Knx.Stack.Tlsm.Sm do
     e27: [{:closed, :a00}, {:o_idle, :a00}, {:o_wait, :a00}]
   }
 
-  @type handler_t :: :closed | :o_idle | :o_wait
-
-  @spec state_handler(
-          Knx.Stack.Tlsm.Event.event_t(),
-          handler_t()
-        ) :: {handler_t(), Knx.Stack.Tlsm.Action.action_t()}
-
   def state_handler(event, handler) do
     row = @table[event]
     Enum.at(row, @index[handler])

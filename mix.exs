@@ -22,9 +22,7 @@ defmodule KnxStack.MixProject do
     [
       {:csv, "~> 2.4", only: :test},
       {:stream_data, "~> 0.5.0", only: :test},
-      {:dialyxir, "~> 1.0": [:dev], runtime: false},
+      {:dialyxir, "~> 1.0": [:dev], runtime: false}
     ]
   end
-
-
 end

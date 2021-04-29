@@ -13,12 +13,6 @@ defmodule Knx.Timer do
 
   use GenServer
 
-  @type signal_t :: :timeout | :stop | :start | :restart
-  @type instance_t :: :ack | :connection
-
-  @type impulse_t :: {Knx.Stack.layer_t() | :timer, signal_t(), instance_t()}
-
-
   # --------------------------------------------------------------------
   # Client API
 

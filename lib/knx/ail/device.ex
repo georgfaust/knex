@@ -26,8 +26,7 @@ defmodule Knx.Ail.Device do
     do: Property.read_prop_value(props, :pid_max_apdu_length)
 
   def verify?(props) do
-    %{verify_mode: verify_mode} =
-      Property.read_prop_value(props, :pid_device_control)
+    %{verify_mode: verify_mode} = Property.read_prop_value(props, :pid_device_control)
     verify_mode
   end
 end

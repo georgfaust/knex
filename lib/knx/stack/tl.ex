@@ -7,16 +7,6 @@ defmodule Knx.Stack.Tl do
   alias Knx.Frame, as: F
   alias Knx.Ail.AddrTab
 
-  @type service_t ::
-          :t_data_con
-          | :t_connect
-          | :t_discon
-          | :t_ack
-          | :t_nak
-          | :t_data_group
-
-  @spec handle(Knx.impulse_t(), S.t()) :: [Knx.impulse_t()]
-
   def handle(
         {:tl, :req, %F{service: service, data: data, seq: seq, tsap: tsap, dest: dest} = frame},
         %S{}

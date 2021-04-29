@@ -132,8 +132,6 @@ defmodule Knx.Stack.Al do
 
   # @ack_requested 0x02
 
-  # @spec handle(Knx.impulse_t(), S.t()) :: [Knx.impulse_t()]
-
   # ??? TODO
   def handle({:al, :req, %F{service: :t_connect} = frame}, _), do: [{:tlsm, :req, frame}]
   def handle({:al, :req, %F{service: :t_discon} = frame}, _), do: [{:tlsm, :req, frame}]
