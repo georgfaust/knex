@@ -19,14 +19,14 @@ defmodule Knx.Stack.Tl do
 
   def handle(
         {:tl, :req, %F{service: service, data: data, seq: seq, tsap: tsap, dest: dest} = frame},
-        %S{addr_tab: addr_tab}
+        %S{}
       ) do
     case encode(service, seq, tsap) do
       {:error, reason} ->
         error({reason, frame})
 
       {addr_t, tpci, _tsap} ->
-        dest = get_dest(addr_t, addr_tab, tsap, dest)
+        dest = get_dest(addr_t, tsap, dest)
         data = <<tpci::bits, data::bits>>
         [{:nl, :req, %F{frame | dest: dest, addr_t: addr_t, data: data}}]
     end
@@ -34,24 +34,24 @@ defmodule Knx.Stack.Tl do
 
   def handle(
         {:tl, up_prim, %F{data: data, addr_t: addr_t, dest: dest} = frame},
-        %S{addr_tab: addr_tab}
+        %S{}
       ) do
     case decode(addr_t, dest, data) do
       {:error, reason} ->
         warning({reason, frame})
 
       {service, seq, data} ->
-        tsap = get_tsap(addr_t, addr_tab, dest)
+        tsap = get_tsap(addr_t, dest)
         [{:tlsm, up_prim, %F{frame | service: service, data: data, seq: seq, tsap: tsap}}]
     end
   end
 
   # ---------------------------------------------------------------------------
 
-  defp get_tsap(@addr_t_ind, _, _), do: nil
-  defp get_tsap(@addr_t_grp, addr_tab, dest), do: AddrTab.get_tsap(addr_tab, dest)
-  defp get_dest(@addr_t_ind, _, _, dest), do: dest
-  defp get_dest(@addr_t_grp, addr_tab, tsap, _), do: AddrTab.get_group_addr(addr_tab, tsap)
+  defp get_tsap(@addr_t_ind, _), do: nil
+  defp get_tsap(@addr_t_grp, dest), do: AddrTab.get_tsap(dest)
+  defp get_dest(@addr_t_ind, _, dest), do: dest
+  defp get_dest(@addr_t_grp, tsap, _), do: AddrTab.get_group_addr(tsap)
 
   defp decode(@addr_t_ind, _dest, data) do
     case data do

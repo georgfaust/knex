@@ -4,14 +4,21 @@ defmodule Knx.Ail.AddrTab do
 
   alias Knx.Mem
 
-  def get_tsap(table, group_addr),
-    do: Enum.find_index(table, fn ga -> ga == group_addr end)
+  def get_tsap(group_addr) do
+    table = Cache.get(:addr_tab)
+    Enum.find_index(table, fn ga -> ga == group_addr end)
+  end
 
-  def get_group_addr(_, tsap) when tsap < 1, do: nil
-  def get_group_addr(table, tsap), do: Enum.at(table, tsap)
+  def get_group_addr(tsap) when tsap < 1, do: nil
+
+  def get_group_addr(tsap) do
+    table = Cache.get(:addr_tab)
+    Enum.at(table, tsap)
+  end
 
   def load(mem, ref) do
     {:ok, _, table} = Mem.read_table(mem, ref, 2)
-    @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
+    table = @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
+    Cache.put(:addr_tab, table)
   end
 end

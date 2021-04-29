@@ -22,6 +22,11 @@ defmodule Knx.TlTest do
   @seq 3
   @t_ack <<0b11::2, @seq::4, 0b10::2>>
 
+  setup do
+    Cache.start_link(%{addr_tab: @addr_tab})
+    :ok
+  end
+
   describe "stack up" do
     test "dl decodes frame" do
       assert [
@@ -89,7 +94,7 @@ defmodule Knx.TlTest do
                     addr_t: @addr_t_grp,
                     data: <<@t_data_group::bits, @a_group_read::bits>>
                   }},
-                 %S{addr_tab: @addr_tab}
+                 %S{}
                )
     end
 
@@ -151,7 +156,7 @@ defmodule Knx.TlTest do
              ] =
                Tl.handle(
                  {:tl, :req, %F{tsap: @tsap, service: :t_data_group, data: @a_group_read}},
-                 %S{addr_tab: @addr_tab}
+                 %S{}
                )
     end
 

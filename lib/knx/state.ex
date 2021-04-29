@@ -13,8 +13,8 @@ defmodule Knx.State do
           objects: map(),
           pending_effects: [Knx.impulse_t()],
           hops: any(),
-          addr_tab: any(),
           auth: any(),
+          go_server: any(),
           mem: bitstring()
         }
 
@@ -32,7 +32,7 @@ defmodule Knx.State do
             objects: %{},
             pending_effects: [],
             hops: 6,
-            addr_tab: nil,
             auth: nil,
+            go_server: %Knx.Ail.GoServer{},
             mem: <<>>
 end

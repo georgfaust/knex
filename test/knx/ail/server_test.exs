@@ -66,7 +66,6 @@ defmodule Knx.Ail.IoServerTest do
                )
     end
 
-    @tag :current
     test "(existing index) with a prop_desc_resp" do
       assert {[{:al, :req, %F{apci: :prop_desc_resp, apdu: @manu_prop_desc_resp}}], @state_1} =
                IoServer.handle(

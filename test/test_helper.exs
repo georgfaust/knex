@@ -7,6 +7,27 @@ ExUnit.start()
 
 defmodule Helper do
   alias Knx.Ail.Property, as: P
+  alias Knx.Ail.GroupObject, as: GO
+
+  @addr_tab [-1, 1, 2, 3, 4, 5, 6]
+
+  @assoc_tab [
+    {1, 1},
+    {2, 2},
+    {3, 3},
+    {4, 4},
+    {5, 5},
+    {6, 6}
+  ]
+
+  @go_tab %{
+    1 => %GO{asap: 1, transmits: true},
+    2 => %GO{asap: 2, writable: true},
+    3 => %GO{asap: 3, readable: true},
+    4 => %GO{asap: 4, updatable: true},
+    5 => %GO{asap: 5, transmits: true, readable: true},
+    6 => %GO{asap: 6, transmits: true, readable: true, updatable: true}
+  }
 
   # IO
   @serial 0x112233445566
@@ -19,6 +40,12 @@ defmodule Helper do
     ia_duplication: false,
     user_stopped: false
   }
+
+  # ---
+
+  def get_assoc_tab(), do: @assoc_tab
+  def get_go_tab(), do: @go_tab
+  def get_addr_tab(), do: @addr_tab
 
   # frames
   @hops 6
@@ -42,6 +69,7 @@ defmodule Helper do
 
   def get_device_props(prog_mode, verify \\ false) do
     device_control = %{@device_control | verify_mode: verify}
+
     [
       P.new(:pid_object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),

@@ -33,8 +33,6 @@ defmodule Knx do
         target
       )
 
-    # IO.inspect(impulse)
-
     case handle.(impulse, state) do
       {%S{} = new_state, new_impulses} -> {new_state, new_impulses}
       new_impulses -> {state, new_impulses}

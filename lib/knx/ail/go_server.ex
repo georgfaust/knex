@@ -1,6 +1,7 @@
 defmodule Knx.Ail.GoServer do
   alias Knx.Ail.{AssocTab, GoTab}
   alias Knx.Frame, as: F
+  alias Knx.State, as: S
 
   defstruct values: %{},
             deferred: [],
@@ -9,9 +10,18 @@ defmodule Knx.Ail.GoServer do
 
   @me __MODULE__
 
-  def handle(impulse, context) do
-    %@me{impulses: impulses} = state = handle_(impulse, context)
-    {%@me{state | impulses: []}, impulses}
+  def handle(impulse, %S{go_server: go_server} = state) do
+    context = {
+      Cache.get(:assoc_tab),
+      Cache.get(:go_tab),
+      %@me{go_server | values: Cache.get(:go_values)}
+    }
+
+    %@me{impulses: impulses, values: values} = go_server = handle_(impulse, context)
+
+    Cache.put(:go_values, values)
+
+    {%S{state | go_server: %@me{go_server | impulses: []}}, impulses}
   end
 
   # ----------------------------------------------------------------------------
@@ -55,7 +65,10 @@ defmodule Knx.Ail.GoServer do
 
         state
         |> update_tsap(assoc_tab, go_tab, resp_tsap, go_value)
-        |> transmit({:al, :req, %F{apci: :group_resp, tsap: resp_tsap, data: go_value}})
+        |> transmit(
+          {:al, :req,
+           %F{apci: :group_resp, tsap: resp_tsap, data: go_value, service: :t_data_group}}
+        )
 
       :error ->
         state

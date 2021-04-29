@@ -4,14 +4,7 @@ defmodule Knx.Ail.GoTabTest do
   import Knx.Ail.GoTab
   alias Knx.Ail.GroupObject
 
-  @assocs [
-    {1, 1},
-    {2, 2},
-    {3, 3},
-    {4, 4},
-    {5, 5},
-    {6, 6}
-  ]
+  @assoc_tab Helper.get_assoc_tab()
 
   @go_tab %{
     1 => %GroupObject{asap: 1, transmits: true, prio: 0, v_type: 0},
@@ -43,7 +36,7 @@ defmodule Knx.Ail.GoTabTest do
              {4, %GroupObject{asap: 4}},
              {5, %GroupObject{asap: 5}},
              {6, %GroupObject{asap: 6}}
-           ] = get_all(@assocs, @go_tab, :any)
+           ] = get_all(@assoc_tab, @go_tab, :any)
   end
 
   test "get all transmitting" do
@@ -51,7 +44,7 @@ defmodule Knx.Ail.GoTabTest do
              {1, %GroupObject{asap: 1}},
              {5, %GroupObject{asap: 5}},
              {6, %GroupObject{asap: 6}}
-           ] = get_all(@assocs, @go_tab, :transmits)
+           ] = get_all(@assoc_tab, @go_tab, :transmits)
   end
 
   test "get all readable" do
@@ -59,26 +52,26 @@ defmodule Knx.Ail.GoTabTest do
              {3, %GroupObject{asap: 3}},
              {5, %GroupObject{asap: 5}},
              {6, %GroupObject{asap: 6}}
-           ] = get_all(@assocs, @go_tab, :readable)
+           ] = get_all(@assoc_tab, @go_tab, :readable)
   end
 
   test "get all writable" do
-    assert [{2, %GroupObject{asap: 2}}] = get_all(@assocs, @go_tab, :writable)
+    assert [{2, %GroupObject{asap: 2}}] = get_all(@assoc_tab, @go_tab, :writable)
   end
 
   test "get first any" do
-    assert {:ok, {1, %GroupObject{asap: 1}}} = get_first(@assocs, @go_tab, :any)
+    assert {:ok, {1, %GroupObject{asap: 1}}} = get_first(@assoc_tab, @go_tab, :any)
   end
 
   test "get first transmitting" do
-    assert {:ok, {1, %GroupObject{asap: 1}}} = get_first(@assocs, @go_tab, :transmits)
+    assert {:ok, {1, %GroupObject{asap: 1}}} = get_first(@assoc_tab, @go_tab, :transmits)
   end
 
   test "get first readable" do
-    assert {:ok, {3, %GroupObject{asap: 3}}} = get_first(@assocs, @go_tab, :readable)
+    assert {:ok, {3, %GroupObject{asap: 3}}} = get_first(@assoc_tab, @go_tab, :readable)
   end
 
   test "get first writable" do
-    assert {:ok, {2, %GroupObject{asap: 2}}} = get_first(@assocs, @go_tab, :writable)
+    assert {:ok, {2, %GroupObject{asap: 2}}} = get_first(@assoc_tab, @go_tab, :writable)
   end
 end
