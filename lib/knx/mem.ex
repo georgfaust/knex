@@ -4,6 +4,8 @@ defmodule Knx.Mem do
   alias Knx.Frame, as: F
   alias Knx.State, as: S
 
+  def handle({:mem, :conf, %F{}}, _state), do: []
+
   def handle({:mem, :req, %F{apci: :mem_read} = frame}, %S{}) do
     [{:al, :req, frame}]
   end

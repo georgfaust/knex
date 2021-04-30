@@ -24,6 +24,8 @@ defmodule Knx.Auth do
 
   @me __MODULE__
 
+  def handle({:auth, :conf, %F{}}, _state), do: []
+
   def handle({:auth, :req, %F{apci: :auth_req} = frame}, %S{}) do
     [{:al, :req, frame}]
   end
