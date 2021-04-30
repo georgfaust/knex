@@ -28,8 +28,8 @@ defmodule Knx.Ail.IoServer do
 
   def handle(_, state), do: {[], state}
 
-  defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl, objects: objects} = state) do
-    {:ok, props} = Map.fetch(objects, o_idx)
+  defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl} = state) do
+    props = Cache.get({:objects, o_idx})
 
     {impulses, props} =
       case serve(props, access_lvl, frame) do
@@ -40,7 +40,9 @@ defmodule Knx.Ail.IoServer do
         impulse -> {[impulse], props}
       end
 
-    {impulses, %S{state | objects: Map.put(objects, o_idx, props)}}
+    Cache.put({:objects, o_idx}, props)
+
+    {impulses, state}
   end
 
   # --------------------------------------

@@ -6,7 +6,7 @@ defmodule Knx.State.GoServer do
 end
 
 defmodule Knx.State do
-  @derive {Inspect, only: [:addr, :c_addr, :handler, :pending_effects]}
+  @derive {Inspect, only: [:addr, :c_addr, :handler]}
 
   defstruct addr: nil,
             max_apdu_length: 15,
@@ -26,6 +26,5 @@ defmodule Knx.State do
             hops: 6,
             go_server: %Knx.State.GoServer{},
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
-            pending_effects: [],
-            objects: %{}
+            pending_effects: []
 end
