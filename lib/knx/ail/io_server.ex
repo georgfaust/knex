@@ -21,14 +21,14 @@ defmodule Knx.Ail.IoServer do
 
   def handle({:io, :conf, %F{}}, _state), do: []
 
-  def handle({:io, _, %F{apci: apci} = frame}, state)
+  def handle({:io, :ind, %F{apci: apci} = frame}, state)
       when apci in @device_object_apcis,
       do: load_and_serve(0, frame, state)
 
-  def handle({:io, _, %F{apdu: [o_idx | _]} = frame}, state),
+  def handle({:io, :ind, %F{apdu: [o_idx | _]} = frame}, state),
     do: load_and_serve(o_idx, frame, state)
 
-  def handle(_, _), do: []
+  # def handle(_, _), do: []
 
   defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl} = state) do
     props = Cache.get({:objects, o_idx})
