@@ -18,12 +18,10 @@ defmodule Knx do
           tl: &Tl.handle/2,
           tlsm: &Tlsm.handle/2,
           al: &Al.handle/2,
-          # TODO
           go: &GO.handle/2,
-          # TODO
           io: &IO.handle/2,
-          # TODO
           mem: &Mem.handle/2,
+          auth: &Knx.Auth.handle/2,
           timer: &append_effect/2,
           driver: &append_effect/2,
           user: &append_effect/2,
@@ -32,6 +30,8 @@ defmodule Knx do
         },
         target
       )
+
+    :logger.debug(inspect(impulse))
 
     case handle.(impulse, state) do
       {%S{} = new_state, new_impulses} -> {new_state, new_impulses}
@@ -46,13 +46,4 @@ defmodule Knx do
 
   def handle_impulses(%S{pending_effects: effects} = state, []),
     do: {effects, %S{state | pending_effects: []}}
-
-  def proftest do
-    Enum.each(1..1_000_000, fn _ ->
-      Knx.handle_impulses(
-        %S{addr: 100, handler: :closed},
-        [{:al, :req, %Knx.Frame{dest: 200, service: :t_connect}}]
-      )
-    end)
-  end
 end

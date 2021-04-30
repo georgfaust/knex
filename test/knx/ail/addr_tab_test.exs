@@ -6,12 +6,12 @@ defmodule Knx.Ail.AddrTabTest do
   @addr_tab [-1, 10, 20, 30, 40, 50]
 
   setup do
-    Cache.start_link(%{addr_tab: @addr_tab})
+    Cache.start_link(%{addr_tab: @addr_tab, mem: @mem})
     :ok
   end
 
   test "addr tab" do
-    assert @addr_tab == load(@mem, 4)
+    assert @addr_tab == load(4)
   end
 
   test "get tsap" do

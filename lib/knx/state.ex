@@ -1,6 +1,17 @@
+defmodule Knx.State.GoServer do
+  defstruct values: %{},
+            deferred: [],
+            impulses: [],
+            transmitting: false
+end
+
 defmodule Knx.State do
   @derive {Inspect, only: [:addr, :c_addr, :handler, :pending_effects]}
+
   defstruct addr: nil,
+            max_apdu_length: 15,
+            verify: false,
+            # tlsm
             c_addr: nil,
             s_seq: 0,
             r_seq: 0,
@@ -8,13 +19,14 @@ defmodule Knx.State do
             handler: :closed,
             stored_frame: nil,
             deferred_frames: [],
-            # now part of shell state
-            timer_pid: nil,
+            # auth
             access_lvl: 0,
-            objects: %{},
-            pending_effects: [],
-            hops: 6,
             auth: nil,
-            go_server: %Knx.Ail.GoServer{},
-            mem: <<>>
+            # nl
+            hops: 6,
+            go_server: %Knx.State.GoServer{},
+            # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
+            pending_effects: [],
+            mem: <<>>,
+            objects: %{}
 end

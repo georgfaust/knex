@@ -16,8 +16,8 @@ defmodule Knx.Ail.AddrTab do
     Enum.at(table, tsap)
   end
 
-  def load(mem, ref) do
-    {:ok, _, table} = Mem.read_table(mem, ref, 2)
+  def load(ref) do
+    {:ok, _, table} = Mem.read_table(ref, 2)
     table = @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
     Cache.put(:addr_tab, table)
   end

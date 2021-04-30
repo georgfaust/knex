@@ -24,7 +24,7 @@ defmodule Knx.Auth do
 
   @me __MODULE__
 
-  def handle({:auth, :req, %F{apci: :auth_request} = frame}, %S{}) do
+  def handle({:auth, :req, %F{apci: :auth_req} = frame}, %S{}) do
     [{:al, :req, frame}]
   end
 
@@ -33,19 +33,21 @@ defmodule Knx.Auth do
   end
 
   def handle(
-        {:auth, :ind, %F{apci: :auth_request, data: [key]}},
+        {:auth, :ind, %F{apci: :auth_req, data: [key], service: service}},
         %S{auth: %@me{} = auth} = state
       ) do
     auth = auth(auth, key)
-    {%{state | auth: auth}, [{:al, :req, %F{apci: :auth_response, data: [auth.access_lvl]}}]}
+
+    {%{state | auth: auth},
+     [{:al, :req, %F{apci: :auth_resp, data: [auth.access_lvl], service: service}}]}
   end
 
   def handle(
-        {:auth, :ind, %F{apci: :key_write, data: [lvl, key]}},
+        {:auth, :ind, %F{apci: :key_write, data: [lvl, key], service: service}},
         %S{auth: %@me{} = auth} = state
       ) do
     {auth, lvl} = key_write(auth, key, lvl)
-    {%{state | auth: auth}, [{:al, :req, %F{apci: :key_response, data: [lvl]}}]}
+    {%{state | auth: auth}, [{:al, :req, %F{apci: :key_resp, data: [lvl], service: service}}]}
   end
 
   def de_auth(%@me{} = auth), do: %@me{auth | access_lvl: @default_lvl}

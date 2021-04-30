@@ -3,7 +3,6 @@ defmodule Knx.Mem do
 
   alias Knx.Frame, as: F
   alias Knx.State, as: S
-  alias Knx.Ail.Device
 
   def handle({:mem, :req, %F{apci: :mem_read} = frame}, %S{}) do
     [{:al, :req, frame}]
@@ -15,13 +14,10 @@ defmodule Knx.Mem do
 
   def handle(
         {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
-        %S{mem: mem, objects: objects}
+        %S{max_apdu_length: max_apdu_length}
       ) do
-    {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
-    max_apdu_length = Device.get_max_apdu_length(device_props)
-
     with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
-         {:ok, data} <- read(mem, number, addr) do
+         {:ok, data} <- read(number, addr) do
       [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
     else
       # [XV]
@@ -33,18 +29,15 @@ defmodule Knx.Mem do
 
   def handle(
         {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
-        %S{mem: mem, objects: objects} = state
+        %S{verify: verify, max_apdu_length: max_apdu_length} = state
       ) do
-    {:ok, device_props} = Map.fetch(objects, Device.get_object_index())
-    max_apdu_length = Device.get_max_apdu_length(device_props)
-
-    with :ok <- validate(Device.verify?(device_props), :no_verify),
+    with :ok <- validate(verify, :no_verify),
          :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
-         {:ok, mem} <- write(mem, addr, data),
+         _ <- write(addr, data),
          # [XVII]
-         {:ok, ^data} <- read(mem, number, addr) do
+         {:ok, ^data} <- read(number, addr) do
       {
-        %{state | mem: mem},
+        state,
         [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
       }
     else
@@ -57,9 +50,9 @@ defmodule Knx.Mem do
     end
   end
 
-  def read_table(mem, addr, entry_size) do
-    with {:ok, <<length::size(2)-unit(8)>>} <- read(mem, 2, addr),
-         {:ok, <<table::bytes>>} <- read(mem, length * entry_size, addr + 2) do
+  def read_table(addr, entry_size) do
+    with {:ok, <<length::size(2)-unit(8)>>} <- read(2, addr),
+         {:ok, <<table::bytes>>} <- read(length * entry_size, addr + 2) do
       {:ok, length, table}
     end
   end
@@ -68,17 +61,21 @@ defmodule Knx.Mem do
 
   # ------------------------------------------------------------------------------
 
-  defp read(mem, number, addr) do
+  defp read(number, addr) do
+    mem = Cache.get(:mem)
+
     with :ok <- validate(area_valid?(mem, number, addr), :area_invalid) do
       {:ok, :binary.part(mem, addr, number)}
     end
   end
 
-  defp write(mem, addr, data) do
+  defp write(addr, data) do
+    mem = Cache.get(:mem)
     number = byte_size(data)
 
-    with :ok <- validate(area_valid?(mem, number, addr), :area_invalid) do
-      {:ok, binary_insert(mem, addr, data, number)}
+    with :ok <- validate(area_valid?(mem, number, addr), :area_invalid),
+         mem <- binary_insert(mem, addr, data, number) do
+      Cache.put(:mem, mem)
     end
   end
 

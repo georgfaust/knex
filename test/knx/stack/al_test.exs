@@ -56,7 +56,7 @@ defmodule Knx.Stack.AlTest do
   # not for future use
   @mem_bit_write 0b1111_010000
 
-  @auth_request 0b1111_010001
+  @auth_req 0b1111_010001
   @auth_resp 0b1111_010010
   @key_write 0b1111_010011
   @key_resp 0b1111_010100
@@ -106,7 +106,7 @@ defmodule Knx.Stack.AlTest do
     device_desc_resp: [:t_data_individual, :t_data_con],
     restart: [:t_data_individual, :t_data_con],
     mem_bit_write: [:t_data_con],
-    auth_request: [:t_data_con],
+    auth_req: [:t_data_con],
     auth_resp: [:t_data_con],
     key_write: [:t_data_con],
     key_resp: [:t_data_con],
@@ -170,7 +170,7 @@ defmodule Knx.Stack.AlTest do
     # roundtrip(:restart, <<@restart::4, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::22>>)
     # roundtrip(:restart, <<@restart::4, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::30>>)
     roundtrip(:mem_bit_write, <<@mem_bit_write::10, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::80>>)
-    roundtrip(:auth_request, <<@auth_request::10, 0x00FE_AFFE_AF::40>>)
+    roundtrip(:auth_req, <<@auth_req::10, 0x00FE_AFFE_AF::40>>)
     roundtrip(:auth_resp, <<@auth_resp::10, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::8>>)
     roundtrip(:key_write, <<@key_write::10, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::40>>)
     roundtrip(:key_resp, <<@key_resp::10, 0xAFFE_AFFE_AFFE_AFFE_AFFE_AFFE::8>>)

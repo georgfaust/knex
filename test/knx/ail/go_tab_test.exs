@@ -25,7 +25,8 @@ defmodule Knx.Ail.GoTabTest do
   @mem <<6::16, @go1::bits, @go2::bits, @go3::bits, @go4::bits, @go5::bits, @go6::bits>>
 
   test "load" do
-    assert @go_tab = load(@mem, 0)
+    Cache.start_link(%{mem: @mem})
+    assert @go_tab = load(0)
   end
 
   test "get all any" do

@@ -34,7 +34,7 @@ defmodule Knx.Stack.Al do
     device_desc_resp: [:t_data_individual, :t_data_con],
     restart: [:t_data_individual, :t_data_con],
     mem_bit_write: [:t_data_con],
-    auth_request: [:t_data_con],
+    auth_req: [:t_data_con],
     auth_resp: [:t_data_con],
     key_write: [:t_data_con],
     key_resp: [:t_data_con],
@@ -101,7 +101,7 @@ defmodule Knx.Stack.Al do
   # not for future use
   @mem_bit_write 0b1111_010000
 
-  @auth_request 0b1111_010001
+  @auth_req 0b1111_010001
   @auth_resp 0b1111_010010
   @key_write 0b1111_010011
   @key_resp 0b1111_010100
@@ -141,7 +141,7 @@ defmodule Knx.Stack.Al do
   def handle({:al, prim, %F{service: :t_discon}}, _), do: [{:user, prim, {:t_discon, nil}}]
 
   def handle({:al, :req, %F{data: data, apci: apci, service: service} = frame}, _) do
-    with :ok <- validate(service in @allowed_t_services[apci], :disallowed_t_service),
+    with :ok <- validate(service in @allowed_t_services[apci], {:forbidden, service, apci}),
          {:ok, data_encoded} <- encode(apci, data) do
       [{:tlsm, :req, %F{frame | data: data_encoded}}]
     else
@@ -151,7 +151,7 @@ defmodule Knx.Stack.Al do
 
   def handle({:al, prim, %F{data: data, service: service} = frame}, _) do
     with {next, apci, data_decoded} <- decode(data),
-         :ok <- validate(service in @allowed_t_services[apci], :disallowed_t_service) do
+         :ok <- validate(service in @allowed_t_services[apci], {:forbidden, service, apci}) do
       [{next, prim, %{frame | apci: apci, data: data_decoded}}]
     else
       {:error, reason} -> [{:logger, :error, reason}]
@@ -250,8 +250,8 @@ defmodule Knx.Stack.Al do
       <<@mem_bit_write::10, number, address::16, data::bytes>> ->
         {:mem, :mem_bit_write, [number, address, data]}
 
-      <<@auth_request::10, 0, key::32>> ->
-        {:auth, :auth_request, [key]}
+      <<@auth_req::10, 0, key::32>> ->
+        {:auth, :auth_req, [key]}
 
       <<@auth_resp::10, level>> ->
         {:todo, :auth_resp, [level]}
@@ -337,7 +337,7 @@ defmodule Knx.Stack.Al do
         :device_desc_resp -> a_device_desc_resp_pdu(data)
         # TODO :restart-> %{data: data, prio: prio}
         :mem_bit_write -> a_mem_bit_write_pdu(data)
-        :auth_request -> a_auth_request_pdu(data)
+        :auth_req -> a_auth_req_pdu(data)
         :auth_resp -> a_auth_resp_pdu(data)
         :key_write -> a_key_write_pdu(data)
         :key_resp -> a_key_resp_pdu(data)
@@ -395,8 +395,8 @@ defmodule Knx.Stack.Al do
   def a_adc_resp_pdu([channel, read_count, sum]),
     do: <<@adc_resp::4, channel::6, read_count, sum::16>>
 
-  def a_auth_request_pdu([key]),
-    do: <<@auth_request::10, 0, key::32>>
+  def a_auth_req_pdu([key]),
+    do: <<@auth_req::10, 0, key::32>>
 
   def a_device_desc_resp_pdu([descriptor_type, descriptor]),
     do: <<@device_desc_resp::4, descriptor_type::6, descriptor::bytes>>

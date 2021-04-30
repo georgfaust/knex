@@ -21,7 +21,7 @@ defmodule AuthTest do
   def key_write(req_lvl, req_key, res_lvl, auth \\ %Auth{}) do
     assert {
              %S{auth: %Auth{} = new_auth},
-             [{:al, :req, %F{apci: :key_response, data: [^res_lvl]}}]
+             [{:al, :req, %F{apci: :key_resp, data: [^res_lvl]}}]
            } =
              Auth.handle(
                {:auth, :ind, %F{apci: :key_write, data: [req_lvl, req_key]}},
@@ -34,20 +34,20 @@ defmodule AuthTest do
   def auth(req_key, res_lvl, auth \\ %Auth{}) do
     assert {
              %S{auth: new_auth},
-             [{:al, :req, %F{apci: :auth_response, data: [^res_lvl]}}]
+             [{:al, :req, %F{apci: :auth_resp, data: [^res_lvl]}}]
            } =
              Auth.handle(
-               {:auth, :ind, %F{apci: :auth_request, data: [req_key]}},
+               {:auth, :ind, %F{apci: :auth_req, data: [req_key]}},
                %S{auth: auth}
              )
 
     new_auth
   end
 
-  test "auth_request.req" do
-    assert [{:al, :req, %F{apci: :auth_request}}] =
+  test "auth_req.req" do
+    assert [{:al, :req, %F{apci: :auth_req}}] =
              Auth.handle(
-               {:auth, :req, %F{apci: :auth_request}},
+               {:auth, :req, %F{apci: :auth_req}},
                %S{}
              )
   end
@@ -60,7 +60,7 @@ defmodule AuthTest do
              )
   end
 
-  describe "auth_request.ind and key_write.ind" do
+  describe "auth_req.ind and key_write.ind" do
     test "any key can write a key to lvl 3" do
       assert %Auth{keys: [0, 0, 0, @some_key]} = key_write(3, @some_key, @default_lvl)
     end

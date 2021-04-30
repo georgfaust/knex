@@ -26,7 +26,8 @@ defmodule Knx.Ail.AssocTabTest do
   ]
 
   test "load" do
-    assert @assoc_tab = load(@mem, 4)
+    Cache.start_link(%{mem: @mem})
+    assert @assoc_tab = load(4)
   end
 
   test "get by asap" do

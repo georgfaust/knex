@@ -14,8 +14,8 @@ defmodule Knx.Ail.GoTab do
     |> Enum.filter(fn {_, go} -> go && flag_set?(go, flag) end)
   end
 
-  def load(mem, ref) do
-    {:ok, _, table} = Mem.read_table(mem, ref, 2)
+  def load(ref) do
+    {:ok, _, table} = Mem.read_table(ref, 2)
 
     for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
     |> Enum.with_index(1)

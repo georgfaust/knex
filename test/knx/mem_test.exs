@@ -11,15 +11,16 @@ defmodule MemTest do
   @table_data <<1::16, 2::16, 3::16, 4::16>>
   @table_mem <<0::24, @table_size::16, @table_data::bits>>
 
-  # verify mode: active, max_apdu_length: 15
-  @objects_verified %{0 => Helper.get_device_props(1, true)}
-  # verify mode: inactive, max_apdu_length: 15
-  @objects_unverified %{0 => Helper.get_device_props(1, false)}
+  setup do
+    Cache.start_link(%{})
+    :ok
+  end
 
-  def mem_read(mem, objects, number, addr) do
+  def mem_read(mem, number, addr) do
+    Cache.put(:mem, mem)
     case Mem.handle(
            {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
-           %S{mem: mem, objects: objects}
+           %S{}
          ) do
       [] ->
         {:error, :max_apdu_exceeded}
@@ -32,12 +33,13 @@ defmodule MemTest do
     end
   end
 
-  def mem_write(mem, objects, addr, data) do
+  def mem_write(mem, verify, addr, data) do
+    Cache.put(:mem, mem)
     number = byte_size(data)
 
     case Mem.handle(
            {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
-           %S{mem: mem, objects: objects}
+           %S{verify: verify}
          ) do
       [] ->
         {:error, :max_apdu_exceeded_or_no_verify}
@@ -46,58 +48,57 @@ defmodule MemTest do
         {:error, :area_invalid}
 
       {
-        %S{mem: new_mem},
+        %S{},
         [{:al, :req, %F{apci: :mem_resp, data: [^number, ^addr, ^data]}}]
       } ->
-        new_mem
+        Cache.get(:mem)
     end
   end
 
   describe "mem_read.ind and mem_write.ind" do
     test "successful write and read" do
-      assert <<_::16, 0xDEAD::16, _::bytes>> =
-               mem1 = mem_write(@mem1, @objects_verified, 2, <<0xDEAD::16>>)
 
-      assert <<0x00DE_AD00::32>> = mem_read(mem1, @objects_verified, 4, 1)
+      assert <<_::16, 0xDEAD::16, _::bytes>> = mem1 = mem_write(@mem1, true, 2, <<0xDEAD::16>>)
+
+      assert <<0x00DE_AD00::32>> = mem_read(mem1, 4, 1)
 
       assert <<_::16, 0xDEAD_BEEF::32, _::bytes>> =
-               mem1 = mem_write(mem1, @objects_verified, 4, <<0xBEEF::16>>)
+               mem1 = mem_write(mem1, true, 4, <<0xBEEF::16>>)
 
-      assert <<0x0000_DEAD_BEEF_0000::64>> = mem_read(mem1, @objects_verified, 8, 0)
+      assert <<0x0000_DEAD_BEEF_0000::64>> = mem_read(mem1, 8, 0)
     end
 
     test "invalid memory write" do
-      assert {:error, :area_invalid} = mem_write(@mem1, @objects_verified, 8, <<0xFF::8>>)
+      assert {:error, :area_invalid} = mem_write(@mem1, true, 8, <<0xFF::8>>)
     end
 
     test "partially invalid memory write" do
-      assert {:error, :area_invalid} = mem_write(@mem1, @objects_verified, 7, <<0xFFFF::16>>)
+      assert {:error, :area_invalid} = mem_write(@mem1, true, 7, <<0xFFFF::16>>)
     end
 
     test "memory write exceeds max apdu length" do
-      assert {:error, :max_apdu_exceeded_or_no_verify} =
-               mem_write(@mem2, @objects_verified, 1, <<1::112>>)
+      assert {:error, :max_apdu_exceeded_or_no_verify} = mem_write(@mem2, true, 1, <<1::112>>)
     end
 
     test "memory write with inactive verify mode" do
-      assert {:error, :max_apdu_exceeded_or_no_verify} =
-               mem_write(@mem1, @objects_unverified, 1, <<0xFF::8>>)
+      assert {:error, :max_apdu_exceeded_or_no_verify} = mem_write(@mem1, false, 1, <<0xFF::8>>)
     end
 
     test "invalid memory read" do
-      assert {:error, :area_invalid} = mem_read(@mem1, @objects_verified, 1, 8)
+      assert {:error, :area_invalid} = mem_read(@mem1, 1, 8)
     end
 
     test "partially invalid memory read" do
-      assert {:error, :area_invalid} = mem_read(@mem1, @objects_verified, 2, 7)
+      assert {:error, :area_invalid} = mem_read(@mem1, 2, 7)
     end
 
     test "memory read exceeds max apdu length" do
-      assert {:error, :max_apdu_exceeded} = mem_read(@mem2, @objects_verified, 13, 1)
+      assert {:error, :max_apdu_exceeded} = mem_read(@mem2, 13, 1)
     end
   end
 
   test "read_table" do
-    assert {:ok, @table_size, @table_data} == Mem.read_table(@table_mem, 3, 2)
+    Cache.put(:mem, @table_mem)
+    assert {:ok, @table_size, @table_data} == Mem.read_table(3, 2)
   end
 end
