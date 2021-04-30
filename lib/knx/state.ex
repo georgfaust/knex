@@ -27,6 +27,5 @@ defmodule Knx.State do
             go_server: %Knx.State.GoServer{},
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
             pending_effects: [],
-            mem: <<>>,
             objects: %{}
 end
