@@ -1,14 +1,19 @@
 defmodule Knx.Ail.AssocTab do
   alias Knx.Mem
 
-  def get_assocs(assoc_tab, asap: asap),
-    do: Enum.filter(assoc_tab, fn {_, asap_} -> asap_ == asap end)
+  def get_assocs(asap: asap) do
+    assoc_tab = Cache.get(:assoc_tab)
+    Enum.filter(assoc_tab, fn {_, asap_} -> asap_ == asap end)
+  end
 
-  def get_assocs(assoc_tab, tsap: tsap),
-    do: Enum.filter(assoc_tab, fn {tsap_, _} -> tsap_ == tsap end)
+  def get_assocs(tsap: tsap) do
+    assoc_tab = Cache.get(:assoc_tab)
+    Enum.filter(assoc_tab, fn {tsap_, _} -> tsap_ == tsap end)
+  end
 
   def load(ref) do
     {:ok, _, table} = Mem.read_table(ref, 4)
-    for <<tsap::16, asap::16 <- table>>, do: {tsap, asap}
+    assoc_tab = for(<<tsap::16, asap::16 <- table>>, do: {tsap, asap})
+    Cache.put(:assoc_tab, assoc_tab)
   end
 end

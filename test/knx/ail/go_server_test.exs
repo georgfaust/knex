@@ -23,10 +23,10 @@ defmodule Knx.Ail.GoServerTest do
   # TODO encode / decode
 
   test "get first" do
-    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(@assoc_tab, @go_tab, :any, asap: 1)
-    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(@assoc_tab, @go_tab, :transmits, asap: 1)
-    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(@assoc_tab, @go_tab, :transmits, tsap: 1)
-    assert :error = GOS.get_first(@assoc_tab, @go_tab, :transmits, tsap: 99)
+    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(:any, asap: 1)
+    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(:transmits, asap: 1)
+    assert {:ok, {1, %GO{asap: 1}}} = GOS.get_first(:transmits, tsap: 1)
+    assert :error = GOS.get_first(:transmits, tsap: 99)
   end
 
   test "group_read.req" do
