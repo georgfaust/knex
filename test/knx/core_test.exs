@@ -54,8 +54,8 @@ defmodule Knx.Ail.CoreTest do
   # @prop_read <<0b1111_010101::10>>
   # @prop_resp <<0b1111_010110::10>>
   # @prop_write <<0b1111_010111::10>>
-  # @prop_dest_read <<0b1111_011000::10>>
-  # @prop_dest_resp <<0b1111_011001::10>>
+  @prop_desc_read <<0b1111_011000::10>>
+  @prop_desc_resp <<0b1111_011001::10>>
 
   # [END]: APCIs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -246,6 +246,43 @@ defmodule Knx.Ail.CoreTest do
   # [END]: GO-specific tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
   # [START]: IO-specific tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  @pid_manufacturer_id 12
+  @p_idx_manufacturer_id 4
+  @pdt_manufacturer_id 4
+
+  @prop_desc_read_frm Helper.get_frame(
+                        src: @remote_addr,
+                        dest: @own_addr,
+                        addr_t: @addr_t_ind,
+                        data:
+                          <<@t_data_individual::bits, @prop_desc_read::bits, 0,
+                            @pid_manufacturer_id, 0>>
+                      )
+
+  @prop_desc_resp_frm Helper.get_frame(
+                        src: @own_addr,
+                        dest: @remote_addr,
+                        addr_t: @addr_t_ind,
+                        # a_prop_desc_resp_pdu:
+                        #  <<o_idx, pid, p_idx, write::1, 0::1, pdt::6, 0::4, max::12,
+                        #  r_lvl::4, w_lvl::4>>
+                        data:
+                          <<@t_data_individual::bits, @prop_desc_resp::bits, 0,
+                            @pid_manufacturer_id, @p_idx_manufacturer_id, 0::1, 0::1,
+                            @pdt_manufacturer_id::6, 0::4, 1::12, 3::4, 0::4>>
+                      )
+
+  test "responds to prop_desc_read: existing pid" do
+    assert {[
+              {:driver, :transmit, @prop_desc_resp_frm}
+            ],
+            %S{}} =
+             Knx.handle_impulses(
+               %S{addr: @own_addr},
+               [{:dl, :ind, @prop_desc_read_frm}]
+             )
+  end
 
   # [END]: IO-specific tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
