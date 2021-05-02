@@ -25,7 +25,7 @@ defmodule Knx.Ail.IoServer do
       when apci in @device_object_apcis,
       do: load_and_serve(0, frame, state)
 
-  def handle({:io, :ind, %F{apdu: [o_idx | _]} = frame}, state),
+  def handle({:io, :ind, %F{data: [o_idx | _]} = frame}, state),
     do: load_and_serve(o_idx, frame, state)
 
   # def handle(_, _), do: []
@@ -49,7 +49,7 @@ defmodule Knx.Ail.IoServer do
 
   # --------------------------------------
 
-  defp serve(props, _, %F{apci: :prop_desc_read, service: service, apdu: [o_idx, pid, p_idx]}) do
+  defp serve(props, _, %F{apci: :prop_desc_read, service: service, data: [o_idx, pid, p_idx]}) do
     apdu =
       case P.get_prop(props, pid, p_idx) do
         {:ok, idx, pdt, %P{id: id, write: write, max: max, r_lvl: r_lvl, w_lvl: w_lvl}} ->
@@ -65,7 +65,7 @@ defmodule Knx.Ail.IoServer do
   defp serve(props, access_lvl, %F{
          apci: :prop_read,
          service: service,
-         apdu: [o_idx, pid, elems, start]
+         data: [o_idx, pid, elems, start]
        }) do
     apdu =
       case P.read_prop(props, access_lvl, pid: pid, elems: elems, start: start) do
@@ -82,7 +82,7 @@ defmodule Knx.Ail.IoServer do
   defp serve(props, access_lvl, %F{
          apci: :prop_write,
          service: service,
-         apdu: [o_idx, pid, elems, start, data]
+         data: [o_idx, pid, elems, start, data]
        }) do
     {props, apdu} =
       case P.write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
@@ -96,7 +96,7 @@ defmodule Knx.Ail.IoServer do
     {al_req_impulse(:prop_resp, service, apdu), props}
   end
 
-  defp serve(props, _, %F{apci: :ind_addr_write, apdu: [address]}) do
+  defp serve(props, _, %F{apci: :ind_addr_write, data: [address]}) do
     props = if Device.prog_mode?(props), do: Device.set_address(props, address)
     {nil, props}
   end
@@ -105,12 +105,12 @@ defmodule Knx.Ail.IoServer do
     if Device.prog_mode?(props), do: al_req_impulse(:ind_addr_resp, service)
   end
 
-  defp serve(props, _, %F{apci: :ind_addr_serial_write, apdu: [serial, address]}) do
+  defp serve(props, _, %F{apci: :ind_addr_serial_write, data: [serial, address]}) do
     props = if Device.serial_matches?(props, serial), do: Device.set_address(props, address)
     {nil, props}
   end
 
-  defp serve(props, _, %F{apci: :ind_addr_serial_read, service: service, apdu: [serial]}) do
+  defp serve(props, _, %F{apci: :ind_addr_serial_read, service: service, data: [serial]}) do
     if Device.serial_matches?(props, serial) do
       # domain address is only relevant for RF and PL, set to 0 for TP
       domain_address = 0
@@ -118,17 +118,22 @@ defmodule Knx.Ail.IoServer do
     end
   end
 
-  defp serve(props, _, %F{apci: :device_desc_read, service: service, apdu: [0 = desc_type]}) do
+  defp serve(props, _, %F{apci: :device_desc_read, service: service, data: [0 = desc_type]}) do
     al_req_impulse(:device_desc_resp, service, [desc_type, <<Device.get_desc(props)::16>>])
   end
 
-  defp serve(_props, _, %F{apci: :device_desc_read, service: _service, apdu: [_desc_type]}) do
+  defp serve(_props, _, %F{apci: :device_desc_read, service: _service, data: [_desc_type]}) do
     raise("TODO long frames needed for other desc types")
+  end
+
+  defp serve(_, _, frame) do
+    :logger.error("[IoServer] no handler for #{inspect frame}")
+    nil
   end
 
   # --------------------------------------
 
   defp al_req_impulse(apci, service, apdu \\ nil) do
-    {:al, :req, %F{apci: apci, service: service, apdu: apdu}}
+    {:al, :req, %F{apci: apci, service: service, data: apdu}}
   end
 end
