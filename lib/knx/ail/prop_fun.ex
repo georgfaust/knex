@@ -1,7 +1,7 @@
 defmodule Knx.Ail.PropertyFunction do
   @io_addr_tab 1
   @io_assoc_tab 2
-  @io_app_prog 3
+  # @io_app_prog 3
   @io_go_tab 9
 
   @pid_load_state_control 5

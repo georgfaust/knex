@@ -11,8 +11,9 @@ defmodule Knx.Ail.Table do
       nil ->
         nil
 
-      {:le_data_rel_alloc, [req_mem_size, mode, fill]} ->
-        IO.inspect({"TODO action", :le_data_rel_alloc, [req_mem_size, mode, fill]})
+      {:le_data_rel_alloc, [_req_mem_size, _mode, _fill]} ->
+        # IO.inspect({"TODO action", :le_data_rel_alloc, [req_mem_size, mode, fill]})
+        nil
 
       action ->
         IO.inspect({"unknown action", action})
