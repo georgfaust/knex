@@ -44,7 +44,7 @@ defmodule Knx.Ail.IoServer do
 
     Cache.put({:objects, o_idx}, props)
 
-    {impulses, state}
+    {state, impulses}
   end
 
   # --------------------------------------

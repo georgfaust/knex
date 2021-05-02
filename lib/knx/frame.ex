@@ -6,7 +6,6 @@ defmodule Knx.Frame do
             apci: nil,
             asap: nil,
             tsap: nil,
-            apdu: nil,
             addr_t: nil,
             prio: 0,
             hops: nil,
