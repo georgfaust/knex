@@ -85,7 +85,7 @@ defmodule Knx.Ail.IoServer do
          apdu: [o_idx, pid, elems, start, data]
        }) do
     {props, apdu} =
-      case P.write_prop(props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
+      case P.write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
         {:ok, props, %P{id: id}} ->
           {props, [o_idx, id, elems, start, data]}
 

@@ -99,4 +99,31 @@ XX: |
   or protected or an illegal number of octets are requested, then the parameter number 
   of the A_Memory_Response-PDU shall be zero and shall contain no data.
   [3/3/7:3.5.4]
+
+XXI: |
+  An Unload to a segment shall free the allocated memory. 
+  The reference pointer (PID_TABLE_REFERENCE) shall be set to zero.
+  [3/5/3:2.5.1.2 Load controls]
+
+XXII: |
+  If the reallocated memory size exceeds the available memory space the base 
+  address shall be set to zero to indicate the memory allocation failure.
+  [3/5/3:2.5.1.2 Load controls]
+
+XXIII: |
+  **PID_TABLE_REFERENCE == 0 indicates an error**
+  The base address of the segments shall be requested from the management server by the load control
+  ‘Table Data Relative Allocation’. It shall set the segment’s base address to PID_TABLE_REFERENCE.
+  **The value 0h shall mean** that no memory is allocated before or that the requested memory size is not
+  possible to be allocated.
+  [3/5/3:2.5.1.3 Memory architecture]
+
+XXIV: |
+  **Configuration Procedures may use UserMemoryWrite!**
+  Load data via direct memory access:
+  if BaseAddress plus allocated memory is lower than FFFFh then
+    MaC: MemoryWrite(BaseAddress, <Data>, Length)
+  if BaseAddress plus allocated memory is higher than FFFFh then
+    MaC: UserMemoryWrite(BaseAddress, <Data>, Length)
+  [3/5/3:2.5.2 Load procedure for complete download]
  

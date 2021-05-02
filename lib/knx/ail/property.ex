@@ -1,5 +1,4 @@
 defmodule Knx.Ail.Property do
-  # TODO callbacks (prop-fun / Lsm / Rsm)
   # TODO darf nicht ueber ende der liste lesen!
 
   # TODO 3.7.3 - 4.1
@@ -7,61 +6,61 @@ defmodule Knx.Ail.Property do
   @pid_prog_mode 54
 
   @pdts %{
-    pdt_control: [id: 0x00, length: 1],
-    pdt_char: [id: 0x01, length: 1],
-    pdt_unsigned_char: [id: 0x02, length: 1],
-    pdt_int: [id: 0x03, length: 2],
-    pdt_unsigned_int: [id: 0x04, length: 2],
-    pdt_knx_float: [id: 0x05, length: 2],
-    pdt_date: [id: 0x06, length: 3],
-    pdt_time: [id: 0x07, length: 3],
-    pdt_long: [id: 0x08, length: 4],
-    pdt_unsigned_long: [id: 0x09, length: 4],
-    pdt_float: [id: 0x0A, length: 4],
-    # pdt_double: [id: 0x0B, length: 8],
+    pdt_control: %{id: 0x00, length: 1, write_length: 10},
+    pdt_char: %{id: 0x01, length: 1},
+    pdt_unsigned_char: %{id: 0x02, length: 1},
+    pdt_int: %{id: 0x03, length: 2},
+    pdt_unsigned_int: %{id: 0x04, length: 2},
+    pdt_knx_float: %{id: 0x05, length: 2},
+    pdt_date: %{id: 0x06, length: 3},
+    pdt_time: %{id: 0x07, length: 3},
+    pdt_long: %{id: 0x08, length: 4},
+    pdt_unsigned_long: %{id: 0x09, length: 4},
+    pdt_float: %{id: 0x0A, length: 4},
+    # pdt_double: %{id: 0x0B, length: 8},
 
     # TODO how to handle this?
-    # pdt_char_block: [id: 0x0C, length: 10],
-    # pdt_poll_group_setting: [id: 0x0D, length: 3],
+    # pdt_char_block: %{id: 0x0C, length: 10},
+    # pdt_poll_group_setting: %{id: 0x0D, length: 3},
 
     # TODO how to handle this?
-    # pdt_short_char_block: [id: 0x0E, length: 5],
+    # pdt_short_char_block: %{id: 0x0E, length: 5},
 
     # TODO dpt not implemented
-    # pdt_date_time: [id: 0x0F, length: 8],
-    # pdt_variable_length: [id: 0x10, length: nil, write_length: nil],
-    pdt_generic_01: [id: 0x11, length: 1],
-    pdt_generic_02: [id: 0x12, length: 2],
-    pdt_generic_03: [id: 0x13, length: 3],
-    pdt_generic_04: [id: 0x14, length: 4],
-    pdt_generic_05: [id: 0x15, length: 5],
-    pdt_generic_06: [id: 0x16, length: 6],
-    pdt_generic_07: [id: 0x17, length: 7],
-    pdt_generic_08: [id: 0x18, length: 8],
-    pdt_generic_09: [id: 0x19, length: 9],
-    pdt_generic_10: [id: 0x1A, length: 10],
-    pdt_generic_11: [id: 0x1B, length: 11],
-    pdt_generic_12: [id: 0x1C, length: 12],
-    pdt_generic_13: [id: 0x1D, length: 13],
-    pdt_generic_14: [id: 0x1E, length: 14],
-    pdt_generic_15: [id: 0x1F, length: 15],
-    pdt_generic_16: [id: 0x20, length: 16],
-    pdt_generic_17: [id: 0x21, length: 17],
-    pdt_generic_18: [id: 0x22, length: 18],
-    pdt_generic_19: [id: 0x23, length: 19],
-    pdt_generic_20: [id: 0x24, length: 20],
-    # pdt_utf8: [id: 0x2F, length: 3],
-    pdt_version: [id: 0x30, length: 2],
-    pdt_alarm_info: [id: 0x31, length: 6],
-    # pdt_binary_information: [id: 0x32, length: 3],
-    pdt_bitset8: [id: 0x33, length: 1],
-    # pdt_bitset16: [id: 0x34, length: 3],
-    # pdt_enum8: [id: 0x35, length: 3],
-    pdt_scaling: [id: 0x36, length: 1]
-    # pdt_ne_vl: [id: 0x3C, length: 3],
-    # pdt_ne_fl: [id: 0x3D, length: 3],
-    # pdt_function: [id: 0x3E, length: 3],
-    # pdt_escape: [id: 0x3F, length: 3]
+    # pdt_date_time: %{id: 0x0F, length: 8},
+    # pdt_variable_length: %{id: 0x10, length: nil, write_length: nil},
+    pdt_generic_01: %{id: 0x11, length: 1},
+    pdt_generic_02: %{id: 0x12, length: 2},
+    pdt_generic_03: %{id: 0x13, length: 3},
+    pdt_generic_04: %{id: 0x14, length: 4},
+    pdt_generic_05: %{id: 0x15, length: 5},
+    pdt_generic_06: %{id: 0x16, length: 6},
+    pdt_generic_07: %{id: 0x17, length: 7},
+    pdt_generic_08: %{id: 0x18, length: 8},
+    pdt_generic_09: %{id: 0x19, length: 9},
+    pdt_generic_10: %{id: 0x1A, length: 10},
+    pdt_generic_11: %{id: 0x1B, length: 11},
+    pdt_generic_12: %{id: 0x1C, length: 12},
+    pdt_generic_13: %{id: 0x1D, length: 13},
+    pdt_generic_14: %{id: 0x1E, length: 14},
+    pdt_generic_15: %{id: 0x1F, length: 15},
+    pdt_generic_16: %{id: 0x20, length: 16},
+    pdt_generic_17: %{id: 0x21, length: 17},
+    pdt_generic_18: %{id: 0x22, length: 18},
+    pdt_generic_19: %{id: 0x23, length: 19},
+    pdt_generic_20: %{id: 0x24, length: 20},
+    # pdt_utf8: %{id: 0x2F, length: 3},
+    pdt_version: %{id: 0x30, length: 2},
+    pdt_alarm_info: %{id: 0x31, length: 6},
+    # pdt_binary_information: %{id: 0x32, length: 3},
+    pdt_bitset8: %{id: 0x33, length: 1},
+    # pdt_bitset16: %{id: 0x34, length: 3},
+    # pdt_enum8: %{id: 0x35, length: 3},
+    pdt_scaling: %{id: 0x36, length: 1}
+    # pdt_ne_vl: %{id: 0x3C, length: 3},
+    # pdt_ne_fl: %{id: 0x3D, length: 3},
+    # pdt_function: %{id: 0x3E, length: 3},
+    # pdt_escape: %{id: 0x3F, length: 3}
   }
 
   @pids %{
@@ -137,8 +136,7 @@ defmodule Knx.Ail.Property do
             max: 1,
             write: false,
             r_lvl: 3,
-            w_lvl: 0,
-            callback: nil
+            w_lvl: 0
 
   import Knx.Toolbox
 
@@ -158,12 +156,12 @@ defmodule Knx.Ail.Property do
     }
   end
 
-  def write_prop(props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
+  def write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
     with {:ok, prop_index, _, %@me{pdt: pdt_atom} = prop} <- get_prop(props, pid),
          :ok <- validate(start - 1 + elems <= prop.max, :array_index_out_of_bounds),
          :ok <- authorize(access_lvl, prop.w_lvl),
          values <- decode_into_list(pid, pdt_atom, data),
-         {:ok, %@me{} = prop} <- write_prop_(prop, elems, start, values) do
+         {:ok, %@me{} = prop} <- write_prop_({o_idx, pdt_atom, pid}, prop, elems, start, values) do
       props = List.replace_at(props, prop_index, prop)
       {:ok, props, prop}
     end
@@ -182,7 +180,7 @@ defmodule Knx.Ail.Property do
     with {:ok, prop_index} <- get_prop_index(props, pid, prop_index),
          {:ok, %@me{pdt: pdt_atom} = prop} <-
            validate(Enum.fetch(props, prop_index), :prop_invalid),
-         [id: pdt, length: _] <- get_pdt(pdt_atom) do
+         %{id: pdt} <- get_pdt(pdt_atom) do
       {:ok, prop_index, pdt, prop}
     end
   end
@@ -197,27 +195,32 @@ defmodule Knx.Ail.Property do
 
   def write_prop_value(props, pid_atom, data) do
     [pdt: _, id: pid] = get_pid(pid_atom)
-    {:ok, props, _} = write_prop(props, 0, pid: pid, elems: 1, start: 1, data: data)
+    {:ok, props, _} = write_prop(nil, props, 0, pid: pid, elems: 1, start: 1, data: data)
     props
-  end
-
-  def get_table_ref(table_props) do
-    read_prop_value(table_props, :pid_device_descriptor)
   end
 
   # - private -------------------------------------------------------------------------------------
 
   # [II]
-  defp write_prop_(prop, 1 = _elems, 0 = _start, [0] = _data),
+  defp write_prop_(_, prop, 1 = _elems, 0 = _start, [0] = _data),
     do: {:ok, %{prop | values: []}}
 
-  defp write_prop_(_prop, _elems, 0 = _start, _data),
+  defp write_prop_(_, _prop, _elems, 0 = _start, _data),
     do: {:error, :argument_error}
 
-  defp write_prop_(_prop, elems, _start, data) when length(data) != elems,
-    do: {:error, :argument_error_data_length}
+  defp write_prop_(_, _prop, elems, _start, data) when length(data) != elems,
+    do: {:error, :argument_error_data_length, {data, elems}}
 
-  defp write_prop_(%{values: values} = prop, _elems, start, data),
+  defp write_prop_({o_idx, pdt, pid}, prop, 1, 1, data)
+       when pdt in [:pdt_control, :pdt_function] do
+    case Knx.Ail.PropertyFunction.handle(o_idx, pid, prop, data) do
+      {:ok, result} -> {:ok, %{prop | values: result}}
+      # TODO was tun bei prop-fun error?
+      {:error, _reason} -> {:ok, prop}
+    end
+  end
+
+  defp write_prop_(_, %{values: values} = prop, _elems, start, data),
     do: {:ok, %{prop | values: insert_list(values, data, start - 1)}}
 
   defp read_prop_(_, 0 = _elems, 0 = _start), do: {:error, :argument_error}
@@ -244,7 +247,12 @@ defmodule Knx.Ail.Property do
   end
 
   def get_pid(pid_atom), do: @pids[pid_atom]
-  def get_pdt(pdt_atom), do: @pdts[pdt_atom]
+  defp get_pdt(pdt_atom), do: @pdts[pdt_atom]
+
+  defp get_pdt_write_length(pdt_atom) do
+    pdt = @pdts[pdt_atom]
+    Map.get(pdt, :write_length, Map.get(pdt, :length)) * 8
+  end
 
   def encode_list(pid, pdt_atom, list) do
     for(x <- list, do: encode(pid, pdt_atom, x))
@@ -252,7 +260,7 @@ defmodule Knx.Ail.Property do
   end
 
   def decode_into_list(pid, pdt_atom, bin) do
-    length = @pdts[pdt_atom][:length] * 8
+    length = get_pdt_write_length(pdt_atom)
 
     for <<chunk::size(length) <- bin>>,
       do: decode(pid, pdt_atom, <<chunk::size(length)>>)
@@ -290,7 +298,7 @@ defmodule Knx.Ail.Property do
 
   def encode(_, pdt, value) do
     # assume unsigned integer for other pdt
-    [id: _, length: length] = @pdts[pdt]
+    %{length: length} = @pdts[pdt]
     bit_length = 8 * length
     <<value::size(bit_length)>>
   end
@@ -309,6 +317,7 @@ defmodule Knx.Ail.Property do
   end
 
   def decode(@pid_prog_mode, _, <<_::7, prog_mode::1>>), do: prog_mode
+  def decode(_, :pdt_control, <<event::8, data::bits>>), do: {event, data}
   def decode(_, :pdt_char, <<char::signed-8>>), do: char
   def decode(_, :pdt_unsigned_char, <<unsigned_char::8>>), do: unsigned_char
   def decode(_, :pdt_int, <<int::signed-16>>), do: int
@@ -322,8 +331,8 @@ defmodule Knx.Ail.Property do
 
   def decode(_, pdt, bin) do
     # assume unsigned integer for other pdt
-    [id: _, length: length] = @pdts[pdt]
-    bit_length = 8 * length
+    bit_length = get_pdt_write_length(pdt)
+
     <<value::size(bit_length)>> = bin
     value
   end

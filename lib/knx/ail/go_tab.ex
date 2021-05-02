@@ -2,6 +2,8 @@ defmodule Knx.Ail.GoTab do
   alias Knx.Ail.GroupObject
   alias Knx.Mem
 
+  def get_object_index(), do: 9
+
   def get_first(assocs, flag) do
     assocs
     |> get_all(flag)
@@ -27,6 +29,8 @@ defmodule Knx.Ail.GoTab do
 
     Cache.put(:go_tab, go_tab)
   end
+
+  def unload(), do: Cache.put(:go_tab, [0])
 
   # -----------------------------------------------------
 

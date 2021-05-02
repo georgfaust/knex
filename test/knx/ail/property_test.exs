@@ -11,6 +11,20 @@ defmodule Knx.Ail.PropertyTest do
   @pid_manufacturer_id 12
   @pid_device_control 14
   @pid_prog_mode 54
+  @pid_load_state_control 5
+
+  @load_state_unloaded 0
+  @load_state_loaded 1
+  @load_state_loading 2
+  @load_state_error 3
+
+  @noop 0
+  @start_loading 1
+  @load_completed 2
+  @additional_load_controls 3
+  @unload 4
+
+  @le_data_rel_alloc 0xB
 
   @props_0 [
     P.new(@pid1_atom, [1, 2, 3], max: 5, write: true, r_lvl: 0, w_lvl: 0),
@@ -20,6 +34,52 @@ defmodule Knx.Ail.PropertyTest do
     P.new(@pid1_atom, [111], max: 1, write: true, r_lvl: 0, w_lvl: 0),
     P.new(@pid2_atom, [222], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
+  @props_addr_tab [
+    # TODO noch nicht fertig
+    P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 0, w_lvl: 0)
+  ]
+
+  describe "load controls" do
+    @addr_tab_mem_ref 4
+    @tag :current
+    test "load address table" do
+      Cache.start_link(%{
+        {:objects, 1} => Helper.get_table_props(1, @addr_tab_mem_ref),
+        :mem =>
+          <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16>>
+      })
+
+      assert {:ok, props, %{values: [@load_state_loading]}} =
+               P.write_prop(1, @props_addr_tab, 0,
+                 pid: @pid_load_state_control,
+                 elems: 1,
+                 start: 1,
+                 data: <<@start_loading::8, 0::unit(8)-9>>
+               )
+
+      rel_alloc =
+        <<@additional_load_controls::8,
+          Knx.Ail.Lsm.encode_le(:le_data_rel_alloc, [10, 1, 0xFF])::bits>>
+
+      assert {:ok = dummy, _, %{values: [@load_state_loading]}} =
+               P.write_prop(1, props, 0,
+                 pid: @pid_load_state_control,
+                 elems: 1,
+                 start: 1,
+                 data: rel_alloc
+               )
+
+      assert {:ok, _, %{values: [@load_state_loaded]}} =
+               P.write_prop(1, props, 0,
+                 pid: @pid_load_state_control,
+                 elems: 1,
+                 start: 1,
+                 data: <<@load_completed::8, 0::unit(8)-9>>
+               )
+
+      assert [-1, 10, 20, 30, 40, 50] == Cache.get(:addr_tab)
+    end
+  end
 
   test("get_prop") do
     assert {:ok, 0, @ptd, %{id: @pid1}} = P.get_prop(@props_0, @pid1)
@@ -46,22 +106,22 @@ defmodule Knx.Ail.PropertyTest do
 
   test "write_prop" do
     assert {:ok, [%{values: []}, _], _} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 1, start: 0, data: <<0>>)
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 1, start: 0, data: <<0>>)
 
     assert {:ok, [%{values: [1, 22, 3]}, _], _} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 1, start: 2, data: <<22>>)
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 1, start: 2, data: <<22>>)
 
     assert {:ok, [%{values: [11, 22, 33]}, _], _} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 3, start: 1, data: <<11, 22, 33>>)
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 3, start: 1, data: <<11, 22, 33>>)
 
     assert {:ok, [%{values: [1, 2, 3, 44, 55]}, _], _} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 2, start: 4, data: <<44, 55>>)
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 2, start: 4, data: <<44, 55>>)
 
     assert {:error, :argument_error} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 2, start: 0, data: <<0, 0>>)
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 2, start: 0, data: <<0, 0>>)
 
-    assert {:error, :argument_error_data_length} =
-             P.write_prop(@props_0, 0, pid: @pid1, elems: 2, start: 1, data: <<0>>)
+    assert {:error, :argument_error_data_length, _} =
+             P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 2, start: 1, data: <<0>>)
   end
 
   @device_control %{

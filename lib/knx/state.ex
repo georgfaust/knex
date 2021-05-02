@@ -27,4 +27,16 @@ defmodule Knx.State do
             go_server: %Knx.State.GoServer{},
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
             pending_effects: []
+
+  def update_from_cache(state) do
+    device_props = Cache.get({:objects, 0})
+
+    %__MODULE__{
+      state
+      | addr: Knx.Ail.Device.get_address(device_props),
+        max_apdu_length: Knx.Ail.Device.get_max_apdu_length(device_props),
+        verify: Knx.Ail.Device.verify?(device_props)
+    }
+  end
 end
+

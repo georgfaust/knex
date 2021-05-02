@@ -1,17 +1,23 @@
 defmodule Cache do
   use Agent
-  @me __MODULE__
+
+  defp via() do
+    case Process.whereis(:cache_registry) do
+      nil -> __MODULE__
+      _ -> {:via, Registry, {:cache_registry, Process.get(:cache_id)}}
+    end
+  end
 
   def start_link(initial_value) do
-    Agent.start_link(fn -> initial_value end, name: @me)
+    Agent.start_link(fn -> initial_value end, name: via())
   end
 
   def get(key) do
-    Agent.get(@me, &Map.get(&1, key))
+    Agent.get(via(), &Map.get(&1, key))
   end
 
   def put(key, value) do
-    Agent.update(@me, &Map.put(&1, key, value))
+    Agent.update(via(), &Map.put(&1, key, value))
     value
   end
 end

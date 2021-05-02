@@ -1,8 +1,11 @@
 defmodule Knx.Ail.AddrTab do
   # [X] tsaps are 1-based, add an invalid entry at index 0
   @make_table_one_based [-1]
+  @empty_table [-1, 0]
 
   alias Knx.Mem
+
+  def get_object_index(), do: 1
 
   def get_tsap(group_addr) do
     table = Cache.get(:addr_tab)
@@ -21,4 +24,6 @@ defmodule Knx.Ail.AddrTab do
     table = @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
     Cache.put(:addr_tab, table)
   end
+
+  def unload(), do: Cache.put(:addr_tab, @empty_table)
 end

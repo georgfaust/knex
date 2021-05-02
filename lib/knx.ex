@@ -31,7 +31,7 @@ defmodule Knx do
         target
       )
 
-    :logger.debug(inspect(impulse))
+    :logger.debug("[D: #{Process.get(:cache_id)}] #{inspect(impulse)}")
 
     case handle.(impulse, state) do
       {%S{} = new_state, new_impulses} -> {new_state, new_impulses}
