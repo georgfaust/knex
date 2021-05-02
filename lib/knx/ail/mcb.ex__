@@ -1,0 +1,38 @@
+defmodule Knx.InterfaceObject.MemoryControlBlock do
+  @moduledoc """
+
+  
+  3/5/1: 4.2.27 PID_MCB_TABLE
+
+
+  Memory Control Block (MCB) Table
+    Segment Size 1    [4 octets]
+    CRC Control Byte  [1 octet]
+    Read Access 1     [4 bit]
+    Write Access 1    [4 bit]
+    CRC               [2 octets]
+
+  CRC Control Byte
+    Bit 7 - 1
+      reserved
+    Bit 0
+      0 : CRC is always valid
+      1 : Contents of protected memory area may change
+  """
+
+  defstruct segment_size: nil,
+            crc_valid: nil,
+            read_access: nil,
+            write_access: nil,
+            crc: nil
+
+  def parse(<<segment_size::32, _::7, crc_valid::1, read_access::4, write_access::4, crc::16>>) do
+    %__MODULE__{
+      segment_size: segment_size,
+      crc_valid: crc_valid,
+      read_access: read_access,
+      write_access: write_access,
+      crc: crc
+    }
+  end
+end

@@ -1,0 +1,42 @@
+defmodule Knx.Ail.Lsm do
+  @load_state_unloaded 0
+  @load_state_loaded 1
+  @load_state_loading 2
+  @load_state_error 3
+
+  @noop 0
+  @start_loading 1
+  @load_completed 2
+  @additional_load_controls 3
+  @unload 4
+
+  # @load_event_relative_allocation 0xA
+  @le_data_rel_alloc 0xB
+
+  def init(), do: @load_state_unloaded
+
+  def dispatch(load_state, {event, data}) do
+    case {load_state, event} do
+      {@load_state_unloaded, @start_loading} -> {@load_state_loading, nil}
+      {@load_state_loading, @unload} -> {@load_state_unloaded, nil}
+      {@load_state_loading, @load_completed} -> {@load_state_loaded, nil}
+      {@load_state_loading, @additional_load_controls} -> {@load_state_loading, decode_le(data)}
+      {@load_state_loaded, @start_loading} -> {@load_state_loading, nil}
+      {@load_state_loaded, @unload} -> {@load_state_unloaded, nil}
+      {@load_state_error, @unload} -> {@load_state_unloaded, nil}
+      {_, @noop} -> {load_state, nil}
+    end
+  end
+
+  def encode_le(:le_data_rel_alloc, [req_mem_size, mode, fill]) do
+    <<@le_data_rel_alloc::8, req_mem_size::32, 0::7, mode::1, fill::8, 0::16>>
+  end
+
+  # ------------------------------
+
+  defp decode_le(<<@le_data_rel_alloc::8, req_mem_size::32, _::7, mode::1, fill::8, _::16>>) do
+    {:le_data_rel_alloc, [req_mem_size, mode, fill]}
+  end
+
+  defp decode_le(data), do: {:error, :unhandled_load_event, data}
+end

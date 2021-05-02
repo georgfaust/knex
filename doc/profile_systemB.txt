@@ -5,7 +5,7 @@ This document lists all mandatory and some useful optional clauses for the Syste
 ## Unklar
 
 - was heisst "except for the coding of the internal service primitives."
-- PID_MCB_TABLE is optional, but useed in configuration procedures for systemB
+- PID_MCB_TABLE is optional, but used in configuration procedures for systemB
 
 ## TODO
 
