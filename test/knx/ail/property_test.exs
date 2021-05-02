@@ -13,18 +13,18 @@ defmodule Knx.Ail.PropertyTest do
   @pid_prog_mode 54
   @pid_load_state_control 5
 
-  @load_state_unloaded 0
+  # @load_state_unloaded 0
   @load_state_loaded 1
   @load_state_loading 2
-  @load_state_error 3
+  # @load_state_error 3
 
-  @noop 0
+  # @noop 0
   @start_loading 1
   @load_completed 2
   @additional_load_controls 3
-  @unload 4
+  # @unload 4
 
-  @le_data_rel_alloc 0xB
+  # @le_data_rel_alloc 0xB
 
   @props_0 [
     P.new(@pid1_atom, [1, 2, 3], max: 5, write: true, r_lvl: 0, w_lvl: 0),
@@ -41,7 +41,6 @@ defmodule Knx.Ail.PropertyTest do
 
   describe "load controls" do
     @addr_tab_mem_ref 4
-    @tag :current
     test "load address table" do
       Cache.start_link(%{
         {:objects, 1} => Helper.get_table_props(1, @addr_tab_mem_ref),
@@ -61,7 +60,7 @@ defmodule Knx.Ail.PropertyTest do
         <<@additional_load_controls::8,
           Knx.Ail.Lsm.encode_le(:le_data_rel_alloc, [10, 1, 0xFF])::bits>>
 
-      assert {:ok = dummy, _, %{values: [@load_state_loading]}} =
+      assert {:ok, _, %{values: [@load_state_loading]}} =
                P.write_prop(1, props, 0,
                  pid: @pid_load_state_control,
                  elems: 1,

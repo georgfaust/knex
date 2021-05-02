@@ -11,6 +11,7 @@ defmodule Knx.Ail.CoreTest do
   @go_values Helper.get_go_values()
 
   @cache %{
+    {:objects, 0} => Helper.get_device_props(0),
     addr_tab: @addr_tab,
     go_tab: @go_tab,
     assoc_tab: @assoc_tab,
