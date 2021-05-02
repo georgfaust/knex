@@ -15,22 +15,22 @@ defmodule Knx.Mem do
   end
 
   def handle(
-        {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
+        {:mem, :ind, %F{apci: :mem_read, data: [number, addr]} = f},
         %S{max_apdu_length: max_apdu_length}
       ) do
     with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
          {:ok, data} <- read(number, addr) do
-      [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
+      [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XV]
       {:error, :max_apdu_exceeded} -> []
       # [XVI]
-      {:error, :area_invalid} -> [{:al, :req, %F{apci: :mem_resp, data: [0, addr, <<>>]}}]
+      {:error, :area_invalid} -> [al_req_impulse(:mem_resp, f, [0, addr, <<>>])]
     end
   end
 
   def handle(
-        {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
+        {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]} = f},
         %S{verify: verify, max_apdu_length: max_apdu_length} = state
       ) do
     with :ok <- validate(verify, :no_verify),
@@ -38,17 +38,14 @@ defmodule Knx.Mem do
          _ <- write(addr, data),
          # [XVII]
          {:ok, ^data} <- read(number, addr) do
-      {
-        state,
-        [{:al, :req, %F{apci: :mem_resp, data: [number, addr, data]}}]
-      }
+      {state, [al_req_impulse(:mem_resp, f, [number, addr, data])]}
     else
       # [XVIII]
       {:error, :no_verify} -> []
       # [XIX]
       {:error, :max_apdu_exceeded} -> []
       # [XX]
-      {:error, :area_invalid} -> [{:al, :req, %F{apci: :mem_resp, data: [0, addr, <<>>]}}]
+      {:error, :area_invalid} -> [al_req_impulse(:mem_resp, f, [0, addr, <<>>])]
     end
   end
 
@@ -84,4 +81,9 @@ defmodule Knx.Mem do
   defp area_valid?(_mem, _number, addr) when addr < 0, do: false
 
   defp area_valid?(mem, number, addr), do: byte_size(mem) >= addr + number
+
+  # duplication
+  defp al_req_impulse(apci, %F{service: service, src: dest}, apdu) do
+    {:al, :req, %F{apci: apci, service: service, dest: dest, data: apdu}}
+  end
 end

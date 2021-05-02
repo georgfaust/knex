@@ -11,11 +11,12 @@ defmodule Knx.Ail.CoreTest do
   @go_values Helper.get_go_values()
 
   @cache %{
-    {:objects, 0} => Helper.get_device_props(0),
+    {:objects, 0} => Helper.get_device_props(0, true),
     addr_tab: @addr_tab,
     go_tab: @go_tab,
     assoc_tab: @assoc_tab,
-    go_values: @go_values
+    go_values: @go_values,
+    mem: <<0::unit(8)-100>>
   }
 
   @own_addr 100
@@ -341,21 +342,26 @@ defmodule Knx.Ail.CoreTest do
                       data: <<@t_data_individual::bits, @mem_resp::bits, 2::6, 2::16, 0xDEAD::16>>
                     )
 
-  # @tag :current
-  # test "mem_write.ind" do
-  #   assert {
-  #            [{:driver, :transmit, @mem_response_frm}],
-  #            %S{mem: new_mem}
-  #          } =
-  #            Knx.handle_impulses(
-  #              %S{
-  #                addr: @own_addr,
-  #                mem: <<0::64>>,
-  #                objects: %{0 => Helper.get_device_props(1, true)}
-  #              },
-  #              [{:dl, :ind, @mem_write_frm}]
-  #            )
-  # end
+  @tag :current
+  test "mem_write.ind" do
+    IO.inspect(@mem_response_frm)
+
+    assert {
+             [
+               # TODO frame-decoder um das vernuenftig zu debuggen
+               {:timer, :restart, {:tlsm, :connection}},
+               {:driver, :transmit, "\xB0\0d\0\xC8`\xC2"},
+               {:timer, :restart, {:tlsm, :connection}},
+               {:timer, :start, {:tlsm, :ack}},
+               {:driver, :transmit, <<176, 0, 100, 0, 200, 101, 66, 66, 0, 2, 222, 173>>}
+             ],
+             %S{}
+           } =
+             Knx.handle_impulses(
+               %S{addr: @own_addr, c_addr: @remote_addr, handler: :o_idle, verify: true},
+               [{:dl, :ind, @mem_write_frm}]
+             )
+  end
 
   # [END]: Mem-specific tests >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 end
