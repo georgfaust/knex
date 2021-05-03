@@ -20,6 +20,10 @@ defmodule Shell.Server do
     GenServer.cast(pid, {:to_bus, impulse})
   end
 
+  def api(pid, dest, apci, data) do
+    
+  end
+
   # --------------------------------------------------------------------
 
   @impl GenServer

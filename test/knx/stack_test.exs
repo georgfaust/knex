@@ -173,7 +173,7 @@ defmodule Knx.TlTest do
     test "dl encodes frame" do
       assert [
                {:driver, :transmit,
-                <<
+                {_,_,<<
                   @std::2,
                   3::2,
                   @prio::2,
@@ -185,7 +185,7 @@ defmodule Knx.TlTest do
                   @len::4,
                   @t_data_group::bits,
                   @a_group_read::bits
-                >>}
+                >>}}
              ] =
                Dl.handle(
                  {

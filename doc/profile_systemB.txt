@@ -6,6 +6,7 @@ This document lists all mandatory and some useful optional clauses for the Syste
 
 - was heisst "except for the coding of the internal service primitives."
 - PID_MCB_TABLE is optional, but used in configuration procedures for systemB
+- interfaceprogram/pei program - mandadory? was tut es? nur bei PEI?
 
 ## TODO
 
@@ -170,7 +171,9 @@ PID_LOAD_STATE_CONTROL
 PID_TABLE_REFERENCE
 PID_TABLE
 PID_MCB_TABLE (not mandatory)
-PID_LOAD_STATE_CONTROL -- ???
+PID_LOAD_STATE_CONTROL
+    PID_LOAD_STATE_CONTROL (load controls 0,1,2,3,4=?; 3-0x0B=M)
+
 
 #### 2 Association Table Object
 

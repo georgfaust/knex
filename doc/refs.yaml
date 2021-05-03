@@ -126,4 +126,17 @@ XXIV: |
   if BaseAddress plus allocated memory is higher than FFFFh then
     MaC: UserMemoryWrite(BaseAddress, <Data>, Length)
   [3/5/3:2.5.2 Load procedure for complete download]
+
+XXV: |
+  Detailed Restart Behaviour description
+  [3/5/2:3.7]
+
+XXVI: |
+  Prior to passing an A_IndividualAddress_Write.Lcon primitive to the local application process, the local
+  Application Layer shall need a T_Data_Broadcast.con from the local Transport Layer. If the confirmation
+  is positive (t_status = ok), the local Application Layer shall pass a positive A_IndividualAddress_-
+  Write.Lcon(a_status = ok) to the local application process. If the confirmation is negative (t_status =
+  not_ok), the local Application Layer shall pass an A_IndividualAddress_Write.Lcon (a_status = not_ok)
+  to the local user indicating that the transmission of the associated T_Data_Broadcast.req did not succeed.
+  [3/3/7:3.2.2]
  
