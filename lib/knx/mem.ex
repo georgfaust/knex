@@ -23,22 +23,25 @@ defmodule Knx.Mem do
       [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XV]
-      {:error, :max_apdu_exceeded} -> []
+      {:error, :max_apdu_exceeded} ->
+        IO.inspect([], label: :mem_read_error)
+
       # [XVI]
-      {:error, :area_invalid} -> [al_req_impulse(:mem_resp, f, [0, addr, <<>>])]
+      {:error, :area_invalid} ->
+        IO.inspect([al_req_impulse(:mem_resp, f, [0, addr, <<>>])], label: :mem_read_error)
     end
   end
 
   def handle(
         {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]} = f},
-        %S{verify: verify, max_apdu_length: max_apdu_length} = state
+        %S{verify: verify, max_apdu_length: max_apdu_length}
       ) do
-    with :ok <- validate(verify, :no_verify),
-         :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
+    with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
          _ <- write(addr, data),
+         :ok <- validate(verify, :no_verify),
          # [XVII]
          {:ok, ^data} <- read(number, addr) do
-      {state, [al_req_impulse(:mem_resp, f, [number, addr, data])]}
+      [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XVIII]
       {:error, :no_verify} -> []
@@ -72,8 +75,11 @@ defmodule Knx.Mem do
     mem = Cache.get(:mem)
     number = byte_size(data)
 
+    IO.inspect({addr, data, number}, label: :before_mem_write)
+
     with :ok <- validate(area_valid?(mem, number, addr), :area_invalid),
          mem <- binary_insert(mem, addr, data, number) do
+      IO.inspect({addr, data, number}, label: :mem_write)
       Cache.put(:mem, mem)
     end
   end

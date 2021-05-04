@@ -13,11 +13,13 @@ defmodule MemTest do
 
   setup do
     Cache.start_link(%{})
+    :timer.sleep(1)
     :ok
   end
 
   def mem_read(mem, number, addr) do
     Cache.put(:mem, mem)
+
     case Mem.handle(
            {:mem, :ind, %F{apci: :mem_read, data: [number, addr]}},
            %S{}
@@ -41,23 +43,23 @@ defmodule MemTest do
            {:mem, :ind, %F{apci: :mem_write, data: [number, addr, data]}},
            %S{verify: verify}
          ) do
-      [] ->
-        {:error, :max_apdu_exceeded_or_no_verify}
+      [] when verify ->
+        {:error, :max_apdu_exceeded}
+
+      [] when not verify ->
+        Cache.get(:mem)
 
       [{:al, :req, %F{apci: :mem_resp, data: [0, ^addr, <<>>]}}] ->
         {:error, :area_invalid}
 
-      {
-        %S{},
-        [{:al, :req, %F{apci: :mem_resp, data: [^number, ^addr, ^data]}}]
-      } ->
+      [{:al, :req, %F{apci: :mem_resp, data: [^number, ^addr, ^data]}}] ->
+        assert verify
         Cache.get(:mem)
     end
   end
 
   describe "mem_read.ind and mem_write.ind" do
     test "successful write and read" do
-
       assert <<_::16, 0xDEAD::16, _::bytes>> = mem1 = mem_write(@mem1, true, 2, <<0xDEAD::16>>)
 
       assert <<0x00DE_AD00::32>> = mem_read(mem1, 4, 1)
@@ -66,6 +68,10 @@ defmodule MemTest do
                mem1 = mem_write(mem1, true, 4, <<0xBEEF::16>>)
 
       assert <<0x0000_DEAD_BEEF_0000::64>> = mem_read(mem1, 8, 0)
+    end
+
+    test "memory write with inactive verify mode" do
+      assert <<_::16, 0xDEAD::16, _::bytes>> = mem1 = mem_write(@mem1, false, 2, <<0xDEAD::16>>)
     end
 
     test "invalid memory write" do
@@ -77,11 +83,7 @@ defmodule MemTest do
     end
 
     test "memory write exceeds max apdu length" do
-      assert {:error, :max_apdu_exceeded_or_no_verify} = mem_write(@mem2, true, 1, <<1::112>>)
-    end
-
-    test "memory write with inactive verify mode" do
-      assert {:error, :max_apdu_exceeded_or_no_verify} = mem_write(@mem1, false, 1, <<0xFF::8>>)
+      assert {:error, :max_apdu_exceeded} = mem_write(@mem2, true, 1, <<1::112>>)
     end
 
     test "invalid memory read" do
