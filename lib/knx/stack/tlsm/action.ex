@@ -2,6 +2,8 @@ defmodule Knx.Stack.Tlsm.Action do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
+  @prio_system 0
+
   # TODO bei disconnect stored und deferred loeschen
 
   def action(:a00, %S{} = state, _) do
@@ -26,7 +28,7 @@ defmodule Knx.Stack.Tlsm.Action do
       # TODO wrap seq?
       %S{state | r_seq: r_seq + 1},
       [
-        {:tl, :req, %F{service: :t_ack, dest: c_addr, seq: r_seq}},
+        {:tl, :req, %F{service: :t_ack, prio: @prio_system, dest: c_addr, seq: r_seq}},
         {:al, :ind, frame},
         {:timer, :restart, {:tlsm, :connection}}
       ]
@@ -38,7 +40,7 @@ defmodule Knx.Stack.Tlsm.Action do
       state,
       [
         {:timer, :restart, {:tlsm, :connection}},
-        {:tl, :req, %F{service: :t_ack, dest: c_addr, seq: seq}}
+        {:tl, :req, %F{service: :t_ack, prio: @prio_system, dest: c_addr, seq: seq}}
       ]
     }
   end
@@ -48,18 +50,18 @@ defmodule Knx.Stack.Tlsm.Action do
       state,
       [
         {:timer, :restart, {:tlsm, :connection}},
-        {:tl, :req, %F{service: :t_nak, dest: c_addr, seq: seq}}
+        {:tl, :req, %F{service: :t_nak, prio: @prio_system, dest: c_addr, seq: seq}}
       ]
     }
   end
 
-  def action(:a05, %S{c_addr: c_addr} = state, %F{}) do
+  def action(:a05, %S{} = state, %F{}) do
     {
       %S{state | c_addr: nil},
       [
         {:timer, :stop, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
-        {:al, :ind, %F{service: :t_discon, src: c_addr}}
+        {:al, :ind, %F{service: :t_discon}}
       ]
     }
   end
@@ -71,7 +73,7 @@ defmodule Knx.Stack.Tlsm.Action do
         {:timer, :stop, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
         {:al, :ind, %F{service: :t_discon}},
-        {:tl, :req, %F{service: :t_discon, dest: c_addr, seq: 0}}
+        {:tl, :req, %F{service: :t_discon, prio: @prio_system, dest: c_addr, seq: 0}}
       ]
     }
   end
@@ -82,16 +84,16 @@ defmodule Knx.Stack.Tlsm.Action do
       [
         {:timer, :restart, {:tlsm, :connection}},
         {:timer, :start, {:tlsm, :ack}},
-        {:tl, :req, %F{frame | service: :t_data_con, dest: c_addr, seq: s_seq}}
+        {:tl, :req, %F{frame | dest: c_addr, seq: s_seq}}
       ]
     }
   end
 
-  def action(:a08, %S{stored_frame: stored_frame} = state, %F{}) do
+  def action(:a08, %S{stored_frame: stored_frame, s_seq: s_seq} = state, %F{}) do
     {recalled_frame, state} = recall_frame(state)
 
     {
-      %S{state | stored_frame: nil},
+      %S{state | stored_frame: nil, s_seq: s_seq + 1},
       [
         {:timer, :restart, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
@@ -115,7 +117,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {
       %S{state | stored_frame: nil},
       [
-        {:tl, :req, %F{service: :t_discon, dest: src, seq: 0}}
+        {:tl, :req, %F{service: :t_discon, prio: @prio_system, dest: src, seq: 0}}
       ]
     }
   end
@@ -132,16 +134,17 @@ defmodule Knx.Stack.Tlsm.Action do
       %S{state | c_addr: dest, s_seq: 0, r_seq: 0},
       [
         {:timer, :start, {:tlsm, :connection}},
-        {:tl, :req, %F{dest: dest, service: :t_connect}}
+        # TODO prio nicht def in standard
+        {:tl, :req, %F{dest: dest, prio: @prio_system, service: :t_connect}}
       ]
     }
   end
 
-  def action(:a13, %S{} = state, %F{src: src}) do
+  def action(:a13, %S{} = state, %F{}) do
     {
       state,
       [
-        {:al, :conf, %F{service: :t_connect, src: src}}
+        {:al, :conf, %F{service: :t_connect}}
       ]
     }
   end
@@ -153,7 +156,7 @@ defmodule Knx.Stack.Tlsm.Action do
         {:timer, :stop, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
         {:al, :conf, %F{service: :t_discon}},
-        {:tl, :req, %F{service: :t_discon, dest: c_addr, seq: 0}}
+        {:tl, :req, %F{service: :t_discon, prio: @prio_system, dest: c_addr, seq: 0}}
       ]
     }
   end
