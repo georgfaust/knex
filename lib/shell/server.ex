@@ -72,6 +72,11 @@ defmodule Shell.Server do
     {:reply, value, state}
   end
 
+  def handle_call({:api_expect, %Knx.Api{timeout_ms: timeout} = expect}, from, state) do
+    {:ok, pid} = :timer.send_after(timeout, :api_timeout)
+    {:noreply, %S{state | api_expect: expect, api_callback: from, api_timer: pid}}
+  end
+
   def handle_cast({:bus_info, :connected}, %S{} = state) do
     :logger.info("[D: #{Process.get(:cache_id)}] connected")
     {:noreply, %S{state | connected: true}}
@@ -99,26 +104,50 @@ defmodule Shell.Server do
   end
 
   @impl GenServer
-  def handle_call({:api_expect, expect}, from, state) do
-    {:noreply, %S{state | api_expect: expect, api_callback: from}}
-  end
-
-  @impl GenServer
   def handle_info(
         {:user, prim, %F{apci: apci} = frame},
         %S{
-          api_expect: %Knx.Api{apci: exp_apci, prim: exp_prim, multi: _multi, take: take},
-          api_callback: api_callback
+          api_expect: %Knx.Api{apci: exp_apci, prim: exp_prim, multi: multi, take: take},
+          api_callback: api_callback,
+          api_timer: timer_pid,
+          api_result: api_result
         } = state
       ) do
     with true <- prim == exp_prim,
          true <- apci == exp_apci do
-      GenServer.reply(api_callback, {:api_result, Map.take(frame, take)})
-    else
-      _ -> nil
-    end
+      if multi do
+        {:noreply, %S{state | api_result: [Map.take(frame, take) | api_result]}}
+      else
+        :timer.cancel(timer_pid)
+        GenServer.reply(api_callback, {:api_result, Map.take(frame, take)})
 
-    {:noreply, state}
+        {:noreply,
+         %S{state | api_expect: %Knx.Api{}, api_callback: nil, api_timer: nil, api_result: []}}
+      end
+    else
+      _ -> {:noreply, state}
+    end
+  end
+
+  def handle_info(
+        :api_timeout,
+        %S{
+          api_expect: %Knx.Api{multi: multi},
+          api_callback: api_callback,
+          api_result: api_result
+        } = state
+      ) do
+    result =
+      if multi do
+        {:api_multi_result, api_result}
+      else
+        {:error, :nothing_received}
+      end
+
+    GenServer.reply(api_callback, result)
+
+    {:noreply,
+     %S{state | api_expect: %Knx.Api{}, api_callback: nil, api_timer: nil, api_result: []}}
   end
 
   # --------------------------------------------------------------------
@@ -142,7 +171,7 @@ defmodule Shell.Server do
 
   defp handle_effect(
          {target, _, _} = effect,
-         %S{driver_pid: driver_pid, timer_pid: _timer_pid} = state
+         %S{driver_pid: driver_pid, timer_pid: _timer_pid}
        ) do
     handle =
       Map.fetch!(

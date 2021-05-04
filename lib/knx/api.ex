@@ -1,13 +1,12 @@
 defmodule Knx.Api do
   @moduledoc """
 
-  !!! TODO seq wird nicht richtig hochgezahlt, beim zweiten ist es repeated
   !!! TODO was tun bei Aenderung PA und bestehender Verbindung?
 
     - results are gathered in a list
     - normally just one result is expected, so we return on the first expected result received
-    - :multi - if this is set results are gathered until timeout is reached
-    - :timeout_ms - defines how long results are gathered
+    - :multi - if this is set results are gathered until timeout is reached (set in override)
+    - :timeout_ms - defines how long results are gathered (set in override)
     - :apci - the apci we expect as result
     - :prim - the primitive we expect as result
 

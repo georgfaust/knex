@@ -31,6 +31,8 @@ defmodule Knx.State do
             connected: false,
             api_expect: %Knx.Api{},
             api_callback: nil,
+            api_timer: nil,
+            api_result: [],
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
             pending_effects: []
 
