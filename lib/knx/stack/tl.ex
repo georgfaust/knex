@@ -15,7 +15,7 @@ defmodule Knx.Stack.Tl do
       {:error, reason} ->
         error({reason, frame})
 
-      {addr_t, tpci, _tsap} ->
+      {addr_t, tpci, tsap} ->
         dest = get_dest(addr_t, tsap, dest)
         data = <<tpci::bits, data::bits>>
         [{:nl, :req, %F{frame | dest: dest, addr_t: addr_t, data: data}}]
@@ -41,6 +41,7 @@ defmodule Knx.Stack.Tl do
   defp get_tsap(@addr_t_ind, _), do: nil
   defp get_tsap(@addr_t_grp, dest), do: AddrTab.get_tsap(dest)
   defp get_dest(@addr_t_ind, _, dest), do: dest
+  defp get_dest(@addr_t_grp, 0, _), do: 0
   defp get_dest(@addr_t_grp, tsap, _), do: AddrTab.get_group_addr(tsap)
 
   defp decode(@addr_t_ind, _dest, data) do

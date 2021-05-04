@@ -4,7 +4,7 @@ defmodule Knx.Mem do
   alias Knx.Frame, as: F
   alias Knx.State, as: S
 
-  def handle({:mem, :conf, %F{}}, _state), do: []
+  def handle({:mem, :conf, %F{} = frame}, _state), do: [{:user, :conf, frame}]
 
   def handle({:mem, :req, %F{apci: :mem_read} = frame}, %S{}) do
     [{:al, :req, frame}]
@@ -23,12 +23,9 @@ defmodule Knx.Mem do
       [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XV]
-      {:error, :max_apdu_exceeded} ->
-        IO.inspect([], label: :mem_read_error)
-
+      {:error, :max_apdu_exceeded} -> []
       # [XVI]
-      {:error, :area_invalid} ->
-        IO.inspect([al_req_impulse(:mem_resp, f, [0, addr, <<>>])], label: :mem_read_error)
+      {:error, :area_invalid} -> [al_req_impulse(:mem_resp, f, [0, addr, <<>>])]
     end
   end
 
@@ -75,11 +72,8 @@ defmodule Knx.Mem do
     mem = Cache.get(:mem)
     number = byte_size(data)
 
-    IO.inspect({addr, data, number}, label: :before_mem_write)
-
     with :ok <- validate(area_valid?(mem, number, addr), :area_invalid),
          mem <- binary_insert(mem, addr, data, number) do
-      IO.inspect({addr, data, number}, label: :mem_write)
       Cache.put(:mem, mem)
     end
   end

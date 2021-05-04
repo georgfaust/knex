@@ -1,0 +1,49 @@
+defmodule ApiTest do
+  use ExUnit.Case
+
+  alias Knx.Frame, as: F
+
+  test "test" do
+    assert {{:al, :req, %F{apci: :a_connect, dest: 1, service: nil}}, %Knx.Api{}} =
+             Knx.Api.get_frame_and_expect(%{apci: :a_connect, dest: 1})
+
+    assert {
+             {:al, :req, %F{apci: :ind_addr_read, service: :t_data_broadcast}},
+             %Knx.Api{expect: :ind_addr_resp, expect_multi: true, timeout_ms: 1000}
+           } =
+             Knx.Api.get_frame_and_expect(
+               %{apci: :ind_addr_read},
+               %{
+                 timeout_ms: 1000,
+                 expect_multi: true
+               }
+             )
+
+    assert {
+             {:al, :req, %F{apci: :mem_write, service: :t_data_individual}},
+             %Knx.Api{expect: nil}
+           } =
+             Knx.Api.get_frame_and_expect(%{apci: :mem_write})
+
+    assert {
+             {:al, :req, %F{apci: :mem_write, service: :t_data_con}},
+             %Knx.Api{expect: nil}
+           } =
+             Knx.Api.get_frame_and_expect(%{
+               apci: :mem_write,
+               service: :t_data_con,
+               data: [1, 2, 3]
+             })
+
+    assert {
+             {:al, :req, %F{apci: :mem_write, service: :t_data_con}},
+             %Knx.Api{expect: :mem_resp}
+           } =
+             Knx.Api.get_frame_and_expect(
+               %{apci: :mem_write, service: :t_data_con},
+               %{
+                 expect: :mem_resp
+               }
+             )
+  end
+end

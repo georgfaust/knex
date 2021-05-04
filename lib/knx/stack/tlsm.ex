@@ -4,7 +4,7 @@ defmodule Knx.Stack.Tlsm do
   alias Knx.Stack.Tlsm.{Sm, Action, Event}
 
   def handle({:tlsm, primitive, %F{service: service} = frame}, %S{} = state)
-      when service in [:t_data_group, :t_data_individual] do
+      when service in [:t_data_group, :t_data_individual, :t_data_broadcast] do
     next =
       case primitive do
         :req -> :tl

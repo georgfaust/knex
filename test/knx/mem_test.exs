@@ -71,7 +71,7 @@ defmodule MemTest do
     end
 
     test "memory write with inactive verify mode" do
-      assert <<_::16, 0xDEAD::16, _::bytes>> = mem1 = mem_write(@mem1, false, 2, <<0xDEAD::16>>)
+      assert <<_::16, 0xDEAD::16, _::bytes>> = mem_write(@mem1, false, 2, <<0xDEAD::16>>)
     end
 
     test "invalid memory write" do

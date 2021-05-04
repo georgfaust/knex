@@ -21,15 +21,22 @@ defmodule Knx.State do
             deferred_frames: [],
             # auth
             access_lvl: 0,
-            auth: nil,
+            auth: %Knx.Auth{},
             # nl
             hops: 6,
             go_server: %Knx.State.GoServer{},
+            # shell
+            driver_pid: nil,
+            timer_pid: nil,
+            connected: false,
+            api_expect: %Knx.Api{},
+            api_callback: nil,
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
             pending_effects: []
 
-  def update_from_cache(state) do
-    device_props = Cache.get({:objects, 0})
+  def update_from_device_props(%__MODULE__{driver_pid: driver_pid} = state, device_props) do
+    addr = Knx.Ail.Device.get_address(device_props)
+    if driver_pid, do: send(driver_pid, {:set_addr, addr})
 
     %__MODULE__{
       state
@@ -39,4 +46,3 @@ defmodule Knx.State do
     }
   end
 end
-

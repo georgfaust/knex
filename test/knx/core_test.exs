@@ -37,7 +37,7 @@ defmodule Knx.Ail.CoreTest do
   @group_resp <<0b0001::4>>
   @group_write <<0b0010::4>>
 
-  @mem_resp <<0b1001::4>>
+  # @mem_resp <<0b1001::4>>
   @mem_write <<0b1010::4>>
 
   @key_write <<0b1111_010011::10>>

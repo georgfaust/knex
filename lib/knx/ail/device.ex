@@ -9,7 +9,8 @@ defmodule Knx.Ail.Device do
   def get_desc(props),
     do: P.read_prop_value(props, :pid_device_descriptor)
 
-  def set_address(props, <<subnet_addr::8, device_addr::8>>) do
+  def set_address(props, address) do
+    <<subnet_addr::8, device_addr::8>> = <<address::16>>
     props
     |> P.write_prop_value(:pid_subnet_addr, <<subnet_addr>>)
     |> P.write_prop_value(:pid_device_addr, <<device_addr>>)
@@ -24,6 +25,9 @@ defmodule Knx.Ail.Device do
 
   def prog_mode?(props),
     do: 1 == P.read_prop_value(props, :pid_prog_mode)
+
+  def set_prog_mode(props, prog_mode),
+    do: P.write_prop_value(props, :pid_prog_mode, <<0::7, prog_mode::1>>)
 
   def serial_matches?(props, other_serial) do
     other_serial == P.read_prop_value(props, :pid_serial)

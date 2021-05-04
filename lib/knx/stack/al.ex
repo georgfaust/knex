@@ -132,13 +132,18 @@ defmodule Knx.Stack.Al do
 
   # @ack_requested 0x02
 
-  # ??? TODO
-  def handle({:al, :req, %F{service: :t_connect} = frame}, _), do: [{:tlsm, :req, frame}]
-  def handle({:al, :req, %F{service: :t_discon} = frame}, _), do: [{:tlsm, :req, frame}]
+  def handle({:al, :req, %F{apci: :a_connect} = frame}, _),
+    do: [{:tlsm, :req, %F{frame | service: :t_connect}}]
+
+  def handle({:al, :req, %F{apci: :a_discon} = frame}, _),
+    do: [{:tlsm, :req, %F{frame | service: :t_discon}}]
 
   # [XIV]
-  def handle({:al, prim, %F{service: :t_connect}}, _), do: [{:user, prim, {:t_connect, nil}}]
-  def handle({:al, prim, %F{service: :t_discon}}, _), do: [{:user, prim, {:t_discon, nil}}]
+  def handle({:al, prim, %F{service: :t_connect} = frame}, _),
+    do: [{:user, prim, %F{frame | apci: :a_connect}}]
+
+  def handle({:al, prim, %F{service: :t_discon} = frame}, _),
+    do: [{:user, prim, %F{frame | apci: :a_discon}}]
 
   def handle({:al, :req, %F{data: data, apci: apci, service: service} = frame}, _) do
     with :ok <- validate(service in @allowed_t_services[apci], {:forbidden, service, apci}),
@@ -156,6 +161,12 @@ defmodule Knx.Stack.Al do
     else
       {:error, reason} -> [{:logger, :error, reason}]
     end
+  end
+
+  # --------------------------------------
+
+  def get_default_service(apci) do
+    Map.get(@allowed_t_services, apci, [nil]) |> hd
   end
 
   # --------------------------------------
@@ -178,7 +189,7 @@ defmodule Knx.Stack.Al do
         {:io, :ind_addr_read, []}
 
       <<@ind_addr_resp::10>> ->
-        {:todo, :ind_addr_resp, []}
+        {:user, :ind_addr_resp, []}
 
       <<@adc_read::4, channel::6, read_count>> ->
         {:adc, :adc_read, [channel, read_count]}
@@ -199,7 +210,7 @@ defmodule Knx.Stack.Al do
         {:mem, :mem_read, [number, addr]}
 
       <<@mem_resp::4, number::6, addr::16, data::bytes>> ->
-        {:todo, :mem_resp, [number, addr, data]}
+        {:user, :mem_resp, [number, addr, data]}
 
       <<@mem_write::4, number::6, addr::16, data::bytes>> ->
         {:mem, :mem_write, [number, addr, data]}
@@ -209,7 +220,7 @@ defmodule Knx.Stack.Al do
         {:mem, :user_mem_read, [number, address]}
 
       <<@user_mem_resp::10, _addr_ext::4, number::4, address::16, data::bytes>> ->
-        {:todo, :user_mem_resp, [number, address, data]}
+        {:user, :user_mem_resp, [number, address, data]}
 
       <<@user_mem_write::10, _addr_ext::4, number::4, address::16, data::bytes>> ->
         {:mem, :user_mem_write, [number, address, data]}
@@ -236,7 +247,7 @@ defmodule Knx.Stack.Al do
         {:io, :device_desc_read, [desc_type]}
 
       <<@device_desc_resp::4, desc_type::6, desc::bytes>> ->
-        {:todo, :device_desc_resp, [desc_type, desc]}
+        {:user, :device_desc_resp, [desc_type, desc]}
 
       <<@restart::4, @restart_write::1, _::4, @restart_basic::1>> ->
         {:todo, :restart, [@restart_write, @restart_basic]}
@@ -254,19 +265,19 @@ defmodule Knx.Stack.Al do
         {:auth, :auth_req, [key]}
 
       <<@auth_resp::10, level>> ->
-        {:todo, :auth_resp, [level]}
+        {:user, :auth_resp, [level]}
 
       <<@key_write::10, level, key::32>> ->
         {:auth, :key_write, [level, key]}
 
       <<@key_resp::10, level>> ->
-        {:todo, :key_resp, [level]}
+        {:user, :key_resp, [level]}
 
       <<@prop_read::10, o_idx, pid, elems::4, start::12>> ->
         {:io, :prop_read, [o_idx, pid, elems, start]}
 
       <<@prop_resp::10, o_idx, pid, elems::4, start::12, data::bytes>> ->
-        {:io, :prop_resp, [o_idx, pid, elems, start, data]}
+        {:user, :prop_resp, [o_idx, pid, elems, start, data]}
 
       <<@prop_write::10, o_idx, pid, elems::4, start::12, data::bytes>> ->
         {:io, :prop_write, [o_idx, pid, elems, start, data]}
@@ -276,7 +287,7 @@ defmodule Knx.Stack.Al do
 
       <<@prop_desc_resp::10, o_idx, pid, p_idx, write::1, 0::1, type::6, 0::4, max::12, r_lvl::4,
         w_lvl::4>> ->
-        {:todo, :prop_desc_resp, [o_idx, pid, p_idx, write, type, max, r_lvl, w_lvl]}
+        {:user, :prop_desc_resp, [o_idx, pid, p_idx, write, type, max, r_lvl, w_lvl]}
 
       # TODO test vs apci-table, siehe request
       # <<@nw_param_read::10, obj_type::16, pid, test_info::bytes>> ->
@@ -298,7 +309,7 @@ defmodule Knx.Stack.Al do
         {:io, :ind_addr_serial_read, [serial]}
 
       <<@ind_addr_serial_resp::10, serial::48, domain_addr::16, _reserved::16>> ->
-        {:todo, :ind_addr_serial_resp, [serial, domain_addr]}
+        {:user, :ind_addr_serial_resp, [serial, domain_addr]}
 
       _ ->
         {:error, :malformed_apdu}

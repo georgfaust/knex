@@ -46,11 +46,12 @@ defmodule Knx.Ail.IoServerTest do
 
   setup do
     Cache.start_link(%{{:objects, 0} => @device_object1})
+    :timer.sleep(5)
     :ok
   end
 
-  test "silently drops conf" do
-    assert [] = IoServer.handle({:io, :conf, %F{}}, %S{})
+  test "forward conf" do
+    assert [{:user, :conf, _}] = IoServer.handle({:io, :conf, %F{}}, %S{})
   end
 
   describe "responds to prop_desc_read" do
@@ -156,9 +157,10 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "on ind_addr_write" do
     test "when prog mode active: changes the addr properties" do
+      <<new_ind_addr::16>> = @new_ind_addr
       assert { %S{}, []} =
                IoServer.handle(
-                 {:io, :ind, %F{apci: :ind_addr_write, data: [@new_ind_addr]}},
+                 {:io, :ind, %F{apci: :ind_addr_write, data: [new_ind_addr]}},
                  %S{}
                )
 
@@ -169,10 +171,11 @@ defmodule Knx.Ail.IoServerTest do
 
     test "when prog mode inactive, addr properties are not changed" do
       Cache.put({:objects, 0}, @device_object2)
+      <<new_ind_addr::16>> = @new_ind_addr
 
       assert { %S{}, []} =
                IoServer.handle(
-                 {:io, :ind, %F{apci: :ind_addr_write, data: [@new_ind_addr]}},
+                 {:io, :ind, %F{apci: :ind_addr_write, data: [new_ind_addr]}},
                  %S{}
                )
     end
@@ -192,9 +195,10 @@ defmodule Knx.Ail.IoServerTest do
 
   describe "handles an ind_addr_serial_write" do
     test "when serial matches by changing the addr properties" do
+      <<new_ind_addr::16>> = @new_ind_addr
       assert { %S{}, []} =
                IoServer.handle(
-                 {:io, :ind, %F{apci: :ind_addr_serial_write, data: [@serial, @new_ind_addr]}},
+                 {:io, :ind, %F{apci: :ind_addr_serial_write, data: [@serial, new_ind_addr]}},
                  %S{}
                )
 
@@ -204,10 +208,11 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "when serial does not match, addr properties are not changed" do
+      <<new_ind_addr::16>> = @new_ind_addr
       assert { %S{}, []} =
                IoServer.handle(
                  {:io, :ind,
-                  %F{apci: :ind_addr_serial_write, data: [@other_serial, @new_ind_addr]}},
+                  %F{apci: :ind_addr_serial_write, data: [@other_serial, new_ind_addr]}},
                  %S{}
                )
 

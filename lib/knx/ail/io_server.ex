@@ -5,7 +5,7 @@ defmodule Knx.Ail.IoServer do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
-  alias Knx.Ail.{Device}
+  alias Knx.Ail.Device
 
   @device_object_apcis [
     :ind_addr_write,
@@ -19,7 +19,7 @@ defmodule Knx.Ail.IoServer do
     :ind_addr_serial_read
   ]
 
-  def handle({:io, :conf, %F{}}, _state), do: []
+  def handle({:io, :conf, %F{} = frame}, _state), do: [{:user, :conf, frame}]
 
   def handle({:io, :ind, %F{apci: apci} = frame}, state)
       when apci in @device_object_apcis,
@@ -33,7 +33,7 @@ defmodule Knx.Ail.IoServer do
   defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl} = state) do
     props = Cache.get({:objects, o_idx})
 
-    {impulses, props} =
+    {impulses, new_props} =
       case serve(props, access_lvl, frame) do
         nil -> {[], props}
         {nil, nil} -> {[], props}
@@ -42,7 +42,13 @@ defmodule Knx.Ail.IoServer do
         impulse -> {[impulse], props}
       end
 
-    Cache.put({:objects, o_idx}, props)
+    state =
+      if props != new_props do
+        Cache.put({:objects, o_idx}, new_props)
+        Knx.State.update_from_device_props(state, new_props)
+      else
+        state
+      end
 
     {state, impulses}
   end
@@ -104,7 +110,7 @@ defmodule Knx.Ail.IoServer do
 
   defp serve(props, _, %F{apci: :ind_addr_serial_read, data: [serial]} = f) do
     if Device.serial_matches?(props, serial) do
-      # domain address is only relevant for RF and PL, set to 0 for TP
+      # domain address is only relevant for open media, set to 0 for TP
       domain_address = 0
       al_req_impulse(:ind_addr_serial_resp, f, [serial, domain_address])
     end
