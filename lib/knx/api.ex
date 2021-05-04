@@ -20,8 +20,8 @@ defmodule Knx.Api do
 
     - TODO
       restart (its complicated)
-      group_read (needs to be handled by :go not :al)
-      group_write (needs to be handled by :go not :al)
+      group_read (done, untested)
+      group_write (done, untested)
 
     - for PEI only
       adc_read

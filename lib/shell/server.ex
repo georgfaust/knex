@@ -132,16 +132,16 @@ defmodule Shell.Server do
   def handle_info(
         :api_timeout,
         %S{
-          api_expect: %Knx.Api{multi: multi},
+          api_expect: %Knx.Api{apci: apci, multi: multi},
           api_callback: api_callback,
           api_result: api_result
         } = state
       ) do
     result =
       if multi do
-        {:api_multi_result, api_result}
+        {:api_multi_result, apci, api_result}
       else
-        {:error, :nothing_received}
+        {:error, apci, :no_resp}
       end
 
     GenServer.reply(api_callback, result)

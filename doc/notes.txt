@@ -7,6 +7,22 @@ problem trennen in de/encode und namen
 
 # TODO klaeren
 
+## management
+
+
+   - TODO was ist ein "data block" und "data stored in management procedure"
+   - wo ist 3/5/4 Installer procedures
+   - Network parameters nur fuer RF?
+   - DM_ProgMode_Switch ??? how to with Programming Mode - Relaisiation Type 1 ???
+   - DMP_InterfaceObjectScan_R: was ist wenn es nur 1,2,3,9,50001 gibt? dauert ewig (3/7/3:2.1)
+   - [3/5/2:3.28] - go-tab hat keine LSM?
+   - DMP_DownloadLoadablePart_RCo_IO - actual download missing?
+   - general: network paramters/nwpar:
+      - lt weinzierl stack nur RF
+      - in proifles: keine muessen fuer systemB impl werden (!!??)
+      - in profiles: nwpar werden in den IO-tabellen
+   - DM_RunStateMachine nur mandatory bei appprog 2 - apprpog 2 unklar.
+
 - 3/4/1 - 3.3.3 
     - RCon statt LCon? typo?
     - :transmit nicht set? ganzen LCon handling fehlt?
