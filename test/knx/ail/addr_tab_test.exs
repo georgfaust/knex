@@ -11,7 +11,7 @@ defmodule Knx.Ail.AddrTabTest do
   end
 
   test "addr tab" do
-    assert @addr_tab == load(4)
+    assert {:ok, @addr_tab} == load(4)
   end
 
   test "get tsap" do

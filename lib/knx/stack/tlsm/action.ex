@@ -4,8 +4,6 @@ defmodule Knx.Stack.Tlsm.Action do
 
   @prio_system 0
 
-  # TODO bei disconnect stored und deferred loeschen
-
   def action(:a00, %S{} = state, _) do
     {
       state,
@@ -26,7 +24,7 @@ defmodule Knx.Stack.Tlsm.Action do
   def action(:a02, %S{c_addr: c_addr, r_seq: r_seq} = state, %F{} = frame) do
     {
       # TODO wrap seq?
-      %S{state | r_seq: r_seq + 1},
+      %S{state | r_seq: inc(r_seq)},
       [
         {:tl, :req, %F{service: :t_ack, prio: @prio_system, dest: c_addr, seq: r_seq}},
         {:al, :ind, frame},
@@ -55,13 +53,13 @@ defmodule Knx.Stack.Tlsm.Action do
     }
   end
 
-  def action(:a05, %S{} = state, %F{}) do
+  def action(:a05, %S{} = state, %F{ok?: ok?}) do
     {
       %S{state | c_addr: nil},
       [
         {:timer, :stop, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
-        {:al, :ind, %F{service: :t_discon}}
+        {:al, :ind, %F{service: :t_discon, ok?: ok?}}
       ]
     }
   end
@@ -93,7 +91,7 @@ defmodule Knx.Stack.Tlsm.Action do
     {recalled_frame, state} = recall_frame(state)
 
     {
-      %S{state | stored_frame: nil, s_seq: s_seq + 1},
+      %S{state | stored_frame: nil, s_seq: inc(s_seq)},
       [
         {:timer, :restart, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
@@ -134,7 +132,6 @@ defmodule Knx.Stack.Tlsm.Action do
       %S{state | c_addr: dest, s_seq: 0, r_seq: 0},
       [
         {:timer, :start, {:tlsm, :connection}},
-        # TODO prio nicht def in standard
         {:tl, :req, %F{dest: dest, prio: @prio_system, service: :t_connect}}
       ]
     }
@@ -171,6 +168,10 @@ defmodule Knx.Stack.Tlsm.Action do
       ]
     }
   end
+
+  # ---
+
+  defp inc(seq), do: rem(seq + 1, 0xF)
 
   defp recall_frame(%S{deferred_frames: [frame | deferred_frames]} = state),
     do: {[{:tlsm, :req, frame}], %S{state | deferred_frames: deferred_frames}}

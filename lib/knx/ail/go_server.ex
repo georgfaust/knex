@@ -85,7 +85,7 @@ defmodule Knx.Ail.GoServer do
   defp udapte_go(%GOSS{impulses: impulses, values: values} = state, go, value) do
     state
     |> Map.put(:values, Map.put(values, go.asap, value))
-    |> Map.put(:impulses, impulses ++ [{:user, :go_value, {go.asap, value}}])
+    |> Map.put(:impulses, impulses ++ [{:app, :go_value, {go.asap, value}}])
   end
 
   defp update_tsap(state, tsap, value, flag \\ :any) do

@@ -37,11 +37,17 @@ defmodule Knx.Ail.Device do
     do: P.read_prop_value(props, :pid_max_apdu_length)
 
   def verify?(props) do
-    %{verify_mode: verify_mode} = P.read_prop_value(props, :pid_device_control)
+    %{verify_mode: verify_mode} = P.read_prop_value(props, :pid_device_ctrl)
     verify_mode
   end
 
-  @device_control %{
+  def update_device_ctrl(props, update) do
+    device_ctrl = P.read_prop_value(props, :pid_device_ctrl)
+    device_ctrl = Map.merge(device_ctrl, update)
+    P.write_prop_value(props, :pid_device_ctrl, device_ctrl)
+  end
+
+  @device_ctrl %{
     safe_state: false,
     verify_mode: false,
     ia_duplication: false,
@@ -50,10 +56,10 @@ defmodule Knx.Ail.Device do
   def get_device_props(serial, order_info, hardware_type, subnet_addr \\ 0xFF) do
     [
       P.new(:pid_object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_serial, [serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_manufacturer_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_device_control, [@device_control], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:pid_device_ctrl, [@device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_order_info, [order_info], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_routing_count, [3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
@@ -61,7 +67,7 @@ defmodule Knx.Ail.Device do
       P.new(:pid_max_apdu_length, [15], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_subnet_addr, [subnet_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_device_addr, [0xFF], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_hardware_type, [hardware_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:pid_hw_type, [hardware_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_device_descriptor, [0x07B0], max: 1, write: false, r_lvl: 3, w_lvl: 0)
     ]
   end

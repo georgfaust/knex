@@ -28,7 +28,7 @@ defmodule Knx.Ail.CoreTest do
   # --- TPCI
 
   @t_data_group <<0b0000_00::6>>
-  @t_data_individual <<0b0000_00::6>>
+  @t_data_ind <<0b0000_00::6>>
   @t_data_con_seq_0 <<0b0100_00::6>>
 
   # --- APCIs
@@ -128,7 +128,7 @@ defmodule Knx.Ail.CoreTest do
 
     test "group_write.req" do
       assert {[
-                {:user, :go_value, {5, [<<1::6>>]}},
+                {:app, :go_value, {5, [<<1::6>>]}},
                 {:driver, :transmit, {_, _, @group_write_frm_dest_5_data_1}}
               ],
               %S{} = state} =
@@ -148,7 +148,7 @@ defmodule Knx.Ail.CoreTest do
 
       # this will be deferred
       assert {[
-                {:user, :go_value, {5, [<<1::6>>]}}
+                {:app, :go_value, {5, [<<1::6>>]}}
               ],
               %S{} = state} =
                Knx.handle_impulses(
@@ -189,7 +189,7 @@ defmodule Knx.Ail.CoreTest do
 
     test "group_read.ind" do
       assert {[
-                {:user, :go_value, {3, <<0::6>>}},
+                {:app, :go_value, {3, <<0::6>>}},
                 {:driver, :transmit, {_, _, @group_resp_frm_dest_3_data_0}}
               ],
               %S{}} =
@@ -202,7 +202,7 @@ defmodule Knx.Ail.CoreTest do
     test "group_write.ind" do
       # TODO testen mit mehr assocs auf einem tsap
       assert {[
-                {:user, :go_value, {2, [<<2::6>>]}}
+                {:app, :go_value, {2, [<<2::6>>]}}
               ],
               %S{}} =
                Knx.handle_impulses(
@@ -220,7 +220,7 @@ defmodule Knx.Ail.CoreTest do
     test "group_resp.ind" do
       # TODO testen mit mehr assocs auf einem tsap
       assert {[
-                {:user, :go_value, {4, [<<2::6>>]}}
+                {:app, :go_value, {4, [<<2::6>>]}}
               ],
               %S{}} =
                Knx.handle_impulses(
@@ -237,17 +237,17 @@ defmodule Knx.Ail.CoreTest do
   end
 
   describe "IO-specific tests" do
-    @pid_manufacturer_id 12
-    @p_idx_manufacturer_id 4
-    @pdt_manufacturer_id 4
+    @pid_manu_id 12
+    @p_idx_manu_id 3
+    @pdt_manu_id 4
 
     @prop_desc_read_frm Helper.get_frame(
                           src: @remote_addr,
                           dest: @own_addr,
                           addr_t: @addr_t_ind,
                           data:
-                            <<@t_data_individual::bits, @prop_desc_read::bits, 0,
-                              @pid_manufacturer_id, 0>>
+                            <<@t_data_ind::bits, @prop_desc_read::bits, 0,
+                              @pid_manu_id, 0>>
                         )
 
     @prop_desc_resp_frm Helper.get_frame(
@@ -258,9 +258,9 @@ defmodule Knx.Ail.CoreTest do
                           #  <<o_idx, pid, p_idx, write::1, 0::1, pdt::6, 0::4, max::12,
                           #  r_lvl::4, w_lvl::4>>
                           data:
-                            <<@t_data_individual::bits, @prop_desc_resp::bits, 0,
-                              @pid_manufacturer_id, @p_idx_manufacturer_id, 0::1, 0::1,
-                              @pdt_manufacturer_id::6, 0::4, 1::12, 3::4, 0::4>>
+                            <<@t_data_ind::bits, @prop_desc_resp::bits, 0,
+                              @pid_manu_id, @p_idx_manu_id, 0::1, 0::1,
+                              @pdt_manu_id::6, 0::4, 1::12, 3::4, 0::4>>
                         )
 
     test "responds to prop_desc_read: existing pid" do
@@ -325,7 +325,7 @@ defmodule Knx.Ail.CoreTest do
     #                     dest: @remote_addr,
     #                     addr_t: @addr_t_ind,
     #                     data:
-    #                       <<@t_data_individual::bits, @mem_resp::bits, 2::6, 2::16, 0xDEAD::16>>
+    #                       <<@t_data_ind::bits, @mem_resp::bits, 2::6, 2::16, 0xDEAD::16>>
     #                   )
 
     test "mem_write.ind" do

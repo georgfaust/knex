@@ -4,8 +4,7 @@ defmodule Knx.Stack.Al do
 
   import Knx.Toolbox
 
-  # --- 3.3.7 - Table 1 – Application Stack control field
-  # TODO rename communication modos wie im std
+  # --- 3.3.7 - Table 1 – Application Layer control field
   @allowed_t_services %{
     group_read: [:t_data_group],
     group_resp: [:t_data_group],
@@ -13,39 +12,41 @@ defmodule Knx.Stack.Al do
     ind_addr_write: [:t_data_broadcast],
     ind_addr_read: [:t_data_broadcast],
     ind_addr_resp: [:t_data_broadcast],
-    adc_read: [:t_data_con],
-    adc_resp: [:t_data_con],
-    sys_nw_param_read: [:t_data_sys_broadcast],
-    sys_nw_param_resp: [:t_data_sys_broadcast],
-    sys_nw_param_write: [:t_data_sys_broadcast],
-    mem_read: [:t_data_individual, :t_data_con],
-    mem_resp: [:t_data_individual, :t_data_con],
-    mem_write: [:t_data_individual, :t_data_con],
+    # adc_read: [:t_data_con],
+    # adc_resp: [:t_data_con],
+    # sys_nw_param_read: [:t_data_sys_broadcast],
+    # sys_nw_param_resp: [:t_data_sys_broadcast],
+    # sys_nw_param_write: [:t_data_sys_broadcast],
+    mem_read: [:t_data_ind, :t_data_con],
+    mem_resp: [:t_data_ind, :t_data_con],
+    mem_write: [:t_data_ind, :t_data_con],
     user_mem_read: [:t_data_con],
     user_mem_resp: [:t_data_con],
     user_mem_write: [:t_data_con],
-    user_mem_bit_write: [:t_data_con],
+    # user_mem_bit_write: [:t_data_con],
     user_manu_info_read: [:t_data_con],
     user_manu_info_resp: [:t_data_con],
-    fun_prop_command: [:t_data_individual, :t_data_con],
-    fun_prop_state_read: [:t_data_individual, :t_data_con],
-    fun_prop_state_resp: [:t_data_individual, :t_data_con],
-    device_desc_read: [:t_data_individual, :t_data_con],
-    device_desc_resp: [:t_data_individual, :t_data_con],
-    restart: [:t_data_individual, :t_data_con],
-    mem_bit_write: [:t_data_con],
+    fun_prop_command: [:t_data_ind, :t_data_con],
+    fun_prop_state_read: [:t_data_ind, :t_data_con],
+    fun_prop_state_resp: [:t_data_ind, :t_data_con],
+    device_desc_read: [:t_data_ind, :t_data_con],
+    device_desc_resp: [:t_data_ind, :t_data_con],
+    restart_basic: [:t_data_ind, :t_data_con],
+    # restart_master: [:t_data_ind, :t_data_con],
+    # restart_resp: [:t_data_ind, :t_data_con],
+    # mem_bit_write: [:t_data_con],
     auth_req: [:t_data_con],
     auth_resp: [:t_data_con],
     key_write: [:t_data_con],
     key_resp: [:t_data_con],
-    prop_read: [:t_data_individual, :t_data_con],
-    prop_resp: [:t_data_individual, :t_data_con],
-    prop_write: [:t_data_individual, :t_data_con],
-    prop_desc_read: [:t_data_individual, :t_data_con],
-    prop_desc_resp: [:t_data_individual, :t_data_con],
-    nw_param_read: [:t_data_individual],
-    nw_param_resp: [:t_data_broadcast, :t_data_individual],
-    nw_param_write: [:t_data_individual],
+    prop_read: [:t_data_ind, :t_data_con],
+    prop_resp: [:t_data_ind, :t_data_con],
+    prop_write: [:t_data_ind, :t_data_con],
+    prop_desc_read: [:t_data_ind, :t_data_con],
+    prop_desc_resp: [:t_data_ind, :t_data_con],
+    # nw_param_read: [:t_data_ind],
+    # nw_param_resp: [:t_data_broadcast, :t_data_ind],
+    # nw_param_write: [:t_data_ind],
     ind_addr_serial_write: [:t_data_broadcast],
     ind_addr_serial_read: [:t_data_broadcast],
     ind_addr_serial_resp: [:t_data_broadcast]
@@ -59,16 +60,13 @@ defmodule Knx.Stack.Al do
   @ind_addr_read 0b0100_000000
   @ind_addr_resp 0b0101_000000
 
-  @adc_read 0b0110
-  @adc_resp 0b0111
+  # @adc_read 0b0110
+  # @adc_resp 0b0111
 
-  @sys_nw_param_read 0b0111_001000
-  @sys_nw_param_resp 0b0111_001001
-  @sys_nw_param_write 0b0111_001010
+  # @sys_nw_param_read 0b0111_001000
+  # @sys_nw_param_resp 0b0111_001001
+  # @sys_nw_param_write 0b0111_001010
 
-  # NOTE: in the APCI table mem_X have 6 bit,
-  #   in the pdu desc they have 4 bits.
-  #   using 4 bits.
   @mem_read 0b1000
   @mem_resp 0b1001
   @mem_write 0b1010
@@ -78,7 +76,7 @@ defmodule Knx.Stack.Al do
   @user_mem_write 0b1011_000010
 
   # not for future use
-  @user_mem_bit_write 0b1011_000100
+  # @user_mem_bit_write 0b1011_000100
 
   @user_manu_info_read 0b1011_000101
   @user_manu_info_resp 0b1011_000110
@@ -93,13 +91,15 @@ defmodule Knx.Stack.Al do
   @device_desc_read 0b1100
   @device_desc_resp 0b1101
 
-  # NOTE. in APCI table this is 0b1110_000000 but lower 6 bits of the restart-APCI are variable!
-  @restart 0b1110
+  @restart_basic 0b1110_000000
+  # @restart_master 0b1110_000001
+  # @restart_resp 0b1110_100001
 
   # coupler specific services - all not for future use
+  # ...
 
   # not for future use
-  @mem_bit_write 0b1111_010000
+  # @mem_bit_write 0b1111_010000
 
   @auth_req 0b1111_010001
   @auth_resp 0b1111_010010
@@ -112,8 +112,8 @@ defmodule Knx.Stack.Al do
   @prop_desc_read 0b1111_011000
   @prop_desc_resp 0b1111_011001
 
-  @nw_param_read 0b1111_011010
-  @nw_param_resp 0b1111_011011
+  # @nw_param_read 0b1111_011010
+  # @nw_param_resp 0b1111_011011
 
   @ind_addr_serial_read 0b1111_011100
   @ind_addr_serial_resp 0b1111_011101
@@ -121,16 +121,9 @@ defmodule Knx.Stack.Al do
 
   # open media specific services
 
-  @nw_param_write 0b1111_100100
+  # @nw_param_write 0b1111_100100
 
   # --- /end Table 1
-
-  @restart_write 0
-  @restart_resp 1
-  @restart_basic 0
-  @restart_master 1
-
-  # @ack_requested 0x02
 
   def handle({:al, :req, %F{apci: :a_connect} = frame}, _),
     do: [{:tlsm, :req, %F{frame | service: :t_connect}}]
@@ -140,10 +133,10 @@ defmodule Knx.Stack.Al do
 
   # [XIV]
   def handle({:al, prim, %F{service: :t_connect} = frame}, _),
-    do: [{:user, prim, %F{frame | apci: :a_connect}}]
+    do: [{:mgmt, prim, %F{frame | apci: :a_connect}}]
 
   def handle({:al, prim, %F{service: :t_discon} = frame}, _),
-    do: [{:user, prim, %F{frame | apci: :a_discon}}]
+    do: [{:mgmt, prim, %F{frame | apci: :a_discon}}]
 
   def handle({:al, :req, %F{data: data, apci: apci, service: service} = frame}, _) do
     with :ok <- validate(service in @allowed_t_services[apci], {:forbidden, service, apci}),
@@ -165,8 +158,13 @@ defmodule Knx.Stack.Al do
 
   # --------------------------------------
 
-  def get_default_service(apci) do
-    Map.get(@allowed_t_services, apci, [nil]) |> hd
+  def get_default_service(apci, mode) do
+    allowed = Map.get(@allowed_t_services, apci, [nil])
+
+    case mode do
+      nil -> allowed |> hd
+      mode -> if mode in allowed, do: mode, else: raise("mode not allowed")
+    end
   end
 
   # --------------------------------------
@@ -189,44 +187,43 @@ defmodule Knx.Stack.Al do
         {:io, :ind_addr_read, []}
 
       <<@ind_addr_resp::10>> ->
-        {:user, :ind_addr_resp, []}
+        {:mgmt, :ind_addr_resp, []}
 
-      <<@adc_read::4, channel::6, read_count>> ->
-        {:adc, :adc_read, [channel, read_count]}
+      # <<@adc_read::4, channel::6, read_count>> ->
+      #   {:adc, :adc_read, [channel, read_count]}
 
-      <<@adc_resp::4, channel::6, read_count, sum::16>> ->
-        {:user, :adc_resp, [channel, read_count, sum]}
+      # <<@adc_resp::4, channel::6, read_count, sum::16>> ->
+      #   {:mgmt, :adc_resp, [channel, read_count, sum]}
 
-      <<@sys_nw_param_read::10, obj_type::16, pid::12, 0::4, operand>> ->
-        {:todo, :sys_nw_param_read, [obj_type, pid, operand]}
+      # <<@sys_nw_param_read::10, obj_type::16, pid::12, 0::4, operand>> ->
+      #   {:___, :sys_nw_param_read, [obj_type, pid, operand]}
 
-      <<@sys_nw_param_resp::10, obj_type::16, pid::12, 0::4, operand, result::bytes>> ->
-        {:todo, :sys_nw_param_resp, [obj_type, pid, operand, result]}
+      # <<@sys_nw_param_resp::10, obj_type::16, pid::12, 0::4, operand, result::bytes>> ->
+      #   {:___, :sys_nw_param_resp, [obj_type, pid, operand, result]}
 
-      <<@sys_nw_param_write::10, obj_type::16, pid::12, 0::4, value::bytes>> ->
-        {:todo, :sys_nw_param_write, [obj_type, pid, value]}
+      # <<@sys_nw_param_write::10, obj_type::16, pid::12, 0::4, value::bytes>> ->
+      #   {:___, :sys_nw_param_write, [obj_type, pid, value]}
 
       <<@mem_read::4, number::6, addr::16>> ->
         {:mem, :mem_read, [number, addr]}
 
       <<@mem_resp::4, number::6, addr::16, data::bytes>> ->
-        {:user, :mem_resp, [number, addr, data]}
+        {:mgmt, :mem_resp, [number, addr, data]}
 
       <<@mem_write::4, number::6, addr::16, data::bytes>> ->
         {:mem, :mem_write, [number, addr, data]}
 
-      # TODO addr-ext not given in tests!
-      <<@user_mem_read::10, _addr_ext::4, number::4, address::16>> ->
-        {:mem, :user_mem_read, [number, address]}
+      <<@user_mem_read::10, addr_ext::4, number::4, address::16>> ->
+        {:mem, :user_mem_read, [addr_ext, number, address]}
 
-      <<@user_mem_resp::10, _addr_ext::4, number::4, address::16, data::bytes>> ->
-        {:user, :user_mem_resp, [number, address, data]}
+      <<@user_mem_resp::10, addr_ext::4, number::4, address::16, data::bytes>> ->
+        {:mgmt, :user_mem_resp, [addr_ext, number, address, data]}
 
-      <<@user_mem_write::10, _addr_ext::4, number::4, address::16, data::bytes>> ->
-        {:mem, :user_mem_write, [number, address, data]}
+      <<@user_mem_write::10, addr_ext::4, number::4, address::16, data::bytes>> ->
+        {:mem, :user_mem_write, [addr_ext, number, address, data]}
 
-      <<@user_mem_bit_write::10, number, address::16, data::bytes>> ->
-        {:mem, :user_mem_bit_write, [number, address, data]}
+      # <<@user_mem_bit_write::10, number, address::16, data::bytes>> ->
+      #   {:mem, :user_mem_bit_write, [number, address, data]}
 
       <<@user_manu_info_read::10>> ->
         {:todo, :user_manu_info_read, []}
@@ -247,37 +244,37 @@ defmodule Knx.Stack.Al do
         {:io, :device_desc_read, [desc_type]}
 
       <<@device_desc_resp::4, desc_type::6, desc::bytes>> ->
-        {:user, :device_desc_resp, [desc_type, desc]}
+        {:mgmt, :device_desc_resp, [desc_type, desc]}
 
-      <<@restart::4, @restart_write::1, _::4, @restart_basic::1>> ->
-        {:todo, :restart, [@restart_write, @restart_basic]}
+      <<@restart_basic::10>> ->
+        {:restart, :restart_basic, []}
 
-      <<@restart::4, @restart_write::1, _::4, @restart_master::1, erase_code, ch_number>> ->
-        {:todo, :restart, [@restart_write, @restart_master, erase_code, ch_number]}
+      # <<@restart_master::10, erase_code, channel_number>> ->
+      #   {:restart, :restart_master, [erase_code, channel_number]}
 
-      <<@restart::4, @restart_resp::1, _::4, @restart_master::1, err_code, proc_time::16>> ->
-        {:todo, :restart, [@restart_resp, @restart_master, err_code, proc_time]}
+      # <<@restart_resp::10, error_code, process_time::16>> ->
+      #   {:mgmt, :restart_resp, [error_code, process_time]}
 
-      <<@mem_bit_write::10, number, address::16, data::bytes>> ->
-        {:mem, :mem_bit_write, [number, address, data]}
+      # <<@mem_bit_write::10, number, address::16, data::bytes>> ->
+      #   {:mem, :mem_bit_write, [number, address, data]}
 
       <<@auth_req::10, 0, key::32>> ->
         {:auth, :auth_req, [key]}
 
       <<@auth_resp::10, level>> ->
-        {:user, :auth_resp, [level]}
+        {:mgmt, :auth_resp, [level]}
 
       <<@key_write::10, level, key::32>> ->
         {:auth, :key_write, [level, key]}
 
       <<@key_resp::10, level>> ->
-        {:user, :key_resp, [level]}
+        {:mgmt, :key_resp, [level]}
 
       <<@prop_read::10, o_idx, pid, elems::4, start::12>> ->
         {:io, :prop_read, [o_idx, pid, elems, start]}
 
       <<@prop_resp::10, o_idx, pid, elems::4, start::12, data::bytes>> ->
-        {:user, :prop_resp, [o_idx, pid, elems, start, data]}
+        {:mgmt, :prop_resp, [o_idx, pid, elems, start, data]}
 
       <<@prop_write::10, o_idx, pid, elems::4, start::12, data::bytes>> ->
         {:io, :prop_write, [o_idx, pid, elems, start, data]}
@@ -287,20 +284,16 @@ defmodule Knx.Stack.Al do
 
       <<@prop_desc_resp::10, o_idx, pid, p_idx, write::1, 0::1, type::6, 0::4, max::12, r_lvl::4,
         w_lvl::4>> ->
-        {:user, :prop_desc_resp, [o_idx, pid, p_idx, write, type, max, r_lvl, w_lvl]}
+        {:mgmt, :prop_desc_resp, [o_idx, pid, p_idx, write, type, max, r_lvl, w_lvl]}
 
-      # TODO test vs apci-table, siehe request
       # <<@nw_param_read::10, obj_type::16, pid, test_info::bytes>> ->
-      #   {:nw_param_read, [obj_type, pid, test_info]}
+      #   {:___, :nw_param_read, [obj_type, pid, test_info]}
 
-      <<@nw_param_read::10, obj_type::16, pid, test_info::bytes>> ->
-        {:todo, :nw_param_read, [obj_type, pid, test_info]}
+      # <<@nw_param_resp::10, obj_type::16, pid, test_info_and_result::bytes>> ->
+      #   {:___, :nw_param_resp, [obj_type, pid, test_info_and_result]}
 
-      <<@nw_param_resp::10, obj_type::16, pid, test_info_and_result::bytes>> ->
-        {:todo, :nw_param_resp, [obj_type, pid, test_info_and_result]}
-
-      <<@nw_param_write::10, obj_type::16, pid, value::bytes>> ->
-        {:todo, :nw_param_write, [obj_type, pid, value]}
+      # <<@nw_param_write::10, obj_type::16, pid, value::bytes>> ->
+      #   {:___, :nw_param_write, [obj_type, pid, value]}
 
       <<@ind_addr_serial_write::10, serial::48, ind_addr::16, _reserved::32>> ->
         {:io, :ind_addr_serial_write, [serial, ind_addr]}
@@ -309,14 +302,12 @@ defmodule Knx.Stack.Al do
         {:io, :ind_addr_serial_read, [serial]}
 
       <<@ind_addr_serial_resp::10, serial::48, domain_addr::16, _reserved::16>> ->
-        {:user, :ind_addr_serial_resp, [serial, domain_addr]}
+        {:mgmt, :ind_addr_serial_resp, [serial, domain_addr]}
 
       _ ->
         {:error, :malformed_apdu}
     end
   end
-
-  # TODO manche apci setzen prio, zb {prio, data} = a_restart_pdu(data)
 
   defp encode(apci, data) do
     encoded =
@@ -327,27 +318,30 @@ defmodule Knx.Stack.Al do
         :ind_addr_write -> a_ind_addr_write_pdu(data)
         :ind_addr_read -> a_ind_addr_read_pdu()
         :ind_addr_resp -> a_ind_addr_resp_pdu()
-        :adc_read -> a_adc_read_pdu(data)
-        :adc_resp -> a_adc_resp_pdu(data)
-        :sys_nw_param_read -> a_sys_nw_param_read_pdu(data)
-        :sys_nw_param_resp -> a_sys_nw_param_resp_pdu(data)
-        :sys_nw_param_write -> a_sys_nw_param_write_pdu(data)
+        # :adc_read -> a_adc_read_pdu(data)
+        # :adc_resp -> a_adc_resp_pdu(data)
+        # :sys_nw_param_read -> a_sys_nw_param_read_pdu(data)
+        # :sys_nw_param_resp -> a_sys_nw_param_resp_pdu(data)
+        # :sys_nw_param_write -> a_sys_nw_param_write_pdu(data)
         :mem_read -> a_mem_read_pdu(data)
         :mem_resp -> a_mem_resp_pdu(data)
         :mem_write -> a_mem_write_pdu(data)
         :user_mem_read -> a_user_mem_read_pdu(data)
         :user_mem_resp -> a_user_mem_resp_pdu(data)
         :user_mem_write -> a_user_mem_write_pdu(data)
-        :user_mem_bit_write -> a_user_mem_bit_write_pdu(data)
+        # :user_mem_bit_write -> a_user_mem_bit_write_pdu(data)
         :user_manu_info_read -> a_user_manu_info_read_pdu()
         :user_manu_info_resp -> a_user_manu_info_resp_pdu(data)
+        # TODO
         :fun_prop_command -> <<>>
         :fun_prop_state_read -> <<>>
         :fun_prop_state_resp -> <<>>
         :device_desc_read -> a_device_desc_read_pdu(data)
         :device_desc_resp -> a_device_desc_resp_pdu(data)
-        # TODO :restart-> %{data: data, prio: prio}
-        :mem_bit_write -> a_mem_bit_write_pdu(data)
+        :restart_basic -> a_restart_basic_pdu()
+        # :restart_master -> a_restart_master_pdu(data)
+        # :restart_resp -> a_restart_resp_pdu(data)
+        # :mem_bit_write -> a_mem_bit_write_pdu(data)
         :auth_req -> a_auth_req_pdu(data)
         :auth_resp -> a_auth_resp_pdu(data)
         :key_write -> a_key_write_pdu(data)
@@ -357,10 +351,9 @@ defmodule Knx.Stack.Al do
         :prop_write -> a_prop_write_pdu(data)
         :prop_desc_read -> a_prop_desc_read_pdu(data)
         :prop_desc_resp -> a_prop_desc_resp_pdu(data)
-        # TODO test vs APCI table, in APCI table: t_data_broadcast, in test: t_data_individual
-        :nw_param_read -> a_nw_param_read_pdu(data)
-        :nw_param_resp -> a_nw_param_resp_pdu(data)
-        :nw_param_write -> a_nw_param_write_pdu(data)
+        # :nw_param_read -> a_nw_param_read_pdu(data)
+        # :nw_param_resp -> a_nw_param_resp_pdu(data)
+        # :nw_param_write -> a_nw_param_write_pdu(data)
         :ind_addr_serial_write -> a_ind_addr_serial_write_pdu(data)
         :ind_addr_serial_read -> a_ind_addr_serial_read_pdu(data)
         :ind_addr_serial_resp -> a_ind_addr_serial_resp_pdu(data)
@@ -368,7 +361,7 @@ defmodule Knx.Stack.Al do
       end
 
     case encoded do
-      :error -> {:error, :unknown_apci}
+      :error -> {:error, :unknown_apci, apci}
       _ -> {:ok, encoded}
     end
   end
@@ -390,7 +383,7 @@ defmodule Knx.Stack.Al do
   def a_ind_addr_resp_pdu(),
     do: <<@ind_addr_resp::10>>
 
-  # NOTE: the IA is returned as src-address (set by NL)
+  # NOTE: the IA is returned as src-address
   def a_ind_addr_serial_resp_pdu([serial, domain_address]),
     do: <<@ind_addr_serial_resp::10, serial::48, domain_address::16, 0::16>>
 
@@ -400,11 +393,11 @@ defmodule Knx.Stack.Al do
   def a_key_resp_pdu([level]),
     do: <<@key_resp::10, level>>
 
-  def a_adc_read_pdu([channel, read_count]),
-    do: <<@adc_read::4, channel::6, read_count>>
+  # def a_adc_read_pdu([channel, read_count]),
+  #   do: <<@adc_read::4, channel::6, read_count>>
 
-  def a_adc_resp_pdu([channel, read_count, sum]),
-    do: <<@adc_resp::4, channel::6, read_count, sum::16>>
+  # def a_adc_resp_pdu([channel, read_count, sum]),
+  #   do: <<@adc_resp::4, channel::6, read_count, sum::16>>
 
   def a_auth_req_pdu([key]),
     do: <<@auth_req::10, 0, key::32>>
@@ -447,8 +440,8 @@ defmodule Knx.Stack.Al do
   def a_key_write_pdu([level, key]),
     do: <<@key_write::10, level, key::32>>
 
-  def a_mem_bit_write_pdu([number, address, data]),
-    do: <<@mem_bit_write::10, number, address::16, data::bytes>>
+  # def a_mem_bit_write_pdu([number, address, data]),
+  #   do: <<@mem_bit_write::10, number, address::16, data::bytes>>
 
   def a_mem_read_pdu([number, addr]),
     do: <<@mem_read::4, number::6, addr::16>>
@@ -456,14 +449,14 @@ defmodule Knx.Stack.Al do
   def a_mem_write_pdu([number, addr, data]),
     do: <<@mem_write::4, number::6, addr::16, data::bytes>>
 
-  def a_nw_param_read_pdu([obj_type, pid, test_info]),
-    do: <<@nw_param_read::10, obj_type::16, pid, test_info::bytes>>
+  # def a_nw_param_read_pdu([obj_type, pid, test_info]),
+  #   do: <<@nw_param_read::10, obj_type::16, pid, test_info::bytes>>
 
-  def a_nw_param_resp_pdu([obj_type, pid, test_info_and_result]),
-    do: <<@nw_param_resp::10, obj_type::16, pid, test_info_and_result::bytes>>
+  # def a_nw_param_resp_pdu([obj_type, pid, test_info_and_result]),
+  #   do: <<@nw_param_resp::10, obj_type::16, pid, test_info_and_result::bytes>>
 
-  def a_nw_param_write_pdu([obj_type, pid, value]),
-    do: <<@nw_param_write::10, obj_type::16, pid, value::bytes>>
+  # def a_nw_param_write_pdu([obj_type, pid, value]),
+  #   do: <<@nw_param_write::10, obj_type::16, pid, value::bytes>>
 
   def a_prop_desc_read_pdu([o_idx, pid, p_idx]),
     do: <<@prop_desc_read::10, o_idx, pid, p_idx>>
@@ -474,23 +467,23 @@ defmodule Knx.Stack.Al do
   def a_prop_write_pdu([o_idx, pid, elems, start, data]),
     do: <<@prop_write::10, o_idx, pid, elems::4, start::12, data::bytes>>
 
-  def a_restart_pdu([@restart_resp, @restart_master, err_code, proc_time]),
-    do: <<@restart::4, @restart_resp::1, 0::4, @restart_master::1, err_code, proc_time::16>>
+  def a_restart_basic_pdu(),
+    do: <<@restart_basic::10>>
 
-  def a_restart_pdu([@restart_write, @restart_basic]),
-    do: <<@restart::4, @restart_write::1, 0::4, @restart_basic::1>>
+  # def a_restart_master_pdu([erase_code, channel_number]),
+  #   do: <<@restart_basic::10, erase_code, channel_number>>
 
-  def a_restart_pdu([@restart_write, @restart_master, erase_code, ch_number]),
-    do: <<@restart::4, @restart_write::1, 0::4, @restart_master::1, erase_code, ch_number>>
+  # def a_restart_resp_pdu([error_code, process_time]),
+  #   do: <<@restart_resp::10, error_code, process_time::16>>
 
-  def a_sys_nw_param_read_pdu([obj_type, pid, operand]),
-    do: <<@sys_nw_param_read::10, obj_type::16, pid::12, 0::4, operand>>
+  # def a_sys_nw_param_read_pdu([obj_type, pid, operand]),
+  #   do: <<@sys_nw_param_read::10, obj_type::16, pid::12, 0::4, operand>>
 
-  def a_sys_nw_param_resp_pdu([obj_type, pid, operand, result]),
-    do: <<@sys_nw_param_resp::10, obj_type::16, pid::12, 0::4, operand, result::bytes>>
+  # def a_sys_nw_param_resp_pdu([obj_type, pid, operand, result]),
+  #   do: <<@sys_nw_param_resp::10, obj_type::16, pid::12, 0::4, operand, result::bytes>>
 
-  def a_sys_nw_param_write_pdu([obj_type, pid, value]),
-    do: <<@sys_nw_param_write::10, obj_type::16, pid::12, 0::4, value::bytes>>
+  # def a_sys_nw_param_write_pdu([obj_type, pid, value]),
+  #   do: <<@sys_nw_param_write::10, obj_type::16, pid::12, 0::4, value::bytes>>
 
   def a_user_manu_info_read_pdu(),
     do: <<@user_manu_info_read::10>>
@@ -498,18 +491,15 @@ defmodule Knx.Stack.Al do
   def a_user_manu_info_resp_pdu([manu_id, manu_specific]),
     do: <<@user_manu_info_resp::10, manu_id, manu_specific::16>>
 
-  def a_user_mem_bit_write_pdu([number, address, data]),
-    do: <<@user_mem_bit_write::10, number, address::16, data::bytes>>
+  # def a_user_mem_bit_write_pdu([number, address, data]),
+  #   do: <<@user_mem_bit_write::10, number, address::16, data::bytes>>
 
-  def a_user_mem_read_pdu([number, address]),
-    do: <<@user_mem_read::10, 0::4, number::4, address::16>>
+  def a_user_mem_read_pdu([addr_ext, number, address]),
+    do: <<@user_mem_read::10, addr_ext::4, number::4, address::16>>
 
-  def a_user_mem_resp_pdu([number, address, data]),
-    do: <<@user_mem_resp::10, 0::4, number::4, address::16, data::bytes>>
+  def a_user_mem_resp_pdu([addr_ext, number, address, data]),
+    do: <<@user_mem_resp::10, addr_ext::4, number::4, address::16, data::bytes>>
 
-  def a_user_mem_write_pdu([number, address, data]),
-    do: <<@user_mem_write::10, 0::4, number::4, address::16, data::bytes>>
-
-  # {:al, :req, %F{apci: :prop_desc_read, apdu: {o_idx, _, _, _}}}
-  # {:io, :load_props, {o_idx, frame}}
+  def a_user_mem_write_pdu([addr_ext, number, address, data]),
+    do: <<@user_mem_write::10, addr_ext::4, number::4, address::16, data::bytes>>
 end

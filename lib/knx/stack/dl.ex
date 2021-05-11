@@ -54,6 +54,7 @@ defmodule Knx.Stack.Dl do
 
   defp frame(%F{data: data, prio: p, src: s, dest: d, addr_t: addr_t, hops: hops}, len)
        when len <= 15 do
+    # IO.inspect(data: data, prio: p, src: s, dest: d, addr_t: addr_t, hops: hops)
     <<@std::2, 3::2, p::2, 0::2, s::16, d::16, addr_t::1, hops::3, len::4, data::bits>>
   end
 

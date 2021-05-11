@@ -31,7 +31,7 @@ defmodule Knx.Ail.AssocTabTest do
   end
 
   test "load" do
-    assert @assoc_tab = load(4)
+    assert {:ok, @assoc_tab} = load(4)
   end
 
   test "get by asap" do

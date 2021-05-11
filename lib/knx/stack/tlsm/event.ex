@@ -8,8 +8,10 @@ defmodule Knx.Stack.Tlsm.Event do
   def get_event(:ind, :t_discon, %F{src: addr}, %S{c_addr: addr}), do: :e02
   def get_event(:ind, :t_discon, _, _), do: :e03
 
-  def get_event(:ind, :t_data_con, %F{src: addr, seq: seq}, %S{c_addr: addr, r_seq: r_seq}) do
+  def get_event(:ind, :t_data_con, %F{src: addr, seq: seq} = frame, %S{c_addr: addr, r_seq: r_seq}) do
     use Bitwise
+
+    #IO.inspect({Process.get(:cache_id), :ind, frame, r_seq}, label: :x_seq)
 
     cond do
       seq == r_seq -> :e04

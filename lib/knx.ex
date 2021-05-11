@@ -3,7 +3,7 @@ defmodule Knx do
   alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
   alias Knx.Ail.GoServer, as: GO
   alias Knx.Ail.IoServer, as: IO
-  alias Knx.Mem
+  alias Knx.{Mem, Restart}
 
   def append_effect(effect, %S{pending_effects: pending_effects} = state) do
     {%S{state | pending_effects: pending_effects ++ [effect]}, []}
@@ -20,13 +20,14 @@ defmodule Knx do
           al: &Al.handle/2,
           go: &GO.handle/2,
           io: &IO.handle/2,
+          restart: &Restart.handle/2,
           mem: &Mem.handle/2,
           auth: &Knx.Auth.handle/2,
           timer: &append_effect/2,
           driver: &append_effect/2,
-          user: &append_effect/2,
+          mgmt: &append_effect/2,
           logger: &append_effect/2,
-          todo: &append_effect/2
+          app: &append_effect/2
         },
         target
       )

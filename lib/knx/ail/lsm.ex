@@ -7,7 +7,7 @@ defmodule Knx.Ail.Lsm do
   @noop 0
   @start_loading 1
   @load_completed 2
-  @additional_load_controls 3
+  @additional_lc 3
   @unload 4
 
   # @load_event_relative_allocation 0xA
@@ -17,19 +17,26 @@ defmodule Knx.Ail.Lsm do
 
   def dispatch(load_state, {event, data}) do
     case {load_state, event} do
-      {@load_state_unloaded, @start_loading} -> {@load_state_loading, nil}
-      {@load_state_loading, @unload} -> {@load_state_unloaded, nil}
       {@load_state_loading, @load_completed} -> {@load_state_loaded, nil}
-      {@load_state_loading, @additional_load_controls} -> {@load_state_loading, decode_le(data)}
-      {@load_state_loaded, @start_loading} -> {@load_state_loading, nil}
-      {@load_state_loaded, @unload} -> {@load_state_unloaded, nil}
-      {@load_state_error, @unload} -> {@load_state_unloaded, nil}
+      {@load_state_loading, @additional_lc} -> {@load_state_loading, decode_le(data)}
+      {_, @start_loading} -> {@load_state_loading, nil}
+      {_, @unload} -> {@load_state_unloaded, nil}
       {_, @noop} -> {load_state, nil}
     end
   end
 
   def encode_le(:le_data_rel_alloc, [req_mem_size, mode, fill]) do
-    <<@le_data_rel_alloc::8, req_mem_size::32, 0::7, mode::1, fill::8, 0::16>>
+    <<@additional_lc::8, @le_data_rel_alloc::8, req_mem_size::32, 0::7, mode::1, fill::8, 0::16>>
+  end
+
+  def encode_le(le) do
+    case le do
+      :noop -> <<@noop::8, 0::unit(8)-9>>
+      :start_loading -> <<@start_loading::8, 0::unit(8)-9>>
+      :load_completed -> <<@load_completed::8, 0::unit(8)-9>>
+      :additional_lc -> raise("additional_lc encoder missing")
+      :unload -> <<@unload::8, 0::unit(8)-9>>
+    end
   end
 
   # ------------------------------

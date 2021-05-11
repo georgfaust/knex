@@ -1,3 +1,13 @@
+# “Commons Clause” License Condition v1.0
+
+# The Software is provided to you by the Licensor under the License, as defined below, subject to the following condition.
+# Without limiting other conditions in the License, the grant of rights under the License will not include, and the License does not grant to you, the right to Sell the Software.
+# For purposes of the foregoing, “Sell” means practicing any or all of the rights granted to you under the License to provide to third parties, for a fee or other consideration (including without limitation fees for hosting or consulting/ support services related to the Software), a product or service whose value derives, entirely or substantially, from the functionality of the Software. Any license notice or attribution required by the License must also include this Commons Clause License Condition notice.
+
+# Software: KNeX - API
+# License: MIT
+# Licensor: Sebastian Fey
+
 defmodule Knx.Api do
   @moduledoc """
 
@@ -5,8 +15,8 @@ defmodule Knx.Api do
 
     - results are gathered in a list
     - normally just one result is expected, so we return on the first expected result received
-    - :multi - if this is set results are gathered until timeout is reached (set in override)
-    - :timeout_ms - defines how long results are gathered (set in override)
+    - :multi - if this is set results are gathered until timeout is reached (set in opts)
+    - :timeout_ms - defines how long results are gathered (set in opts)
     - :apci - the apci we expect as result
     - :prim - the primitive we expect as result
 
@@ -19,7 +29,6 @@ defmodule Knx.Api do
       fun_prop_state_read
 
     - TODO
-      restart (its complicated)
       group_read (done, untested)
       group_write (done, untested)
 
@@ -31,9 +40,9 @@ defmodule Knx.Api do
       sys_nw_param_read:  :t_data_sys_broadcast,
       sys_nw_param_resp:  :t_data_sys_broadcast,
       sys_nw_param_write:  :t_data_sys_broadcast,
-      nw_param_read:  :t_data_individual,
-      nw_param_resp: %@me{:t_data_individual,
-      nw_param_write:  :t_data_individual,
+      nw_param_read:  :t_data_ind,
+      nw_param_resp: %@me{:t_data_ind,
+      nw_param_write:  :t_data_ind,
 
     - unused in management procedures
       user_mem_bit_write:  :t_data_con,
@@ -41,60 +50,126 @@ defmodule Knx.Api do
       user_manu_info_resp:  :t_data_con,
       mem_bit_write:  :t_data_con,
 
-
-  Knx.Api.call_(via(1), %{apci: :a_connect, dest: 5887})
-  Knx.Api.call_(via(1), %{apci: :a_discon, dest: 5887})
-                                                                      desc-type
-  Knx.Api.call_(via(1), %{apci: :device_desc_read, dest: 5887, data: [0]})
-
-                                                              key
-  Knx.Api.call_(via(1), %{apci: :auth_req, dest: 5887, data: [4711]})
-                                                               level key
-  Knx.Api.call_(via(1), %{apci: :key_write, dest: 5887, data: [3,    0]})
-
-  NOTE: set prog_mode with Shell.Server.set_prog_mode(via(1), 1)
-  Knx.Api.call_(via(1), %{apci: :ind_addr_read})
-
-                                                        address
-  Knx.Api.call_(via(1), %{apci: :ind_addr_write, data: [100]})
-
-                                                              serial
-  Knx.Api.call_(via(1), %{apci: :ind_addr_serial_read, data: [2]})
-
-                                                              serial addr
-  Knx.Api.call_(via(1), %{apci: :ind_addr_serial_write, data: [2,    100]})
-
-                                                              number, addr, data
-  Knx.Api.call_(via(1), %{apci: :mem_write, dest: 5887, data: [2,     0,    <<0xAFFE::16>>]})
-
-                                                             number, addr
-  Knx.Api.call_(via(1), %{apci: :mem_read, dest: 5887, data: [5,     0]})
-
-                                                                    o_idx, pid, p_idx
-  Knx.Api.call_(via(1), %{apci: :prop_desc_read, dest: 5887, data: [0,     11,  0]})
-  Knx.Api.call_(via(1), %{apci: :prop_desc_read, dest: 5887, data: [0,     0,   3]})
-
-                                                                o_idx, pid, elems, start, data
-  Knx.Api.call_(via(1), %{apci: :prop_write, dest: 5887, data: [0,     54,  1,     1,     1]})
-
-                                                              o_idx, pid, elems, start
-  Knx.Api.call_(via(1), %{apci: :prop_read, dest: 5887, data: [0,    11,  1,     1]})
-
-
   """
   alias Knx.Frame, as: F
   @me __MODULE__
 
   defstruct prim: :conf,
             apci: nil,
-            timeout_ms: 50,
+            timeout_ms: 100,
             multi: false,
             take: [:apci]
 
+  # --- con/discon
+
+  def connect(pid, ia, timeout \\ 50) do
+    call_(pid, %{apci: :a_connect, dest: ia}, nil, %{timeout_ms: timeout})
+  end
+
+  def discon(pid) do
+    call_(pid, %{apci: :a_discon})
+  end
+
+  # --- groups
+  def group_write(pid, asap, data) do
+    call_(pid, %{apci: :group_write, asap: asap, data: [data]})
+  end
+
+  # --- device_desc
+
+  def device_desc_read(pid, ia, mode \\ :co) do
+    call_(pid, %{apci: :device_desc_read, dest: ia, data: [0]}, mode)
+  end
+
+  def device_desc_read_x(pid, ia, mode \\ :co) do
+    case device_desc_read(pid, ia, mode) do
+      {:api_result, %{apci: apci, data: [typ, desc]}} -> {:ok, apci, {typ, desc}}
+      error -> error
+    end
+  end
+
+  # --- ind_addr
+
+  def ind_addr_serial_read(pid, sn) do
+    call_(pid, %{apci: :ind_addr_serial_read, data: [sn]})
+  end
+
+  def ind_addr_read(pid, timeout) do
+    call_(pid, %{apci: :ind_addr_read}, nil, %{multi: true, timeout_ms: timeout})
+  end
+
+  def ind_addr_write(pid, ia) do
+    Knx.Api.call_(pid, %{apci: :ind_addr_write, data: [ia]})
+  end
+
+  # --- prop
+
+  def prop_desc_read(pid, ia, o_idx, id, idx, mode \\ :co, opts \\ %{}) do
+    call_(pid, %{apci: :prop_desc_read, dest: ia, data: [o_idx, id, idx]}, mode, opts)
+  end
+
+  def prop_read(pid, ia, o_idx, id, mode \\ :co, opts \\ %{}) do
+    call_(pid, %{apci: :prop_read, dest: ia, data: [o_idx, id, 1, 1]}, mode, opts)
+  end
+
+  def prop_read_x(pid, ia, o_idx, id, mode \\ :co) do
+    case prop_read(pid, ia, o_idx, id, mode) do
+      {:api_result, %{data: [_, _, _, _, data]}} -> {:ok, :prop_resp, data}
+      error -> error
+    end
+  end
+
+  def prop_write(pid, ia, o_idx, id, data, mode \\ :co) do
+    call_(pid, %{apci: :prop_write, dest: ia, data: [o_idx, id, 1, 1, data]}, mode)
+  end
+
+  def prop_write_x(pid, ia, o_idx, id, data, mode \\ :co) do
+    case prop_write(pid, ia, o_idx, id, data, mode) do
+      {:api_result, %{data: [_, _, _, _, data]}} -> {:ok, :prop_resp, data}
+      error -> error
+    end
+  end
+
+  # --- funprop
+  # TODO
+
+  # --- mem
+
+  def mem_write(pid, ia, ref, data, mode \\ :co) do
+    call_(pid, %{apci: :mem_write, dest: ia, data: [byte_size(data), ref, data]}, mode)
+  end
+
+  def mem_write_v(pid, ia, ref, data, mode \\ :co) do
+    call_(
+      pid,
+      %{apci: :mem_write, dest: ia, data: [byte_size(data), ref, data]},
+      mode,
+      %{apci: :mem_resp, prim: :ind, take: [:apci, :data]}
+    )
+  end
+
+  def mem_read(pid, ia, number, ref, mode \\ :co) do
+    call_(pid, %{apci: :mem_read, dest: ia, data: [number, ref]}, mode)
+  end
+
+  # --- restart
+
+  def restart(pid, ia, :basic, mode \\ :co) do
+    call_(pid, %{apci: :restart_basic, dest: ia}, mode)
+  end
+
+  # ---
+
   def get_expect(apci) do
     expect = %{
+      # TODO discon muss moegliches result sein,
+      # ist aber OK wenn das nicht kommt und dafuer :conf
+      # --> schauen ob das woanders aehnlich vorkommen kann
+      # --> JA! discon kann ja als Antwort auf ALLE tdatacon kommen!
+      #     zb bei Authorize "A_Disconnect.ind ⇒ error: connection was broken down"
       a_connect: nil,
       a_discon: nil,
+      restart_basic: nil,
       device_desc_read: :device_desc_resp,
       auth_req: :auth_resp,
       key_write: :key_resp,
@@ -111,7 +186,6 @@ defmodule Knx.Api do
       prop_read: :prop_resp,
       # fun_prop_command: :fun_prop_state_resp,
       # fun_prop_state_read: :fun_prop_state_resp
-      # restart:  :todo,
       group_read: :group_resp,
       group_write: nil
     }
@@ -133,19 +207,22 @@ defmodule Knx.Api do
     Map.get(handler, apci, :al)
   end
 
-  @doc """
-  generate a request to send and an expected result.
-  fields can be overridden with `expect`. (eg %{expect: :mem_resp} for a verified `:mem_write`)
-  """
-  def call_(device_name, %{apci: apci} = frame, override \\ %{}) do
+  def call_(device_name, %{apci: apci} = frame, mode \\ nil, opts \\ %{}) do
     case get_expect(apci) do
       :error ->
-        {:error, :unknown_apci}
+        {:error, :unknown_apci, apci}
 
       expect ->
-        frame = Map.merge(%F{service: Knx.Stack.Al.get_default_service(apci), data: []}, frame)
+        service = Knx.Stack.Al.get_default_service(apci, get_service(mode))
+        frame = Map.merge(%F{service: service, data: []}, frame)
         impulse = {get_handler(apci), :req, frame}
-        Shell.Server.api_call(device_name, impulse, Map.merge(expect, override))
+        Shell.Server.api_call(device_name, impulse, Map.merge(expect, opts))
     end
   end
+
+  # ---
+
+  defp get_service(:co), do: :t_data_con
+  defp get_service(:cl), do: :t_data_ind
+  defp get_service(_), do: nil
 end

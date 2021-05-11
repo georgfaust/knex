@@ -5,6 +5,7 @@ defmodule Knx.Ail.AddrTab do
 
   alias Knx.Mem
 
+  # TODO hack
   def get_object_index(), do: 1
 
   def get_tsap(group_addr) do
@@ -20,10 +21,15 @@ defmodule Knx.Ail.AddrTab do
   end
 
   def load(ref) do
-    {:ok, _, table} = Mem.read_table(ref, 2)
-    table = @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
-    Cache.put(:addr_tab, table)
+    case Mem.read_table(ref, 2) do
+      {:ok, _, table} ->
+        table = @make_table_one_based ++ for(<<addr::16 <- table>>, do: addr)
+        {:ok, Cache.put(:addr_tab, table)}
+
+      error ->
+        error
+    end
   end
 
-  def unload(), do: Cache.put(:addr_tab, @empty_table)
+  def unload(), do: {:ok, Cache.put(:addr_tab, @empty_table)}
 end

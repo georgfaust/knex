@@ -43,7 +43,7 @@ defmodule Helper do
   @subnet_addr 0xFF
   @device_addr 0xFF
   @desc 0x07B0
-  @device_control %{
+  @device_ctrl %{
     safe_state: false,
     verify_mode: false,
     ia_duplication: false,
@@ -78,14 +78,14 @@ defmodule Helper do
   end
 
   def get_device_props(prog_mode, verify \\ false) do
-    device_control = %{@device_control | verify_mode: verify}
+    device_ctrl = %{@device_ctrl | verify_mode: verify}
 
     [
       P.new(:pid_object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_serial, [@serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_manufacturer_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_device_control, [device_control], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:pid_device_ctrl, [device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_order_info, [0x0815], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_routing_count, [3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
@@ -93,7 +93,7 @@ defmodule Helper do
       P.new(:pid_max_apdu_length, [15], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_subnet_addr, [@subnet_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_device_addr, [@device_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_hardware_type, [0xAABBCCDDEEFF], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:pid_hw_type, [0xAABBCCDDEEFF], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:pid_device_descriptor, [@desc], max: 1, write: false, r_lvl: 3, w_lvl: 0)
     ]
   end
@@ -101,7 +101,7 @@ defmodule Helper do
   def get_table_props(object_type, mem_ref) do
     [
       P.new(:pid_object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
       # Table                 23 = PID_TABLE      PDT_UNSIGNED_INT[]
       # Memory Control Table  27 = PID_MCB_TABLE  PDT_GENERIC_08[]

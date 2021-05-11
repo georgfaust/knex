@@ -140,3 +140,14 @@ XXVI: |
   to the local user indicating that the transmission of the associated T_Data_Broadcast.req did not succeed.
   [3/3/7:3.2.2]
  
+XXVII: |
+  Safe State denotes a state of the device in which no user-supplied part shall be executed.
+  The implementation of the Safe State is optional.
+  [3/5/1:4.2.14.8 Safe State Control]
+
+XXVIII: |
+  Propery Index in zero-based
+  The property_index, if evaluated, shall address the Property of the Interface Object with a sequential
+  number, i.e. property_index = 0 shall mean the first Property of the associated Interface Object,
+  property_index = 1 shall mean the second Property.
+  [AL:3.4.33]

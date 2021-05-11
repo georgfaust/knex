@@ -20,4 +20,10 @@ defmodule Cache do
     Agent.update(via(), &Map.put(&1, key, value))
     value
   end
+
+  def update(key, update_fn) do
+    value = get(key)
+    value = update_fn.(value)
+    put(key, value)
+  end
 end

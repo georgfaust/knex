@@ -2,7 +2,8 @@ defmodule Knx.Ail.GoTab do
   alias Knx.Ail.GroupObject
   alias Knx.Mem
 
-  def get_object_index(), do: 9
+  # TODO hack
+  def get_object_index(), do: 4
 
   def get_first(assocs, flag) do
     assocs
@@ -19,18 +20,22 @@ defmodule Knx.Ail.GoTab do
   end
 
   def load(ref) do
-    {:ok, _, table} = Mem.read_table(ref, 2)
+    case Mem.read_table(ref, 2) do
+      {:ok, _, table} ->
+        table =
+          for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
+          |> Enum.with_index(1)
+          |> Enum.map(fn {d, i} -> {i, GroupObject.new(d, i)} end)
+          |> Enum.into(%{})
 
-    go_tab =
-      for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {d, i} -> {i, GroupObject.new(d, i)} end)
-      |> Enum.into(%{})
+        {:ok, Cache.put(:go_tab, table)}
 
-    Cache.put(:go_tab, go_tab)
+      error ->
+        error
+    end
   end
 
-  def unload(), do: Cache.put(:go_tab, [0])
+  def unload(), do: {:ok, Cache.put(:go_tab, [0])}
 
   # -----------------------------------------------------
 

@@ -8,10 +8,10 @@ defmodule Knx.Ail.PropertyTest do
   @pid1 101
   @pid2 102
   @ptd 0x11
-  @pid_manufacturer_id 12
-  @pid_device_control 14
+  @pid_manu_id 12
+  @pid_device_ctrl 14
   @pid_prog_mode 54
-  @pid_load_state_control 5
+  @pid_load_state_ctrl 5
 
   # @load_state_unloaded 0
   @load_state_loaded 1
@@ -21,7 +21,7 @@ defmodule Knx.Ail.PropertyTest do
   # @noop 0
   @start_loading 1
   @load_completed 2
-  @additional_load_controls 3
+  # @additional_lc 3
   # @unload 4
 
   # @le_data_rel_alloc 0xB
@@ -36,9 +36,11 @@ defmodule Knx.Ail.PropertyTest do
   ]
   @props_addr_tab [
     # TODO noch nicht fertig
-    P.new(:pid_load_state_control, [0], max: 1, write: true, r_lvl: 0, w_lvl: 0)
+    P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
 
+
+  @tag :xxxx
   describe "load controls" do
     @addr_tab_mem_ref 4
     test "load address table" do
@@ -50,19 +52,17 @@ defmodule Knx.Ail.PropertyTest do
 
       assert {:ok, props, %{values: [@load_state_loading]}} =
                P.write_prop(1, @props_addr_tab, 0,
-                 pid: @pid_load_state_control,
+                 pid: @pid_load_state_ctrl,
                  elems: 1,
                  start: 1,
                  data: <<@start_loading::8, 0::unit(8)-9>>
                )
 
-      rel_alloc =
-        <<@additional_load_controls::8,
-          Knx.Ail.Lsm.encode_le(:le_data_rel_alloc, [10, 1, 0xFF])::bits>>
+      rel_alloc = Knx.Ail.Lsm.encode_le(:le_data_rel_alloc, [10, 1, 0xFF])
 
       assert {:ok, _, %{values: [@load_state_loading]}} =
                P.write_prop(1, props, 0,
-                 pid: @pid_load_state_control,
+                 pid: @pid_load_state_ctrl,
                  elems: 1,
                  start: 1,
                  data: rel_alloc
@@ -70,7 +70,7 @@ defmodule Knx.Ail.PropertyTest do
 
       assert {:ok, _, %{values: [@load_state_loaded]}} =
                P.write_prop(1, props, 0,
-                 pid: @pid_load_state_control,
+                 pid: @pid_load_state_ctrl,
                  elems: 1,
                  start: 1,
                  data: <<@load_completed::8, 0::unit(8)-9>>
@@ -82,24 +82,23 @@ defmodule Knx.Ail.PropertyTest do
 
   test("get_prop") do
     assert {:ok, 0, @ptd, %{id: @pid1}} = P.get_prop(@props_0, @pid1)
-    assert {:ok, 1, @ptd, %{id: @pid2}} = P.get_prop(@props_0, 0, 2)
+    assert {:ok, 1, @ptd, %{id: @pid2}} = P.get_prop(@props_0, 0, 1)
     assert {:ok, 1, @ptd, %{id: @pid2}} = P.get_prop(@props_1, @pid2, 0)
-    assert {:ok, 0, @ptd, %{id: @pid1}} = P.get_prop(@props_1, 0, 1)
+    assert {:ok, 0, @ptd, %{id: @pid1}} = P.get_prop(@props_1, 0, 0)
     assert {:error, :prop_invalid} = P.get_prop(@props_0, :pid_non_existing)
     assert {:error, :prop_invalid} = P.get_prop(@props_0, 0, 99)
-    assert {:error, :argument_error} = P.get_prop(@props_0, 0, 0)
   end
 
   test "read_prop" do
-    assert {:ok, 1, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 0)
-    assert {:ok, 1, <<1>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 1)
+    assert {:ok, 0, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 0)
+    assert {:ok, 0, <<1>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 1)
 
-    assert {:ok, 1, <<1, 2, 3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 3, start: 1)
+    assert {:ok, 0, <<1, 2, 3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 3, start: 1)
 
     # TODO muss error sein!? --> standard
-    assert {:ok, 1, <<1, 2, 3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 4, start: 1)
+    assert {:ok, 0, <<1, 2, 3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 4, start: 1)
 
-    assert {:ok, 1, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 3)
+    assert {:ok, 0, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 3)
     assert {:error, :nothing_read} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 4)
   end
 
@@ -123,7 +122,7 @@ defmodule Knx.Ail.PropertyTest do
              P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 2, start: 1, data: <<0>>)
   end
 
-  @device_control %{
+  @device_ctrl %{
     safe_state: true,
     verify_mode: false,
     ia_duplication: true,
@@ -132,7 +131,7 @@ defmodule Knx.Ail.PropertyTest do
 
   test "encode" do
     assert <<1>> == P.encode(@pid_prog_mode, nil, 1)
-    assert <<0b0000_1010>> == P.encode(@pid_device_control, nil, @device_control)
+    assert <<0b0000_1010>> == P.encode(@pid_device_ctrl, nil, @device_ctrl)
     assert <<1>> == P.encode(nil, :pdt_char, 1)
     assert <<0xFF>> == P.encode(nil, :pdt_char, -1)
     assert <<1>> == P.encode(nil, :pdt_unsigned_char, 1)
@@ -172,7 +171,7 @@ defmodule Knx.Ail.PropertyTest do
 
   test "decode" do
     assert 1 == P.decode(@pid_prog_mode, nil, <<1>>)
-    assert @device_control = P.decode(@pid_device_control, nil, <<0b0000_1010>>)
+    assert @device_ctrl = P.decode(@pid_device_ctrl, nil, <<0b0000_1010>>)
     assert 1 == P.decode(nil, :pdt_char, <<1>>)
     assert -1 == P.decode(nil, :pdt_char, <<0xFF>>)
     assert 1 == P.decode(nil, :pdt_unsigned_char, <<1>>)
@@ -211,9 +210,9 @@ defmodule Knx.Ail.PropertyTest do
 
   test "lists" do
     assert <<0, 0, 0, 1, 255, 255>> ==
-             P.encode_list(@pid_manufacturer_id, :pdt_unsigned_int, [0, 1, 0xFFFF])
+             P.encode_list(@pid_manu_id, :pdt_unsigned_int, [0, 1, 0xFFFF])
 
     assert [0, 1, 0xFFFF] ==
-             P.decode_into_list(@pid_manufacturer_id, :pdt_unsigned_int, <<0, 0, 0, 1, 255, 255>>)
+             P.decode_into_list(@pid_manu_id, :pdt_unsigned_int, <<0, 0, 0, 1, 255, 255>>)
   end
 end

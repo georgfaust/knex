@@ -1,6 +1,7 @@
 defmodule Knx.Ail.AssocTab do
   alias Knx.Mem
 
+  # TODO hack
   def get_object_index(), do: 2
 
   def get_assocs(asap: asap) do
@@ -14,10 +15,15 @@ defmodule Knx.Ail.AssocTab do
   end
 
   def load(ref) do
-    {:ok, _, table} = Mem.read_table(ref, 4)
-    assoc_tab = for(<<tsap::16, asap::16 <- table>>, do: {tsap, asap})
-    Cache.put(:assoc_tab, assoc_tab)
+    case Mem.read_table(ref, 4) do
+      {:ok, _, table} ->
+        table = for(<<tsap::16, asap::16 <- table>>, do: {tsap, asap})
+        {:ok, Cache.put(:assoc_tab, table)}
+
+      error ->
+        error
+    end
   end
 
-  def unload(), do: Cache.put(:assoc_tab, [0])
+  def unload(), do: {:ok, Cache.put(:assoc_tab, [0])}
 end

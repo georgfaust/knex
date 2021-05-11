@@ -46,7 +46,7 @@ defmodule Knx.Ail.GoServerTest do
   test "group_write.req" do
     assert {%S{} = state,
             [
-              {:user, :go_value, {5, <<1>>}},
+              {:app, :go_value, {5, <<1>>}},
               {:al, :req, %F{apci: :group_write, tsap: 5}}
             ]} =
              GOS.handle(
@@ -57,7 +57,7 @@ defmodule Knx.Ail.GoServerTest do
     # this will be deferred
     assert {
              %S{go_server: %{deferred: [{:al, :req, %F{}}]}} = state,
-             [{:user, :go_value, {5, <<1>>}}]
+             [{:app, :go_value, {5, <<1>>}}]
            } =
              GOS.handle(
                {:go, :req, %F{apci: :group_write, asap: 5, tsap: nil, data: <<1>>}},
@@ -82,7 +82,7 @@ defmodule Knx.Ail.GoServerTest do
     assert {
              %S{},
              [
-               {:user, :go_value, {3, <<0::6>>}},
+               {:app, :go_value, {3, <<0::6>>}},
                {:al, :req, %F{apci: :group_resp, tsap: 3}}
              ]
            } =
@@ -96,7 +96,7 @@ defmodule Knx.Ail.GoServerTest do
     # TODO testen mit mehr assocs auf einem tsap
     assert {
              %S{},
-             [{:user, :go_value, {2, <<2>>}}]
+             [{:app, :go_value, {2, <<2>>}}]
            } =
              GOS.handle(
                {:go, :ind, %F{apci: :group_write, asap: nil, tsap: 2, data: <<2>>}},
@@ -112,7 +112,7 @@ defmodule Knx.Ail.GoServerTest do
 
   test "group_resp.ind" do
     # TODO testen mit mehr assocs auf einem tsap
-    assert {%S{}, [{:user, :go_value, {4, <<2>>}}]} =
+    assert {%S{}, [{:app, :go_value, {4, <<2>>}}]} =
              GOS.handle(
                {:go, :ind, %F{apci: :group_resp, asap: nil, tsap: 4, data: <<2>>}},
                %S{}

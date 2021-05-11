@@ -41,7 +41,7 @@ defmodule Shell.Server do
       {:objects, 0} => objects[0],
       {:objects, 1} => objects[1],
       {:objects, 2} => objects[2],
-      {:objects, 9} => objects[9],
+      {:objects, 3} => objects[3],
       :mem => mem,
       :go_values => %{}
     })
@@ -77,6 +77,7 @@ defmodule Shell.Server do
     {:noreply, %S{state | api_expect: expect, api_callback: from, api_timer: pid}}
   end
 
+  @impl GenServer
   def handle_cast({:bus_info, :connected}, %S{} = state) do
     :logger.info("[D: #{Process.get(:cache_id)}] connected")
     {:noreply, %S{state | connected: true}}
@@ -87,7 +88,6 @@ defmodule Shell.Server do
     {:noreply, handle_impulse(impulse, state)}
   end
 
-  @impl GenServer
   def handle_cast({:prog_mode, prog_mode}, state) do
     # Device.set(&Device.set_prog_mode(&1, prog_mode))
     # ---
@@ -105,7 +105,7 @@ defmodule Shell.Server do
 
   @impl GenServer
   def handle_info(
-        {:user, prim, %F{apci: apci} = frame},
+        {:mgmt, prim, %F{apci: apci, ok?: ok?} = frame},
         %S{
           api_expect: %Knx.Api{apci: exp_apci, prim: exp_prim, multi: multi, take: take},
           api_callback: api_callback,
@@ -113,19 +113,23 @@ defmodule Shell.Server do
           api_result: api_result
         } = state
       ) do
-    with true <- prim == exp_prim,
-         true <- apci == exp_apci do
+    if prim == exp_prim and apci == exp_apci do
       if multi do
         {:noreply, %S{state | api_result: [Map.take(frame, take) | api_result]}}
       else
-        :timer.cancel(timer_pid)
-        GenServer.reply(api_callback, {:api_result, Map.take(frame, take)})
-
-        {:noreply,
-         %S{state | api_expect: %Knx.Api{}, api_callback: nil, api_timer: nil, api_result: []}}
+        call_done(timer_pid, api_callback, {:api_result, Map.take(frame, take)}, state)
       end
     else
-      _ -> {:noreply, state}
+      if apci == :a_discon and api_callback do
+        call_done(
+          timer_pid,
+          api_callback,
+          {if(ok? == false, do: :negative_lcon, else: :pdu), :a_discon, exp_apci},
+          state
+        )
+      else
+        {:noreply, state}
+      end
     end
   end
 
@@ -180,9 +184,9 @@ defmodule Shell.Server do
           # timer: fn effect -> send(timer_pid, effect) end,
           timer: fn effect -> log_effect(effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
-          user: fn effect -> send(self(), effect) end,
-          logger: fn effect -> log_effect(effect) end,
-          todo: fn effect -> log_effect(effect) end
+          mgmt: fn effect -> send(self(), effect) end,
+          app: fn effect -> log_effect(effect) end,
+          logger: fn effect -> log_effect(effect) end
         },
         target
       )
@@ -192,5 +196,13 @@ defmodule Shell.Server do
 
   defp log_effect(effect) do
     :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
+  end
+
+  defp call_done(timer_pid, api_callback, result, state) do
+    :timer.cancel(timer_pid)
+    GenServer.reply(api_callback, result)
+
+    {:noreply,
+     %S{state | api_expect: %Knx.Api{}, api_callback: nil, api_timer: nil, api_result: []}}
   end
 end

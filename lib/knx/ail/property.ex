@@ -2,11 +2,12 @@ defmodule Knx.Ail.Property do
   # TODO darf nicht ueber ende der liste lesen!
 
   # TODO 3.7.3 - 4.1
-  @pid_device_control 14
+  @pid_device_ctrl 14
   @pid_prog_mode 54
 
+  # TODO get from master.xml
   @pdts %{
-    pdt_control: %{id: 0x00, length: 1, write_length: 10},
+    pdt_ctrl: %{id: 0x00, length: 1, write_length: 10},
     pdt_char: %{id: 0x01, length: 1},
     pdt_unsigned_char: %{id: 0x02, length: 1},
     pdt_int: %{id: 0x03, length: 2},
@@ -69,15 +70,15 @@ defmodule Knx.Ail.Property do
     pid_object_name: [pdt: :pdt_unsigned_char, id: 2],
     # PID_SEMAPHOR
     # PID_GROUP_OBJECT_REFERENCE
-    pid_load_state_control: [pdt: :pdt_control, id: 5],
-    pid_run_state_control: [pdt: :pdt_control, id: 6],
+    pid_load_state_ctrl: [pdt: :pdt_ctrl, id: 5],
+    pid_run_state_ctrl: [pdt: :pdt_ctrl, id: 6],
     pid_table_reference: [pdt: :pdt_unsigned_long, id: 7],
-    # pid_service_control: [pdt: :pdt__todo__, id: 8],
+    # pid_service_ctrl: [pdt: :pdt__todo__, id: 8],
     # pid_firmware_revision: [pdt: :pdt__todo__, id: 9],
     pid_serial: [pdt: :pdt_generic_06, id: 11],
-    pid_manufacturer_id: [pdt: :pdt_unsigned_int, id: 12],
+    pid_manu_id: [pdt: :pdt_unsigned_int, id: 12],
     pid_prog_version: [pdt: :pdt_generic_05, id: 13],
-    pid_device_control: [pdt: :pdt_bitset8, id: @pid_device_control],
+    pid_device_ctrl: [pdt: :pdt_bitset8, id: @pid_device_ctrl],
     pid_order_info: [pdt: :pdt_generic_10, id: 15],
     pid_pei_type: [pdt: :pdt_unsigned_char, id: 16],
     pid_port_configuration: [pdt: :pdt__todo__, id: 17],
@@ -93,7 +94,7 @@ defmodule Knx.Ail.Property do
     pid_subnet_addr: [pdt: :pdt_unsigned_char, id: 57],
     pid_device_addr: [pdt: :pdt_unsigned_char, id: 58],
     # pid_io_list: [pdt: :pdt__todo__, id: 71],
-    pid_hardware_type: [pdt: :pdt_generic_06, id: 78],
+    pid_hw_type: [pdt: :pdt_generic_06, id: 78],
     # pid_rf_domain_address_cemi_server: [pdt: :pdt__todo__, id: 82],
     pid_device_descriptor: [pdt: :pdt_generic_02, id: 83],
     pid_channel_01_param: [pdt: :pdt_generic_01, id: 101],
@@ -172,11 +173,14 @@ defmodule Knx.Ail.Property do
          :ok <- authorize(access_lvl, prop.r_lvl),
          {:ok, values} <- read_prop_(prop, elems, start),
          data <- if(encode?, do: encode_list(pid, pdt_atom, values), else: values) do
-      {:ok, one_based(prop_index), data}
+      {:ok, prop_index, data}
     end
   end
 
-  def get_prop(props, pid, prop_index \\ 0) do
+  def get_prop(props, pid, prop_index \\ 0)
+  def get_prop(props, _pid, _prop_index) when not is_list(props), do: {:error, :no_props}
+
+  def get_prop(props, pid, prop_index) do
     with {:ok, prop_index} <- get_prop_index(props, pid, prop_index),
          {:ok, %@me{pdt: pdt_atom} = prop} <-
            validate(Enum.fetch(props, prop_index), :prop_invalid),
@@ -189,8 +193,11 @@ defmodule Knx.Ail.Property do
 
   def read_prop_value(props, pid_atom) do
     [pdt: _, id: pid] = get_pid(pid_atom)
-    {:ok, _, values} = read_prop(props, 0, false, pid: pid, elems: 1, start: 1)
-    hd(values)
+    case read_prop(props, 0, false, pid: pid, elems: 1, start: 1) do
+      {:ok, _, values} -> hd(values)
+      error -> error
+    end
+
   end
 
   def write_prop_value(props, pid_atom, data) do
@@ -212,11 +219,10 @@ defmodule Knx.Ail.Property do
     do: {:error, :argument_error_data_length, {data, elems}}
 
   defp write_prop_({o_idx, pdt, pid}, prop, 1, 1, data)
-       when pdt in [:pdt_control, :pdt_function] do
+       when pdt in [:pdt_ctrl, :pdt_function] do
     case Knx.Ail.PropertyFunction.handle(o_idx, pid, prop, data) do
       {:ok, result} -> {:ok, %{prop | values: result}}
-      # TODO was tun bei prop-fun error?
-      {:error, _reason} -> {:ok, prop}
+      {:error, result} -> {:ok, %{prop | values: result}}
     end
   end
 
@@ -236,8 +242,7 @@ defmodule Knx.Ail.Property do
     end
   end
 
-  defp get_prop_index(_props, 0 = _id, 0 = _index), do: {:error, :argument_error}
-  defp get_prop_index(_props, 0 = _id, index), do: {:ok, zero_based(index)}
+  defp get_prop_index(_props, 0 = _id, index), do: {:ok, index}
 
   defp get_prop_index(props, id, 0 = _index) do
     case Enum.find_index(props, fn p -> p.id == id end) do
@@ -267,7 +272,7 @@ defmodule Knx.Ail.Property do
   end
 
   def encode(
-        @pid_device_control,
+        @pid_device_ctrl,
         _,
         %{
           safe_state: safe_state,
@@ -304,7 +309,7 @@ defmodule Knx.Ail.Property do
   end
 
   def decode(
-        @pid_device_control,
+        @pid_device_ctrl,
         _,
         <<_::4, safe_state::1, verify::1, ia_dup::1, user_stopped::1>>
       ) do
@@ -317,7 +322,7 @@ defmodule Knx.Ail.Property do
   end
 
   def decode(@pid_prog_mode, _, <<_::7, prog_mode::1>>), do: prog_mode
-  def decode(_, :pdt_control, <<event::8, data::bits>>), do: {event, data}
+  def decode(_, :pdt_ctrl, <<event::8, data::bits>>), do: {event, data}
   def decode(_, :pdt_char, <<char::signed-8>>), do: char
   def decode(_, :pdt_unsigned_char, <<unsigned_char::8>>), do: unsigned_char
   def decode(_, :pdt_int, <<int::signed-16>>), do: int

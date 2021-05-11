@@ -4,8 +4,20 @@ defmodule Knx.Ail.Table do
   @ls_unloaded 0
   @ls_loaded 1
 
-  def load_control(%{values: [load_state]}, [{event, data}], table_mod) do
+  @load_state_error 3
+
+  def new_load_state_action(new_load_state, table_mod) do
+    case new_load_state do
+      @ls_unloaded -> table_mod.unload()
+      @ls_loaded -> table_mod.load(get_table_ref(table_mod))
+      _ -> {:ok, nil}
+    end
+  end
+
+  def load_ctrl(%{values: [load_state]}, [{event, data}], table_mod) do
     {new_load_state, action} = Knx.Ail.Lsm.dispatch(load_state, {event, data})
+
+    IO.inspect({load_state, event, new_load_state, action})
 
     case action do
       nil ->
@@ -19,15 +31,11 @@ defmodule Knx.Ail.Table do
         IO.inspect({"unknown action", action})
     end
 
-    # IO.inspect(new_load_state, label: :new_load_state)
-
-    case new_load_state do
-      @ls_unloaded -> table_mod.unload()
-      @ls_loaded -> table_mod.load(get_table_ref(table_mod))
-      _ -> nil
+    case new_load_state_action(new_load_state, table_mod) do
+      {:ok, _} -> {:ok, [new_load_state]}
+      {:error, _} -> {:error, [@load_state_error]}
+      unexpected -> raise(inspect {:unexpected, unexpected})
     end
-
-    {:ok, [new_load_state]}
   end
 
   def load(table_mod) do
@@ -43,9 +51,11 @@ defmodule Knx.Ail.Table do
   def get_table_props(object_type, mem_ref) do
     [
       P.new(:pid_object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_control, [@ls_unloaded], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:pid_load_state_ctrl, [@ls_unloaded], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:pid_table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
+      # TODO -- ?? siehe notes
       # Table                 23 = PID_TABLE      PDT_UNSIGNED_INT[]
+      # not mandatory -- aber sinnvoll um dl-zeit zu reduzieren
       # Memory Control Table  27 = PID_MCB_TABLE  PDT_GENERIC_08[]
       # Error code            28 = PID_ERROR_CODE PDT_ENUM8
     ]

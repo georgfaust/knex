@@ -4,8 +4,26 @@ problem trennen in de/encode und namen
 
 ## de/encode
 
+TODO:
+  resources - passende real types durcharbeiten
 
 # TODO klaeren
+
+- PID_TABLE
+  - soll tabelle enthalten
+  - diese werden aber per mem-write geschrieben
+  - sollte jetztige loesung also eigentlich ok sein
+
+# TODO ne-param-apcis: test vs APCI table, in APCI table: t_data_broadcast, in test: t_data_individual
+
+# TODO Resources - 4.10.2.4.1 Remote access 
+  - wird (ueber 2 references) von systemB benutzt, nutzt aber feste mem-ref!?
+  - darin werden auch die runtime-error flags gesetzt (und wieder cleared) warum braucht man das ist doch ueber LSM geischert.
+  - Profiles: A.25 PID_ERRORS_FLAGS optional for systemB
+  - --> nicht impl in restart
+
+ # TODO manche apci setzen prio, zb {prio, data} = a_restart_pdu(data)
+# TODO ack_requested
 
 ## management
 
@@ -200,9 +218,9 @@ problem trennen in de/encode und namen
           | :pid_run_state_control
           | :pid_table_reference
           | :pid_serial
-          | :pid_manufacturer_id
+          | :pid_manu_id
           | :pid_prog_version
-          | :pid_device_control
+          | :pid_device_ctrl
           | :pid_order_info
           | :pid_pei_type
           | :pid_port_configuration
@@ -213,7 +231,7 @@ problem trennen in de/encode und namen
           | :pid_max_apdu_length
           | :pid_subnet_addr
           | :pid_device_addr
-          | :pid_hardware_type
+          | :pid_hw_type
           | :pid_device_descriptor
           | :pid_channel_01_param
           | :pid_channel_02_param

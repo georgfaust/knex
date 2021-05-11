@@ -19,7 +19,7 @@ defmodule Knx.Ail.IoServer do
     :ind_addr_serial_read
   ]
 
-  def handle({:io, :conf, %F{} = frame}, _state), do: [{:user, :conf, frame}]
+  def handle({:io, :conf, %F{} = frame}, _state), do: [{:mgmt, :conf, frame}]
 
   def handle({:io, :ind, %F{apci: apci} = frame}, state)
       when apci in @device_object_apcis,
@@ -45,7 +45,12 @@ defmodule Knx.Ail.IoServer do
     state =
       if props != new_props do
         Cache.put({:objects, o_idx}, new_props)
-        Knx.State.update_from_device_props(state, new_props)
+        # TODO hack
+        if o_idx == 0 do
+          Knx.State.update_from_device_props(state, new_props)
+        else
+          state
+        end
       else
         state
       end
@@ -59,9 +64,9 @@ defmodule Knx.Ail.IoServer do
     apdu =
       case P.get_prop(props, pid, p_idx) do
         {:ok, idx, pdt, %P{id: id, write: write, max: max, r_lvl: r_lvl, w_lvl: w_lvl}} ->
-          [o_idx, id, one_based(idx), bool_to_int(write), pdt, max, r_lvl, w_lvl]
+          [o_idx, id, idx, bool_to_int(write), pdt, max, r_lvl, w_lvl]
 
-        {:error, _reason} ->
+        {:error, _} ->
           [o_idx, pid, p_idx, 0, 0, 0, 0, 0]
       end
 

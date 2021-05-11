@@ -4,7 +4,7 @@ defmodule Knx.Stack.Tlsm do
   alias Knx.Stack.Tlsm.{Sm, Action, Event}
 
   def handle({:tlsm, primitive, %F{service: service} = frame}, %S{} = state)
-      when service in [:t_data_group, :t_data_individual, :t_data_broadcast] do
+      when service in [:t_data_group, :t_data_ind, :t_data_broadcast] do
     next =
       case primitive do
         :req -> :tl
@@ -16,16 +16,21 @@ defmodule Knx.Stack.Tlsm do
   end
 
   def handle({:tlsm, primitive, %F{service: service} = frame}, %S{handler: handler} = state) do
-    event = Event.get_event(primitive, service, frame, state)
-    {new_handler, action} = Sm.state_handler(event, handler)
-    :logger.debug("[D: #{Process.get(:cache_id)}] (#{handler}) --[#{event}/#{action}]--> (#{new_handler})")
-    Action.action(action, %S{state | handler: new_handler}, frame)
+    tran(handler, primitive, service, frame, state)
   end
 
   def handle({:tlsm, :timeout, timer}, %S{handler: handler} = state) do
-    event = Event.get_event(:timeout, timer, %F{}, state)
+    tran(handler, :timeout, timer, %F{}, state)
+  end
+
+  defp tran(handler, typ, par, frame, state) do
+    event = Event.get_event(typ, par, frame, state)
     {new_handler, action} = Sm.state_handler(event, handler)
-    :logger.debug("[D: #{Process.get(:cache_id)}] (#{handler}) --[#{event}/#{action}]--> (#{new_handler})")
-    Action.action(action, %S{state | handler: new_handler}, %F{})
+
+    # TODO check closed entry and delete stored and deferred, seqs should be handled by actions!?
+
+    :logger.info("[D: #{Process.get(:cache_id)}] (#{handler}) --[#{event}/#{action}]--> (#{new_handler})")
+
+    Action.action(action, %S{state | handler: new_handler}, frame)
   end
 end

@@ -46,7 +46,7 @@ defmodule Knx.Stack.Tl do
 
   defp decode(@addr_t_ind, _dest, data) do
     case data do
-      <<0::6, data::bits>> -> {:t_data_individual, nil, data}
+      <<0::6, data::bits>> -> {:t_data_ind, nil, data}
       <<0b01::2, seq::4, data::bits>> -> {:t_data_con, seq, data}
       <<0b1000_0000::8>> -> {:t_connect, nil, <<>>}
       <<0b1000_0001::8>> -> {:t_discon, nil, <<>>}
@@ -70,7 +70,7 @@ defmodule Knx.Stack.Tl do
       :t_data_group -> {@addr_t_grp, <<0::6>>, tsap}
       :t_data_broadcast -> {@addr_t_grp, <<0::6>>, 0}
       :t_data_tag_group -> {@addr_t_grp, <<0b00_0001::6>>, tsap}
-      :t_data_individual -> {@addr_t_ind, <<0::6>>, tsap}
+      :t_data_ind -> {@addr_t_ind, <<0::6>>, tsap}
       :t_data_con -> {@addr_t_ind, <<0b01::2, seq::4>>, tsap}
       :t_connect -> {@addr_t_ind, <<0b1000_0000::8>>, tsap}
       :t_discon -> {@addr_t_ind, <<0b1000_0001::8>>, tsap}

@@ -20,6 +20,6 @@ defmodule Knx.Toolbox do
   def bool_to_int(true), do: 1
   def bool_to_int(false), do: 0
 
-  def zero_based(index), do: index - 1
-  def one_based(index), do: index + 1
+  # def zero_based(index), do: index - 1
+  # def one_based(index), do: index + 1
 end

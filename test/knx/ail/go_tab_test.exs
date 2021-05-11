@@ -31,7 +31,7 @@ defmodule Knx.Ail.GoTabTest do
   end
 
   test "load" do
-    assert @go_tab = load(0)
+    assert {:ok, @go_tab} = load(0)
   end
 
   test "get all any" do

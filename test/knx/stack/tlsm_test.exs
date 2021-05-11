@@ -86,7 +86,7 @@ defmodule KnxTest do
       assert {
                [
                  {:timer, :start, {:tlsm, :connection}},
-                 {:user, :ind, %F{apci: :a_connect}}
+                 {:mgmt, :ind, %F{apci: :a_connect}}
                ],
                %S{c_addr: @remote_addr, handler: :o_idle}
              } =
@@ -117,7 +117,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}}
+                   {:mgmt, :ind, %F{apci: :a_discon}}
                  ],
                  %S{handler: :closed}
                } =
@@ -143,7 +143,7 @@ defmodule KnxTest do
 
       # 5.5.1.4
       assert {[
-                {:user, :conf, %F{apci: :a_connect}}
+                {:mgmt, :conf, %F{apci: :a_connect}}
               ],
               %S{handler: :o_idle}} =
                Knx.handle_impulses(
@@ -156,7 +156,7 @@ defmodule KnxTest do
                [
                  {:timer, :stop, {:tlsm, :connection}},
                  {:timer, :stop, {:tlsm, :ack}},
-                 {:user, :ind, %F{apci: :a_discon}}
+                 {:mgmt, :ind, %F{apci: :a_discon}}
                ],
                %S{handler: :closed}
              } =
@@ -172,7 +172,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}},
+                   {:mgmt, :ind, %F{apci: :a_discon}},
                    {:driver, :transmit, {_, _, @tx_disconn_frm}}
                  ],
                  %S{handler: :closed}
@@ -189,7 +189,7 @@ defmodule KnxTest do
                [
                  {:timer, :stop, {:tlsm, :connection}},
                  {:timer, :stop, {:tlsm, :ack}},
-                 {:user, :conf, %F{apci: :a_discon}}
+                 {:mgmt, :conf, %F{apci: :a_discon}}
                ],
                %S{handler: :closed}
              } =
@@ -205,7 +205,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}},
+                   {:mgmt, :ind, %F{apci: :a_discon}},
                    {:driver, :transmit, {_, _, @tx_disconn_frm}}
                  ],
                  %S{handler: :closed}
@@ -223,7 +223,7 @@ defmodule KnxTest do
       assert {
                [
                  {:timer, :restart, {:tlsm, :connection}},
-                 {:user, :ind, %F{apci: :auth_resp, data: [@auth_level]}},
+                 {:mgmt, :ind, %F{apci: :auth_resp, data: [@auth_level]}},
                  {:driver, :transmit, {_, _, @tx_ack_frm}}
                ],
                %S{handler: :o_idle}
@@ -309,7 +309,7 @@ defmodule KnxTest do
                [
                  {:timer, :restart, {:tlsm, :connection}},
                  {:timer, :stop, {:tlsm, :ack}},
-                 {:user, :conf, %F{}}
+                 {:mgmt, :conf, %F{}}
                ],
                %S{handler: :o_idle}
              } =
@@ -335,7 +335,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}},
+                   {:mgmt, :ind, %F{apci: :a_discon}},
                    {:driver, :transmit, {_, _, @tx_disconn_frm}}
                  ],
                  %S{handler: :closed}
@@ -373,7 +373,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}},
+                   {:mgmt, :ind, %F{apci: :a_discon}},
                    {:driver, :transmit, {_, _, @tx_disconn_frm}}
                  ],
                  %S{handler: :closed}
@@ -385,6 +385,7 @@ defmodule KnxTest do
       end)
     end
 
+    @tag :current
     test "5.5.3.5 Reception of T_NAK_PDU with correct Sequence Number" do
       assert {
                [
@@ -417,7 +418,7 @@ defmodule KnxTest do
                  [
                    {:timer, :stop, {:tlsm, :connection}},
                    {:timer, :stop, {:tlsm, :ack}},
-                   {:user, :ind, %F{apci: :a_discon}},
+                   {:mgmt, :ind, %F{apci: :a_discon}},
                    {:driver, :transmit, {_, _, @tx_disconn_frm}}
                  ],
                  %S{handler: :closed}
