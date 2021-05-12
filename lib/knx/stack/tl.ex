@@ -1,11 +1,10 @@
 defmodule Knx.Stack.Tl do
-  @addr_t_ind 0
-  @addr_t_grp 1
-
   import PureLogger
   alias Knx.State, as: S
   alias Knx.Frame, as: F
   alias Knx.Ail.AddrTab
+  require Knx.Defs
+  import Knx.Defs
 
   def handle(
         {:tl, :req, %F{service: service, data: data, seq: seq, tsap: tsap, dest: dest} = frame},
@@ -38,13 +37,13 @@ defmodule Knx.Stack.Tl do
 
   # ---------------------------------------------------------------------------
 
-  defp get_tsap(@addr_t_ind, _), do: nil
-  defp get_tsap(@addr_t_grp, dest), do: AddrTab.get_tsap(dest)
-  defp get_dest(@addr_t_ind, _, dest), do: dest
-  defp get_dest(@addr_t_grp, 0, _), do: 0
-  defp get_dest(@addr_t_grp, tsap, _), do: AddrTab.get_group_addr(tsap)
+  defp get_tsap(addr_t(:ind), _), do: nil
+  defp get_tsap(addr_t(:grp), dest), do: AddrTab.get_tsap(dest)
+  defp get_dest(addr_t(:ind), _, dest), do: dest
+  defp get_dest(addr_t(:grp), 0, _), do: 0
+  defp get_dest(addr_t(:grp), tsap, _), do: AddrTab.get_group_addr(tsap)
 
-  defp decode(@addr_t_ind, _dest, data) do
+  defp decode(addr_t(:ind), _dest, data) do
     case data do
       <<0::6, data::bits>> -> {:t_data_ind, nil, data}
       <<0b01::2, seq::4, data::bits>> -> {:t_data_con, seq, data}
@@ -56,7 +55,7 @@ defmodule Knx.Stack.Tl do
     end
   end
 
-  defp decode(@addr_t_grp, dest, data) do
+  defp decode(addr_t(:grp), dest, data) do
     case {dest, data} do
       {0, <<0::6, data::bits>>} -> {:t_data_broadcast, nil, data}
       {_, <<0::6, data::bits>>} -> {:t_data_group, nil, data}
@@ -67,15 +66,15 @@ defmodule Knx.Stack.Tl do
 
   defp encode(service, seq, tsap) do
     case service do
-      :t_data_group -> {@addr_t_grp, <<0::6>>, tsap}
-      :t_data_broadcast -> {@addr_t_grp, <<0::6>>, 0}
-      :t_data_tag_group -> {@addr_t_grp, <<0b00_0001::6>>, tsap}
-      :t_data_ind -> {@addr_t_ind, <<0::6>>, tsap}
-      :t_data_con -> {@addr_t_ind, <<0b01::2, seq::4>>, tsap}
-      :t_connect -> {@addr_t_ind, <<0b1000_0000::8>>, tsap}
-      :t_discon -> {@addr_t_ind, <<0b1000_0001::8>>, tsap}
-      :t_ack -> {@addr_t_ind, <<0b11::2, seq::4, 0b10::2>>, tsap}
-      :t_nak -> {@addr_t_ind, <<0b11::2, seq::4, 0b11::2>>, tsap}
+      :t_data_group -> {addr_t(:grp), <<0::6>>, tsap}
+      :t_data_broadcast -> {addr_t(:grp), <<0::6>>, 0}
+      :t_data_tag_group -> {addr_t(:grp), <<0b00_0001::6>>, tsap}
+      :t_data_ind -> {addr_t(:ind), <<0::6>>, tsap}
+      :t_data_con -> {addr_t(:ind), <<0b01::2, seq::4>>, tsap}
+      :t_connect -> {addr_t(:ind), <<0b1000_0000::8>>, tsap}
+      :t_discon -> {addr_t(:ind), <<0b1000_0001::8>>, tsap}
+      :t_ack -> {addr_t(:ind), <<0b11::2, seq::4, 0b10::2>>, tsap}
+      :t_nak -> {addr_t(:ind), <<0b11::2, seq::4, 0b11::2>>, tsap}
       _ -> {:error, :invalid_service}
     end
   end

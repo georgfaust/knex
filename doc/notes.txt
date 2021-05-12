@@ -5,6 +5,14 @@ problem trennen in de/encode und namen
 ## de/encode
 
 TODO:
+
+    # ARRAY!
+    pid_object_name: [pdt: :pdt_unsigned_char, id: 2],
+    # TODO 2 PDT? ARRAY!
+    pid_table: [pdt: :pdt_unsigned_int, id: 23],
+    # ARRAY!
+    pid_mcb_table: [pdt: :pdt_generic_07, id: 27],
+
   resources - passende real types durcharbeiten
 
 # TODO klaeren

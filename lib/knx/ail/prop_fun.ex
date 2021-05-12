@@ -1,10 +1,6 @@
 defmodule Knx.Ail.PropertyFunction do
-  @io_addr_tab 1
-  @io_assoc_tab 2
-  # @io_app_prog 3
-  @io_go_tab 9
-
-  @pid_load_state_ctrl 5
+  require Knx.Defs
+  import Knx.Defs
 
   alias Knx.Ail.{Table, AddrTab, AssocTab, GoTab}
 
@@ -12,9 +8,9 @@ defmodule Knx.Ail.PropertyFunction do
     Map.fetch(
       %{
         # TODO hack these are object indexes
-        {1, @pid_load_state_ctrl} => &Table.load_ctrl(&1, &2, AddrTab),
-        {2, @pid_load_state_ctrl} => &Table.load_ctrl(&1, &2, AssocTab),
-        {3, @pid_load_state_ctrl} => &Table.load_ctrl(&1, &2, GoTab)
+        {1, prop_id(:load_state_ctrl)} => &Table.load_ctrl(&1, &2, AddrTab),
+        {2, prop_id(:load_state_ctrl)} => &Table.load_ctrl(&1, &2, AssocTab),
+        {3, prop_id(:load_state_ctrl)} => &Table.load_ctrl(&1, &2, GoTab)
       },
       {o_idx, pid}
     )

@@ -12,16 +12,11 @@ defmodule Knx.ManagementProcedures do
   alias Knx.Api
   alias Knx.Ail.Property, as: P
   import Knx.Toolbox
+  require Knx.Defs
+  import Knx.Defs
 
   # TODO duplication
   @device_object 0
-  @pid_serial 11
-  @pid_manu_id 12
-  @pid_hw_type 78
-  @pid_device_ctrl 14
-  @pid_load_state_ctrl 5
-
-  @load_state_error 3
 
   @nm_ind_addr_read_timeout 300
   @nm_ind_addr_write 100
@@ -104,7 +99,10 @@ defmodule Knx.ManagementProcedures do
   # TODO 7000 > 5000 (genserver call timeout) -> habe auf 700 reduziert.
   def nm_serial_default_ia_scan(pid) do
     {:api_multi_result, :prop_resp, response} =
-      Api.prop_read(pid, 0xFFFF, @device_object, @pid_serial, :cl, %{multi: true, timeout_ms: 700})
+      Api.prop_read(pid, 0xFFFF, @device_object, prop_id(:serial), :cl, %{
+        multi: true,
+        timeout_ms: 700
+      })
 
     Enum.map(response, &extract_prop_resp_data(&1))
   end
@@ -147,9 +145,10 @@ defmodule Knx.ManagementProcedures do
   # TODO:test/fix connect first
   def dm_identify_rco2(pid, ia) do
     with {:ok, desc} <- dmp_connect_rco(pid, ia),
-         {:ok, :prop_resp, manu_id} <- Api.prop_read_x(pid, ia, @device_object, @pid_manu_id),
+         {:ok, :prop_resp, manu_id} <-
+           Api.prop_read_x(pid, ia, @device_object, prop_id(:manu_id)),
          {:ok, :prop_resp, hardware_type} <-
-           Api.prop_read_x(pid, ia, @device_object, @pid_hw_type) do
+           Api.prop_read_x(pid, ia, @device_object, prop_id(:hw_type)) do
       {:ok, desc, manu_id, hardware_type}
     end
   end
@@ -306,17 +305,12 @@ defmodule Knx.ManagementProcedures do
   # def dmp_loadstatemachinewrite_rco_io(pid) do
   # end
 
-  @load_state_unloaded 0
-  @load_state_loaded 1
-  @load_state_loading 2
-  # @load_state_error 3
-
   def dmp_downloadloadablepart_rco_io(pid, ia, o_idx, ref, data, method \\ :mem, _add_lcs \\ []) do
-    with :ok <- lsm_dispatch(pid, ia, o_idx, :unload, @load_state_unloaded),
-         :ok <- lsm_dispatch(pid, ia, o_idx, :start_loading, @load_state_loading),
+    with :ok <- lsm_dispatch(pid, ia, o_idx, :unload, load_state(:unloaded)),
+         :ok <- lsm_dispatch(pid, ia, o_idx, :start_loading, load_state(:loading)),
          # TODO _add_lcs
          :ok <- download(pid, ia, o_idx, ref, data, method),
-         :ok <- lsm_dispatch(pid, ia, o_idx, :load_completed, @load_state_loaded) do
+         :ok <- lsm_dispatch(pid, ia, o_idx, :load_completed, load_state(:loaded)) do
       :ok
     end
   end
@@ -369,18 +363,17 @@ defmodule Knx.ManagementProcedures do
     event = Knx.Ail.Lsm.encode_le(event)
 
     with {:ok, :prop_resp, state} <-
-           Api.prop_write_x(pid, ia, o_idx, @pid_load_state_ctrl, event, :co),
+           Api.prop_write_x(pid, ia, o_idx, prop_id(:load_state_ctrl), event, :co),
          :ok <- poll_lsm_state(pid, ia, o_idx, state, <<expect_state>>) do
       :ok
     end
   end
 
-  defp poll_lsm_state(_pid, _ia, _o_idx, <<@load_state_error>>, _expect_state), do: :error
+  defp poll_lsm_state(_pid, _ia, _o_idx, <<load_state(:error)>>, _expect_state), do: :error
   defp poll_lsm_state(_pid, _ia, _o_idx, state, state), do: :ok
 
   defp poll_lsm_state(pid, ia, o_idx, _, expect_state) do
-
-    case Api.prop_read(pid, ia, o_idx, @pid_load_state_ctrl) do
+    case Api.prop_read(pid, ia, o_idx, prop_id(:load_state_ctrl)) do
       {:api_result, resp} ->
         state = extract_prop_resp_data(resp)
         poll_lsm_state(pid, ia, o_idx, state, expect_state)
@@ -445,11 +438,12 @@ defmodule Knx.ManagementProcedures do
     # "if P of device control is unknown to the Management Client"
     #   -- was soll das bringen, lass ich mal weg
     with {:ok, :prop_resp, device_ctrl} <-
-           Api.prop_read_x(pid, ia, @device_object, @pid_device_ctrl),
-         device_ctrl <- P.decode(@pid_device_ctrl, nil, device_ctrl),
-         device_ctrl <- P.encode(@pid_device_ctrl, nil, %{device_ctrl | verify_mode: true}),
+           Api.prop_read_x(pid, ia, @device_object, prop_id(:device_ctrl)),
+         device_ctrl <- P.decode(prop_id(:device_ctrl), nil, device_ctrl),
+         device_ctrl <-
+           P.encode(prop_id(:device_ctrl), nil, %{device_ctrl | verify_mode: true}),
          {:api_result, _} <-
-           Api.prop_write(pid, ia, @device_object, @pid_device_ctrl, device_ctrl) do
+           Api.prop_write(pid, ia, @device_object, prop_id(:device_ctrl), device_ctrl) do
       :ok
     end
   end
@@ -465,7 +459,6 @@ defmodule Knx.ManagementProcedures do
   defp mem_write_chunks(_, _, _, _, _, []), do: :ok
 
   defp mem_write_chunks(pid, ia, verify, ref, delay, [chunk | chunks]) do
-
     with {_, %{apci: :mem_write}} <- Api.mem_write(pid, ia, ref, chunk),
          :ok <- if(verify, do: verify_mem(pid, ia, ref, chunk), else: :ok) do
       dmp_delay(delay)

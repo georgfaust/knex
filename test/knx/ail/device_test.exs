@@ -40,7 +40,7 @@ defmodule Knx.Ail.DeviceTest do
   test "set_address" do
     <<new_ind_addr::16>> = @new_ind_addr
     props = Device.set_address(@device_props, new_ind_addr)
-    assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
-    assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
+    assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
+    assert @new_device_addr == P.read_prop_value(props, :device_addr)
   end
 end

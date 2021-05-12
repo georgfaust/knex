@@ -5,6 +5,12 @@ defmodule Knx.Ail.CoreTest do
   alias Knx.State, as: S
   alias Knx.Auth
 
+  require Knx.Defs
+  import Knx.Defs
+
+  # TODO DUPLICATION
+  @p_idx_manu_id 3
+
   @addr_tab Helper.get_addr_tab()
   @assoc_tab Helper.get_assoc_tab()
   @go_tab Helper.get_go_tab()
@@ -22,30 +28,11 @@ defmodule Knx.Ail.CoreTest do
   @own_addr 100
   @remote_addr 200
 
-  @addr_t_ind 0
-  @addr_t_group 1
-
   # --- TPCI
 
   @t_data_group <<0b0000_00::6>>
   @t_data_ind <<0b0000_00::6>>
   @t_data_con_seq_0 <<0b0100_00::6>>
-
-  # --- APCIs
-
-  @group_read <<0b0000_000000::10>>
-  @group_resp <<0b0001::4>>
-  @group_write <<0b0010::4>>
-
-  # @mem_resp <<0b1001::4>>
-  @mem_write <<0b1010::4>>
-
-  @key_write <<0b1111_010011::10>>
-  @key_resp <<0b1111_010100::10>>
-  @prop_desc_read <<0b1111_011000::10>>
-  @prop_desc_resp <<0b1111_011001::10>>
-
-  # ---
 
   setup do
     Cache.start_link(@cache)
@@ -56,57 +43,58 @@ defmodule Knx.Ail.CoreTest do
     @group_read_frm_dest_1 Helper.get_frame(
                              src: @own_addr,
                              dest: 1,
-                             addr_t: @addr_t_group,
-                             data: <<@t_data_group::bits, @group_read::bits>>
+                             addr_t: addr_t(:grp),
+                             data: <<@t_data_group::bits, apci(:group_read)::bits>>
                            )
 
     @group_read_frm_dest_3 Helper.get_frame(
                              src: @own_addr,
                              dest: 3,
-                             addr_t: @addr_t_group,
-                             data: <<@t_data_group::bits, @group_read::bits>>
+                             addr_t: addr_t(:grp),
+                             data: <<@t_data_group::bits, apci(:group_read)::bits>>
                            )
 
     @group_write_frm_dest_5_data_1 Helper.get_frame(
                                      src: @own_addr,
                                      dest: 5,
-                                     addr_t: @addr_t_group,
-                                     data: <<@t_data_group::bits, @group_write::bits, 1::6>>
+                                     addr_t: addr_t(:grp),
+                                     data: <<@t_data_group::bits, apci(:group_write)::bits, 1::6>>
                                    )
 
     @group_write_frm_dest_2_data_2 Helper.get_frame(
                                      src: @remote_addr,
                                      dest: 2,
-                                     addr_t: @addr_t_group,
-                                     data: <<@t_data_group::bits, @group_write::bits, 2::6>>
+                                     addr_t: addr_t(:grp),
+                                     data: <<@t_data_group::bits, apci(:group_write)::bits, 2::6>>
                                    )
 
     @group_write_frm_dest_99_data_2 Helper.get_frame(
                                       src: @remote_addr,
                                       dest: 99,
-                                      addr_t: @addr_t_group,
-                                      data: <<@t_data_group::bits, @group_write::bits, 2::6>>
+                                      addr_t: addr_t(:grp),
+                                      data:
+                                        <<@t_data_group::bits, apci(:group_write)::bits, 2::6>>
                                     )
 
     @group_resp_frm_dest_3_data_0 Helper.get_frame(
                                     src: @own_addr,
                                     dest: 3,
-                                    addr_t: @addr_t_group,
-                                    data: <<@t_data_group::bits, @group_resp::bits, 0::6>>
+                                    addr_t: addr_t(:grp),
+                                    data: <<@t_data_group::bits, apci(:group_resp)::bits, 0::6>>
                                   )
 
     @group_resp_frm_dest_4_data_2 Helper.get_frame(
                                     src: @remote_addr,
                                     dest: 4,
-                                    addr_t: @addr_t_group,
-                                    data: <<@t_data_group::bits, @group_resp::bits, 2::6>>
+                                    addr_t: addr_t(:grp),
+                                    data: <<@t_data_group::bits, apci(:group_resp)::bits, 2::6>>
                                   )
 
     @group_resp_frm_dest_99_data_2 Helper.get_frame(
                                      src: @remote_addr,
                                      dest: 99,
-                                     addr_t: @addr_t_group,
-                                     data: <<@t_data_group::bits, @group_resp::bits, 2::6>>
+                                     addr_t: addr_t(:grp),
+                                     data: <<@t_data_group::bits, apci(:group_resp)::bits, 2::6>>
                                    )
 
     test "group_read.req" do
@@ -237,30 +225,27 @@ defmodule Knx.Ail.CoreTest do
   end
 
   describe "IO-specific tests" do
-    @pid_manu_id 12
-    @p_idx_manu_id 3
-    @pdt_manu_id 4
+
 
     @prop_desc_read_frm Helper.get_frame(
                           src: @remote_addr,
                           dest: @own_addr,
-                          addr_t: @addr_t_ind,
+                          addr_t: addr_t(:ind),
                           data:
-                            <<@t_data_ind::bits, @prop_desc_read::bits, 0,
-                              @pid_manu_id, 0>>
+                            <<@t_data_ind::bits, apci(:prop_desc_read)::bits, 0, prop_id(:manu_id), 0>>
                         )
 
     @prop_desc_resp_frm Helper.get_frame(
                           src: @own_addr,
                           dest: @remote_addr,
-                          addr_t: @addr_t_ind,
+                          addr_t: addr_t(:ind),
                           # a_prop_desc_resp_pdu:
                           #  <<o_idx, pid, p_idx, write::1, 0::1, pdt::6, 0::4, max::12,
                           #  r_lvl::4, w_lvl::4>>
                           data:
-                            <<@t_data_ind::bits, @prop_desc_resp::bits, 0,
-                              @pid_manu_id, @p_idx_manu_id, 0::1, 0::1,
-                              @pdt_manu_id::6, 0::4, 1::12, 3::4, 0::4>>
+                            <<@t_data_ind::bits, apci(:prop_desc_resp)::bits, 0, prop_id(:manu_id),
+                              @p_idx_manu_id, 0::1, 0::1, pdt_id(pid_pdt(:manu_id))::6, 0::4, 1::12, 3::4,
+                              0::4>>
                         )
 
     test "responds to prop_desc_read: existing pid" do
@@ -279,15 +264,15 @@ defmodule Knx.Ail.CoreTest do
     @key_write_frm Helper.get_frame(
                      src: @remote_addr,
                      dest: @own_addr,
-                     addr_t: @addr_t_ind,
-                     data: <<@t_data_con_seq_0::bits, @key_write::bits, 3, 0xAA::32>>
+                     addr_t: addr_t(:ind),
+                     data: <<@t_data_con_seq_0::bits, apci(:key_write)::bits, 3, 0xAA::32>>
                    )
 
     @key_response_frm Helper.get_frame(
                         src: @own_addr,
                         dest: @remote_addr,
-                        addr_t: @addr_t_ind,
-                        data: <<@t_data_con_seq_0::bits, @key_resp::bits, 3>>
+                        addr_t: addr_t(:ind),
+                        data: <<@t_data_con_seq_0::bits, apci(:key_resp)::bits, 3>>
                       )
 
     test "key_write.ind" do
@@ -315,17 +300,19 @@ defmodule Knx.Ail.CoreTest do
     @mem_write_frm Helper.get_frame(
                      src: @remote_addr,
                      dest: @own_addr,
-                     addr_t: @addr_t_ind,
-                     data: <<@t_data_con_seq_0::bits, @mem_write::bits, 2::6, 2::16, 0xDEAD::16>>
+                     addr_t: addr_t(:ind),
+                     data:
+                       <<@t_data_con_seq_0::bits, apci(:mem_write)::bits, 2::6, 2::16,
+                         0xDEAD::16>>
                    )
 
     # TODO siehe test
     # @mem_response_frm Helper.get_frame(
     #                     src: @own_addr,
     #                     dest: @remote_addr,
-    #                     addr_t: @addr_t_ind,
+    #                     addr_t: addr_t(:ind),
     #                     data:
-    #                       <<@t_data_ind::bits, @mem_resp::bits, 2::6, 2::16, 0xDEAD::16>>
+    #                       <<@t_data_ind::bits, apci(:mem_resp)::bits, 2::6, 2::16, 0xDEAD::16>>
     #                   )
 
     test "mem_write.ind" do

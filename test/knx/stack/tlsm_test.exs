@@ -4,9 +4,11 @@ defmodule KnxTest do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
+  require Knx.Defs
+  import Knx.Defs
+
   @own_addr 100
   @remote_addr 200
-  @addr_t_ind 0
   @seq 0
   @auth_level 0
   @data <<0b1111_010010::10, @auth_level>>
@@ -22,61 +24,61 @@ defmodule KnxTest do
   @tx_connect_frm Helper.get_frame(
                     src: @own_addr,
                     dest: @remote_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @t_connect
                   )
   @rx_connect_frm Helper.get_frame(
                     src: @remote_addr,
                     dest: @own_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @t_connect
                   )
   @tx_disconn_frm Helper.get_frame(
                     src: @own_addr,
                     dest: @remote_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @t_discon
                   )
   @rx_disconn_frm Helper.get_frame(
                     src: @remote_addr,
                     dest: @own_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @t_discon
                   )
   @tx_datacon_frm Helper.get_frame(
                     src: @own_addr,
                     dest: @remote_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @data_con
                   )
   @rx_datacon_frm Helper.get_frame(
                     src: @remote_addr,
                     dest: @own_addr,
-                    addr_t: @addr_t_ind,
+                    addr_t: addr_t(:ind),
                     data: @data_con
                   )
   @tx_ack_frm Helper.get_frame(
                 src: @own_addr,
                 dest: @remote_addr,
-                addr_t: @addr_t_ind,
+                addr_t: addr_t(:ind),
                 data: @t_ack
               )
   @rx_ack_frm Helper.get_frame(
                 src: @remote_addr,
                 dest: @own_addr,
-                addr_t: @addr_t_ind,
+                addr_t: addr_t(:ind),
                 data: @t_ack
               )
   @tx_nak_frm Helper.get_frame(
                 src: @own_addr,
                 dest: @remote_addr,
-                addr_t: @addr_t_ind,
+                addr_t: addr_t(:ind),
                 data: @t_nak
               )
   @rx_nak_frm Helper.get_frame(
                 src: @remote_addr,
                 dest: @own_addr,
-                addr_t: @addr_t_ind,
+                addr_t: addr_t(:ind),
                 data: @t_nak
               )
 

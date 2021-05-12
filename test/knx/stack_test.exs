@@ -4,11 +4,12 @@ defmodule Knx.TlTest do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
+  require Knx.Defs
+  import Knx.Defs
+
   alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
 
   @std 0b10
-  @addr_t_ind 0
-  @addr_t_grp 1
   @r_addr 0xDE
   @o_addr 0xAD
   @group_addr 0x0001
@@ -34,7 +35,7 @@ defmodule Knx.TlTest do
                 %F{
                   src: @r_addr,
                   dest: @group_addr,
-                  addr_t: @addr_t_grp,
+                  addr_t: addr_t(:grp),
                   hops: @hops,
                   len: @len,
                   prio: @prio,
@@ -51,7 +52,7 @@ defmodule Knx.TlTest do
                     0::2,
                     @r_addr::16,
                     @group_addr::16,
-                    @addr_t_grp::1,
+                    addr_t(:grp)::1,
                     @hops::3,
                     @len::4,
                     @t_data_group::bits,
@@ -64,7 +65,7 @@ defmodule Knx.TlTest do
     test "nl lets individual addressed frame with device's ind addr pass" do
       assert [{:tl, :ind, %F{}}] =
                Nl.handle(
-                 {:nl, :ind, %F{dest: @o_addr, addr_t: @addr_t_ind}},
+                 {:nl, :ind, %F{dest: @o_addr, addr_t: addr_t(:ind)}},
                  %S{addr: @o_addr}
                )
     end
@@ -72,7 +73,7 @@ defmodule Knx.TlTest do
     test "nl drops not-addressed individual addressed frame" do
       assert [] =
                Nl.handle(
-                 {:nl, :ind, %F{dest: @o_addr + 1, addr_t: @addr_t_ind}},
+                 {:nl, :ind, %F{dest: @o_addr + 1, addr_t: addr_t(:ind)}},
                  %S{addr: @o_addr}
                )
     end
@@ -80,7 +81,7 @@ defmodule Knx.TlTest do
     test "nl lets grp-addressed pass" do
       assert [{:tl, :ind, %F{}}] =
                Nl.handle(
-                 {:nl, :ind, %F{dest: @group_addr, addr_t: @addr_t_grp}},
+                 {:nl, :ind, %F{dest: @group_addr, addr_t: addr_t(:grp)}},
                  %S{addr: @o_addr}
                )
     end
@@ -91,7 +92,7 @@ defmodule Knx.TlTest do
                  {:tl, :ind,
                   %F{
                     dest: @group_addr,
-                    addr_t: @addr_t_grp,
+                    addr_t: addr_t(:grp),
                     data: <<@t_data_group::bits, @a_group_read::bits>>
                   }},
                  %S{}
@@ -101,7 +102,7 @@ defmodule Knx.TlTest do
     test "t_ack: tl sets seq and service, keeps dest" do
       assert [{:tlsm, :ind, %F{seq: @seq, service: :t_ack, dest: @o_addr, data: <<>>}}] =
                Tl.handle(
-                 {:tl, :ind, %F{dest: @o_addr, addr_t: @addr_t_ind, data: @t_ack}},
+                 {:tl, :ind, %F{dest: @o_addr, addr_t: addr_t(:ind), data: @t_ack}},
                  %S{}
                )
     end
@@ -150,7 +151,7 @@ defmodule Knx.TlTest do
                {:nl, :req,
                 %F{
                   dest: @group_addr,
-                  addr_t: @addr_t_grp,
+                  addr_t: addr_t(:grp),
                   data: <<@t_data_group::bits, @a_group_read::bits>>
                 }}
              ] =
@@ -173,19 +174,20 @@ defmodule Knx.TlTest do
     test "dl encodes frame" do
       assert [
                {:driver, :transmit,
-                {_,_,<<
-                  @std::2,
-                  3::2,
-                  @prio::2,
-                  0::2,
-                  @r_addr::16,
-                  @group_addr::16,
-                  @addr_t_grp::1,
-                  @hops::3,
-                  @len::4,
-                  @t_data_group::bits,
-                  @a_group_read::bits
-                >>}}
+                {_, _,
+                 <<
+                   @std::2,
+                   3::2,
+                   @prio::2,
+                   0::2,
+                   @r_addr::16,
+                   @group_addr::16,
+                   addr_t(:grp)::1,
+                   @hops::3,
+                   @len::4,
+                   @t_data_group::bits,
+                   @a_group_read::bits
+                 >>}}
              ] =
                Dl.handle(
                  {
@@ -194,7 +196,7 @@ defmodule Knx.TlTest do
                    %F{
                      src: @r_addr,
                      dest: @group_addr,
-                     addr_t: @addr_t_grp,
+                     addr_t: addr_t(:grp),
                      hops: @hops,
                      len: @len,
                      prio: @prio,

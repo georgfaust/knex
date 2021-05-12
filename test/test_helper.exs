@@ -81,28 +81,28 @@ defmodule Helper do
     device_ctrl = %{@device_ctrl | verify_mode: verify}
 
     [
-      P.new(:pid_object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_serial, [@serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_device_ctrl, [device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_order_info, [0x0815], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_routing_count, [3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_prog_mode, [prog_mode], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_max_apdu_length, [15], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_subnet_addr, [@subnet_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_device_addr, [@device_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_hw_type, [0xAABBCCDDEEFF], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_device_descriptor, [@desc], max: 1, write: false, r_lvl: 3, w_lvl: 0)
+      P.new(:object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:serial, [@serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:device_ctrl, [device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:order_info, [0x0815], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:routing_count, [3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:prog_mode, [prog_mode], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:max_apdu_length, [15], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:subnet_addr, [@subnet_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:device_addr, [@device_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:hw_type, [0xAABBCCDDEEFF], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:device_descriptor, [@desc], max: 1, write: false, r_lvl: 3, w_lvl: 0)
     ]
   end
 
   def get_table_props(object_type, mem_ref) do
     [
-      P.new(:pid_object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:pid_load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:pid_table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
+      P.new(:object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
       # Table                 23 = PID_TABLE      PDT_UNSIGNED_INT[]
       # Memory Control Table  27 = PID_MCB_TABLE  PDT_GENERIC_08[]
       # Error code            28 = PID_ERROR_CODE PDT_ENUM8

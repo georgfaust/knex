@@ -33,7 +33,7 @@ defmodule Shell.Server do
 
   @impl GenServer
   def init({objects, mem, driver_mod}) do
-    serial = Knx.Ail.Property.read_prop_value(objects[0], :pid_serial)
+    serial = Knx.Ail.Property.read_prop_value(objects[0], :serial)
 
     Process.put(:cache_id, serial)
 

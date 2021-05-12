@@ -1,9 +1,9 @@
 defmodule Knx.Ail.AddrTab do
+  alias Knx.Mem
+
   # [X] tsaps are 1-based, add an invalid entry at index 0
   @make_table_one_based [-1]
   @empty_table [-1, 0]
-
-  alias Knx.Mem
 
   # TODO hack
   def get_object_index(), do: 1

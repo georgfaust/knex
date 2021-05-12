@@ -6,56 +6,33 @@ defmodule Knx.Ail.IoServerTest do
   alias Knx.Ail.IoServer
   alias Knx.Ail.Property, as: P
 
-  @serial 0x112233445566
-  @desc 0x07B0
+  require Knx.Defs
+  import Knx.Defs
 
+  @invalid_pid 4711
+  @invalid_idx 99
+
+  @serial 0x112233445566
+  @other_serial 0x1122334455FF
+  @desc 0x07B0
   @new_subnet_addr 0x08
   @new_device_addr 0x15
   @new_ind_addr <<@new_subnet_addr, @new_device_addr>>
-  @other_serial 0x1122334455FF
 
   @device_object1 Helper.get_device_props(1)
   @device_object2 Helper.get_device_props(0)
 
-  @pid_manu_id 12
-  @p_idx_manu_id 3
-  @pdt_manu_id 4
-
   # a_prop_desc_resp_pdu(
   #   [o_idx, pid, p_idx, write, pdt, max, r_lvl, w_lvl])
-  @manu_prop_desc_resp [
-    0,
-    @pid_manu_id,
-    @p_idx_manu_id,
-    0,
-    @pdt_manu_id,
-    1,
-    3,
-    0
-  ]
-
-  @pid_object_type 1
-  @p_object_type_idx 0
-  @object_type_prop_desc_resp [
-    0,
-    @pid_object_type,
-    @p_object_type_idx,
-    0,
-    4,
-    1,
-    3,
-    0
-  ]
-
-  @invalid_pid 4711
-  @invalid_idx 99
+  @manu_prop_desc_resp [0, prop_id(:manu_id), 3, 0, pdt_id(pid_pdt(:manu_id)), 1, 3, 0]
+  @object_type_prop_desc_resp [0, prop_id(:object_type), 0, 0, 4, 1, 3, 0]
   @error_pid_prop_desc_resp [0, @invalid_pid, 0, 0, 0, 0, 0, 0]
   @error_idx_prop_desc_resp [0, 0, @invalid_idx, 0, 0, 0, 0, 0]
 
   # a_prop_resp_pdu(
   #   [o_idx, pid, elems, start, data])
-  @manu_prop_resp [0, @pid_manu_id, 1, 1, <<0xAFFE::16>>]
-  @manu_prop_write_resp [0, @pid_manu_id, 1, 1, <<0xBEEF::16>>]
+  @manu_prop_resp [0, prop_id(:manu_id), 1, 1, <<0xAFFE::16>>]
+  @manu_prop_write_resp [0, prop_id(:manu_id), 1, 1, <<0xBEEF::16>>]
 
   setup do
     Cache.start_link(%{{:objects, 0} => @device_object1})
@@ -75,7 +52,7 @@ defmodule Knx.Ail.IoServerTest do
                  {:io, :ind,
                   %F{
                     apci: :prop_desc_read,
-                    data: [0, @pid_manu_id, 0]
+                    data: [0, prop_id(:manu_id), 0]
                   }},
                  %S{}
                )
@@ -87,7 +64,7 @@ defmodule Knx.Ail.IoServerTest do
                  {:io, :ind,
                   %F{
                     apci: :prop_desc_read,
-                    data: [0, 0, @p_idx_manu_id]
+                    data: [0, 0, 3]
                   }},
                  %S{}
                )
@@ -140,7 +117,7 @@ defmodule Knx.Ail.IoServerTest do
                   %F{
                     apci: :prop_read,
                     #     [o_idx, pid, elems, start]
-                    data: [0, @pid_manu_id, 1, 1]
+                    data: [0, prop_id(:manu_id), 1, 1]
                   }},
                  %S{}
                )
@@ -168,14 +145,14 @@ defmodule Knx.Ail.IoServerTest do
                   %F{
                     apci: :prop_write,
                     #     [o_idx, pid, elems, start, data]
-                    data: [0, @pid_manu_id, 1, 1, <<0xBEEF::16>>]
+                    data: [0, prop_id(:manu_id), 1, 1, <<0xBEEF::16>>]
                   }},
                  %S{}
                )
 
       # TODO warum manu-id das sollte doch nicht schreibbar sein!?
       props = Cache.get({:objects, 0})
-      assert 0xBEEF == P.read_prop_value(props, :pid_manu_id)
+      assert 0xBEEF == P.read_prop_value(props, :manu_id)
     end
 
     test "(invalid pid) ???" do
@@ -194,8 +171,8 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       props = Cache.get({:objects, 0})
-      assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
-      assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
+      assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
+      assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end
 
     test "when prog mode inactive, addr properties are not changed" do
@@ -233,8 +210,8 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       props = Cache.get({:objects, 0})
-      assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
-      assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
+      assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
+      assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end
 
     test "when serial does not match, addr properties are not changed" do
@@ -249,8 +226,8 @@ defmodule Knx.Ail.IoServerTest do
 
       # TOD check unchanged
       #  props = Cache.get({:objects, 0})
-      #  assert @new_subnet_addr == P.read_prop_value(props, :pid_subnet_addr)
-      #  assert @new_device_addr == P.read_prop_value(props, :pid_device_addr)
+      #  assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
+      #  assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end
   end
 
