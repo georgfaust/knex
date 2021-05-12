@@ -42,6 +42,7 @@ defmodule Knx.Ail.IoServer do
         impulse -> {[impulse], props}
       end
 
+    # TODO make it not suck so much
     state =
       if props != new_props do
         Cache.put({:objects, o_idx}, new_props)

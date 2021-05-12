@@ -1,6 +1,21 @@
 defmodule Knx.Defs do
   use Const
 
+  enum(object_type,
+    do: [
+      device_object: 0,
+      addr_tab_object: 1,
+      assoc_tab_object: 2,
+      app_program_object: 3,
+      interface_prog_object: 4,
+      router_object: 6,
+      cemi_server_object: 8,
+      group_object_tab_object: 9,
+      knxnet_ip_parameter_object: 11,
+      file_server_object: 13
+    ]
+  )
+
   enum(pdt_id,
     do: [
       ctrl: 0x00,
