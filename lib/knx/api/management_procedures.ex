@@ -109,6 +109,17 @@ defmodule Knx.ManagementProcedures do
     Enum.map(response, &extract_prop_resp_data(&1))
   end
 
+  # custom nmp
+  def nm_serial_ia_scan(pid, ia) do
+    {:api_multi_result, :prop_resp, response} =
+      Api.prop_read(pid, ia, @device_object, prop_id(:serial), :cl, %{
+        multi: true,
+        timeout_ms: 700
+      })
+
+    Enum.map(response, &extract_prop_resp_data(&1))
+  end
+
   # TODO - DM_Connect_RCo already returns the value of the Device Descriptor Type 0 of the Management Server. This result is
   #        part of the return of this procedure NM_Identify_RCo2.
 
