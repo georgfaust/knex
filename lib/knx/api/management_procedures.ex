@@ -32,9 +32,10 @@ defmodule Knx.ManagementProcedures do
     with {:not_connected, _} <- connect(pid, ia_new),
          {:in_prog_mode, [ia]} <- wait_for_prog_mode(pid, @nm_ind_addr_write),
          :ok <- prog_if_differs(pid, ia, ia_new),
+         :timer.sleep(5),
          {_, %{apci: :a_connect}} <- Api.connect(pid, ia_new),
          {_, %{apci: :device_desc_resp}} <- Api.device_desc_read(pid, ia_new),
-         {_, %{apci: :restart_basic}} <- Api.restart(pid, ia, :basic),
+         _ <- Api.restart(pid, ia, :basic),
          _ <- Api.discon(pid) do
       :ok
     else
@@ -78,6 +79,7 @@ defmodule Knx.ManagementProcedures do
 
   def nm_ind_addr_reset(pid) do
     with {_, %{apci: :ind_addr_write}} <- Api.ind_addr_write(pid, 0xFFFF),
+      :timer.sleep(2),
          {_, %{apci: :a_connect}} <- Api.connect(pid, 0xFFFF),
          {_, %{apci: :restart_basic}} <- Api.restart(pid, 0xFFFF, :basic),
          _ <- Api.discon(pid) do
@@ -359,20 +361,26 @@ defmodule Knx.ManagementProcedures do
   end
 
   defp lsm_dispatch(pid, ia, o_idx, event, expect_state) do
-    IO.inspect({ia, o_idx, event, expect_state})
-    event = Knx.Ail.Lsm.encode_le(event)
+    event_ = Knx.Ail.Lsm.encode_le(event)
+    event = event_
 
     with {:ok, :prop_resp, state} <-
            Api.prop_write_x(pid, ia, o_idx, prop_id(:load_state_ctrl), event, :co),
-         :ok <- poll_lsm_state(pid, ia, o_idx, state, <<expect_state>>) do
+         :ok <-
+          poll_lsm_state(pid, ia, o_idx, state, <<expect_state>>) do
       :ok
     end
   end
 
-  defp poll_lsm_state(_pid, _ia, _o_idx, <<load_state(:error)>>, _expect_state), do: :error
-  defp poll_lsm_state(_pid, _ia, _o_idx, state, state), do: :ok
+  defp poll_lsm_state(_pid, _ia, _o_idx, <<load_state(:error)>>, _expect_state) do
+     :error
+  end
 
-  defp poll_lsm_state(pid, ia, o_idx, _, expect_state) do
+  defp poll_lsm_state(_pid, _ia, _o_idx, state, state) do
+     :ok
+  end
+
+  defp poll_lsm_state(pid, ia, o_idx, _state, expect_state) do
     case Api.prop_read(pid, ia, o_idx, prop_id(:load_state_ctrl)) do
       {:api_result, resp} ->
         state = extract_prop_resp_data(resp)
@@ -411,7 +419,7 @@ defmodule Knx.ManagementProcedures do
   end
 
   defp scan_props(pid, ia, o_idx, p_idx, pids) do
-    :timer.sleep(5)
+    :timer.sleep(2)
 
     case get_prop_id(pid, ia, o_idx, p_idx) do
       {:ok, :prop_id, 0} -> pids
@@ -495,6 +503,10 @@ defmodule Knx.ManagementProcedures do
       # --> warum? connect hat doch funktioniert?
       {:not_connected, :no_connection_established}
     else
+      # TODO HACK -- need stacktrace
+      {:error, :a_connect, :no_resp} ->
+        {:not_connected, :connect_negative_conf}
+
       {:negative_lcon, :a_discon, :a_connect} ->
         {:not_connected, :connect_negative_conf}
 
@@ -519,9 +531,13 @@ defmodule Knx.ManagementProcedures do
   end
 
   defp wait_for_prog_mode(pid, timeout) do
-    case Api.ind_addr_read(pid, timeout) do
-      {_, :ind_addr_resp, []} -> wait_for_prog_mode(pid, timeout)
-      {_, :ind_addr_resp, result} -> {:in_prog_mode, Enum.map(result, &Map.get(&1, :src))}
+    :timer.sleep(5)
+    case Api.ind_addr_read(pid, @nm_ind_addr_read_timeout) do
+      {:api_multi_result, _, result} -> {:in_prog_mode, Enum.map(result, &Map.get(&1, :src))}
+
+      # TODO HACK. warum funktioniert das ohne die neg-lcon clause bei nmindaddrread oben?
+      {:error, _} -> wait_for_prog_mode(pid, timeout)
+      {:negative_lcon, _, _} -> wait_for_prog_mode(pid, timeout)
     end
   end
 

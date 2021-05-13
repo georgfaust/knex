@@ -1,7 +1,8 @@
 defmodule Knx.Ail.Device do
   alias Knx.Ail.Property, as: P
-
-  def get_object_index(), do: 0
+  import Knx.Defs
+  require Knx.Defs
+  use Bitwise
 
   # TODO Auth --- unklar, aber gehe davon aus, dass jeweils die Rechte auf dem IO ausschlaggebend sind
   #   auch wenn nicht direkt uber data-primitives zugegriffen wird
@@ -54,10 +55,14 @@ defmodule Knx.Ail.Device do
     ia_duplication: false,
     user_stopped: false
   }
-  def get_device_props(serial, order_info, hardware_type, subnet_addr \\ 0xFF) do
+  def get_device_props(serial, order_info, hardware_type, addr \\ 0xFFFF) do
+
+    device_addr = addr &&& 0x00FF
+    subnet_addr = (addr &&& 0xFF00) >>> 8
+
     [
-      P.new(:object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:object_type, [object_type(:device)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:serial, [serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:device_ctrl, [@device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
@@ -67,7 +72,7 @@ defmodule Knx.Ail.Device do
       P.new(:prog_mode, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:max_apdu_length, [15], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:subnet_addr, [subnet_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:device_addr, [0xFF], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:device_addr, [device_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:hw_type, [hardware_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:device_descriptor, [0x07B0], max: 1, write: false, r_lvl: 3, w_lvl: 0)
     ]

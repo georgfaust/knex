@@ -45,13 +45,14 @@ defmodule Cache do
   end
 
   def get_obj_idx(idx) do
-    {_, props} = Enum.at(get(:objects), idx)
+    {_, props} = Enum.at(get(:objects), idx, {nil, []})
     props
   end
 
   def put_obj_idx(idx, props) do
     objects = get(:objects)
     {object_t, _} = Enum.at(objects, idx)
-    put(:objects, Keyword.put(objects, object_t, props))
+    objects = List.replace_at(objects, idx, {object_t, props})
+    put(:objects, objects)
   end
 end

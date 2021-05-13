@@ -6,6 +6,8 @@ ExUnit.start()
 # :dbg.p(:all, :call)
 
 defmodule Helper do
+  import Knx.Defs
+  require Knx.Defs
   alias Knx.Ail.Property, as: P
   alias Knx.Ail.GroupObject, as: GO
 
@@ -82,7 +84,7 @@ defmodule Helper do
 
     [
       P.new(:object_type, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:serial, [@serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:device_ctrl, [device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
@@ -101,7 +103,7 @@ defmodule Helper do
   def get_table_props(object_type, mem_ref) do
     [
       P.new(:object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
       # Table                 23 = PID_TABLE      PDT_UNSIGNED_INT[]
       # Memory Control Table  27 = PID_MCB_TABLE  PDT_GENERIC_08[]

@@ -12,10 +12,9 @@ defmodule Knx.Ail.Table do
     end
   end
 
-  def load_ctrl(%{values: [ls]}, [{event, data}], table_mod) do
-    {new_ls, action} = Knx.Ail.Lsm.dispatch(ls, {event, data})
+  def load_ctrl(%{values: [load_state]}, [{event, data}], table_mod) do
+    {new_ls, action} = Knx.Ail.Lsm.dispatch(load_state, {event, data})
 
-    IO.inspect({ls, event, new_ls, action})
 
     case action do
       nil ->
@@ -46,9 +45,9 @@ defmodule Knx.Ail.Table do
     P.read_prop_value(props, :table_reference)
   end
 
-  def get_table_props(object_type, mem_ref) do
+  def get_table_props(type, mem_ref) do
     [
-      P.new(:object_type, [object_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:object_type, [object_type(type)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0)
       # TODO -- ?? siehe notes

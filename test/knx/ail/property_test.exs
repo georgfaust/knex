@@ -29,7 +29,7 @@ defmodule Knx.Ail.PropertyTest do
   ]
   @props_addr_tab [
     # TODO noch nicht fertig
-    P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 0, w_lvl: 0)
+    P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
 
   @tag :xxxx

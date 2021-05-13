@@ -1,7 +1,7 @@
 defmodule Knx.Ail.AssocTab do
   alias Knx.Mem
 
-  def get_object_type(), do: :addr_tab
+  def get_object_type(), do: :assoc_tab
 
   def get_assocs(asap: asap) do
     assoc_tab = Cache.get(:assoc_tab)

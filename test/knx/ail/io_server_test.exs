@@ -1,6 +1,9 @@
 defmodule Knx.Ail.IoServerTest do
   use ExUnit.Case
 
+  # TODO test a non-device object
+  # TODO test a non-existing object (prop_desc_read)
+
   alias Knx.State, as: S
   alias Knx.Frame, as: F
   alias Knx.Ail.IoServer

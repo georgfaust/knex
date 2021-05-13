@@ -1,12 +1,9 @@
 defmodule Shell.Server do
-  use GenServer
+  use GenServer, restart: :transient
 
   alias Knx
   alias Knx.State, as: S
   alias Knx.Frame, as: F
-
-  require Knx.Defs
-  import Knx.Defs
 
   @me __MODULE__
   # @timer_config %{{:tlsm, :ack} => 3000, {:tlsm, :connection} => 6000}
@@ -14,6 +11,10 @@ defmodule Shell.Server do
   def start_link(name: name, objects: objects, mem: mem, driver_mod: driver_mod) do
     GenServer.start_link(@me, {objects, mem, driver_mod}, name: name)
   end
+
+  # def stop(name) do
+  #   GenServer.cast(name, :stop)
+  # end
 
   def dispatch(pid, impulse) do
     GenServer.cast(pid, impulse)
@@ -32,11 +33,15 @@ defmodule Shell.Server do
     GenServer.call(pid, {:cache_get, key})
   end
 
+  def get_children(pid) do
+    GenServer.call(pid, :get_children)
+  end
+
   # --------------------------------------------------------------------
 
   @impl GenServer
   def init({objects, mem, driver_mod}) do
-    serial = Knx.Ail.Property.read_prop_value(objects[0], :serial)
+    serial = Knx.Ail.Property.read_prop_value(objects[:device], :serial)
 
     Process.put(:cache_id, serial)
 
@@ -46,7 +51,7 @@ defmodule Shell.Server do
       go_values: %{}
     })
 
-    state = S.update_from_device_props(%S{}, objects[0])
+    state = S.update_from_device_props(%S{}, objects[:device])
 
     Knx.Ail.Table.load(Knx.Ail.AddrTab)
     Knx.Ail.Table.load(Knx.Ail.AssocTab)
@@ -69,12 +74,17 @@ defmodule Shell.Server do
     {:reply, value, state}
   end
 
+  def handle_call(:get_children, _from, %S{driver_pid: driver_pid} = state) do
+    cache_id = Process.get(:cache_id)
+    [{cache, _}] = Registry.lookup(:cache_registry, cache_id)
+    {:reply, {driver_pid, cache}, state}
+  end
+
   def handle_call({:api_expect, %Knx.Api{timeout_ms: timeout} = expect}, from, state) do
     {:ok, pid} = :timer.send_after(timeout, :api_timeout)
     {:noreply, %S{state | api_expect: expect, api_callback: from, api_timer: pid}}
   end
 
-  @impl GenServer
   def handle_cast({:bus_info, :connected}, %S{} = state) do
     :logger.info("[D: #{Process.get(:cache_id)}] connected")
     {:noreply, %S{state | connected: true}}
@@ -95,7 +105,6 @@ defmodule Shell.Server do
     # end
     props = Cache.get_obj(:device)
     props = Knx.Ail.Device.set_prog_mode(props, prog_mode)
-    # IO.inspect(props)
     Cache.put_obj(:device, props)
     {:noreply, state}
   end
@@ -150,6 +159,11 @@ defmodule Shell.Server do
     {:noreply,
      %S{state | api_expect: %Knx.Api{}, api_callback: nil, api_timer: nil, api_result: []}}
   end
+
+  # @impl GenServer
+  # def terminate(reason, _state) do
+  #   IO.inspect({:server, :terminate, reason, self()})
+  # end
 
   # --------------------------------------------------------------------
 
