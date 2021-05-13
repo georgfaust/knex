@@ -35,7 +35,7 @@ defmodule Knx.Ail.IoServerTest do
   @manu_prop_write_resp [0, prop_id(:manu_id), 1, 1, <<0xBEEF::16>>]
 
   setup do
-    Cache.start_link(%{{:objects, 0} => @device_object1})
+    Cache.start_link(%{objects: [device: @device_object1]})
     :timer.sleep(5)
     :ok
   end
@@ -151,7 +151,7 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       # TODO warum manu-id das sollte doch nicht schreibbar sein!?
-      props = Cache.get({:objects, 0})
+      props = Cache.get_obj(:device)
       assert 0xBEEF == P.read_prop_value(props, :manu_id)
     end
 
@@ -170,13 +170,13 @@ defmodule Knx.Ail.IoServerTest do
                  %S{}
                )
 
-      props = Cache.get({:objects, 0})
+      props = Cache.get_obj(:device)
       assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
       assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end
 
     test "when prog mode inactive, addr properties are not changed" do
-      Cache.put({:objects, 0}, @device_object2)
+      Cache.put_obj(:device, @device_object2)
       <<new_ind_addr::16>> = @new_ind_addr
 
       assert {%S{}, []} =
@@ -194,7 +194,7 @@ defmodule Knx.Ail.IoServerTest do
     end
 
     test "when prog mode inactive, nothing happens" do
-      Cache.put({:objects, 0}, @device_object2)
+      Cache.put_obj(:device, @device_object2)
       assert {%S{}, []} = IoServer.handle({:io, :ind, %F{apci: :ind_addr_read}}, %S{})
     end
   end
@@ -209,7 +209,7 @@ defmodule Knx.Ail.IoServerTest do
                  %S{}
                )
 
-      props = Cache.get({:objects, 0})
+      props = Cache.get_obj(:device)
       assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
       assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end
@@ -225,7 +225,7 @@ defmodule Knx.Ail.IoServerTest do
                )
 
       # TOD check unchanged
-      #  props = Cache.get({:objects, 0})
+      #  props = Cache.get_obj(:device)
       #  assert @new_subnet_addr == P.read_prop_value(props, :subnet_addr)
       #  assert @new_device_addr == P.read_prop_value(props, :device_addr)
     end

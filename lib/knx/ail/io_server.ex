@@ -31,7 +31,7 @@ defmodule Knx.Ail.IoServer do
   # def handle(_, _), do: []
 
   defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl} = state) do
-    props = Cache.get({:objects, o_idx})
+    props = Cache.get_obj_idx(o_idx)
 
     {impulses, new_props} =
       case serve(props, access_lvl, frame) do
@@ -45,7 +45,7 @@ defmodule Knx.Ail.IoServer do
     # TODO make it not suck so much
     state =
       if props != new_props do
-        Cache.put({:objects, o_idx}, new_props)
+        Cache.put_obj_idx(o_idx, new_props)
         # TODO hack
         if o_idx == 0 do
           Knx.State.update_from_device_props(state, new_props)

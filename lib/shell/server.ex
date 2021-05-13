@@ -5,6 +5,9 @@ defmodule Shell.Server do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
+  require Knx.Defs
+  import Knx.Defs
+
   @me __MODULE__
   # @timer_config %{{:tlsm, :ack} => 3000, {:tlsm, :connection} => 6000}
 
@@ -38,12 +41,9 @@ defmodule Shell.Server do
     Process.put(:cache_id, serial)
 
     Cache.start_link(%{
-      {:objects, 0} => objects[0],
-      {:objects, 1} => objects[1],
-      {:objects, 2} => objects[2],
-      {:objects, 3} => objects[3],
-      :mem => mem,
-      :go_values => %{}
+      objects: objects,
+      mem: mem,
+      go_values: %{}
     })
 
     state = S.update_from_device_props(%S{}, objects[0])
@@ -89,14 +89,14 @@ defmodule Shell.Server do
     # Device.set(&Device.set_prog_mode(&1, prog_mode))
     # ---
     # def set(setter) do
-    #   props = Cache.get({:objects, 0})
+    #   props = Cache.get_obj ...
     #   props = setter.(props)
-    #   Cache.put({:objects, 0}, props)
+    #   Cache.put_obj(..., props)
     # end
-    props = Cache.get({:objects, 0})
+    props = Cache.get_obj(:device)
     props = Knx.Ail.Device.set_prog_mode(props, prog_mode)
     # IO.inspect(props)
-    Cache.put({:objects, 0}, props)
+    Cache.put_obj(:device, props)
     {:noreply, state}
   end
 

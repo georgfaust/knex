@@ -5,8 +5,7 @@ defmodule Knx.Ail.AddrTab do
   @make_table_one_based [-1]
   @empty_table [-1, 0]
 
-  # TODO hack
-  def get_object_index(), do: 1
+  def get_object_type(), do: :addr_tab
 
   def get_tsap(group_addr) do
     table = Cache.get(:addr_tab)

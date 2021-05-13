@@ -32,15 +32,13 @@ defmodule Knx.Ail.PropertyTest do
     P.new(:load_state_ctrl, [0], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
 
-
   @tag :xxxx
   describe "load controls" do
     @addr_tab_mem_ref 4
     test "load address table" do
       Cache.start_link(%{
-        {:objects, 1} => Helper.get_table_props(1, @addr_tab_mem_ref),
-        :mem =>
-          <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16>>
+        objects: [addr_tab: Helper.get_table_props(1, @addr_tab_mem_ref)],
+        mem: <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16>>
       })
 
       assert {:ok, props, %{values: [load_state(:loading)]}} =

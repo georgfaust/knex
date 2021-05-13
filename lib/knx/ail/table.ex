@@ -42,7 +42,7 @@ defmodule Knx.Ail.Table do
   end
 
   def get_table_ref(table_mod) do
-    props = Cache.get({:objects, table_mod.get_object_index()})
+    props = Cache.get_obj(table_mod.get_object_type())
     P.read_prop_value(props, :table_reference)
   end
 

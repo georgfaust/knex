@@ -2,8 +2,7 @@ defmodule Knx.Ail.GoTab do
   alias Knx.Ail.GroupObject
   alias Knx.Mem
 
-  # TODO hack
-  def get_object_index(), do: 4
+  def get_object_type(), do: :go_tab
 
   def get_first(assocs, flag) do
     assocs
