@@ -274,4 +274,25 @@ defmodule Knx.Defs do
       ind_addr_serial_write: <<0b1111_011110::10>>
     ]
   )
+
+  enum(service_type_id,
+    do: [
+      search_req: 0x0201,
+      search_resp: 0x0202,
+      description_req: 0x0203,
+      description_resp: 0x0204,
+      connect_req: 0x0205,
+      connect_resp: 0x0206,
+      connectionstate_req: 0x0207,
+      connectionstate_resp: 0x0208,
+      disconnect_req: 0x0209,
+      disconnect_resp: 0x020A,
+      device_configuration_req: 0x0310,
+      device_configuration_ack: 0x0311,
+      tunnelling_req: 0x0420,
+      tunnelling_ack: 0x0421
+    ]
+  )
+
+
 end
