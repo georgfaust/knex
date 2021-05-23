@@ -31,6 +31,9 @@ defmodule Knx.Ail.Device do
   def set_prog_mode(props, prog_mode),
     do: P.write_prop_value(props, :prog_mode, <<0::7, prog_mode::1>>)
 
+  def get_prog_mode(props),
+    do: P.read_prop_value(props, :prog_mode)
+
   def serial_matches?(props, other_serial) do
     other_serial == P.read_prop_value(props, :serial)
   end

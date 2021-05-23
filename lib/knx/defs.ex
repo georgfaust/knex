@@ -135,7 +135,35 @@ defmodule Knx.Defs do
       channel_29_param: :generic_01,
       channel_30_param: :generic_01,
       channel_31_param: :generic_01,
-      channel_32_param: :generic_01
+      channel_32_param: :generic_01,
+      # KNXnet/IP Parameter Object
+      project_installation_id: :unsigned_int,
+      knx_individual_address: :unsigned_int,
+      additional_individual_addresses: :unsigned_int,
+      current_ip_assignment_method: :unsigned_char,
+      ip_assignment_method: :unsigned_char,
+      ip_capabilities: :bitset8,
+      current_ip_address: :unsigned_long,
+      current_subnet_mask: :unsigned_long,
+      current_default_gateway: :unsigned_long,
+      ip_address: :unsigned_long,
+      subnet_mask: :unsigned_long,
+      default_gateway: :unsigned_long,
+      dhcp_bootp_server: :unsigned_long,
+      mac_address: :generic_06,
+      system_setup_multicast_address: :unsigned_long,
+      routing_multicast_address: :unsigned_long,
+      ttl: :unsigned_char,
+      knxnetip_device_capabilities: :bitset16,
+      knxnetip_device_state: :unsigned_char,
+      knxnetip_routing_capabilities: :unsigned_char,
+      priority_fifo_enabled: :binary_information,
+      queue_overflow_to_ip: :unsigned_int,
+      queue_overflow_to_knx: :unsigned_int,
+      msg_transmit_to_ip: :unsigned_long,
+      msg_transmit_to_knx: :unsigned_long,
+      friendly_name: :unsigned_char,
+      routing_busy_wait_time: :unsigned_int
     ]
   )
 
@@ -200,7 +228,35 @@ defmodule Knx.Defs do
       channel_29_param: 129,
       channel_30_param: 130,
       channel_31_param: 131,
-      channel_32_param: 132
+      channel_32_param: 132,
+      # KNXnet/IP Parameter Object
+      project_installation_id: 51,
+      knx_individual_address: 52,
+      additional_individual_addresses: 53,
+      current_ip_assignment_method: 54,
+      ip_assignment_method: 55,
+      ip_capabilities: 56,
+      current_ip_address: 57,
+      current_subnet_mask: 58,
+      current_default_gateway: 59,
+      ip_address: 60,
+      subnet_mask: 61,
+      default_gateway: 62,
+      dhcp_bootp_server: 63,
+      mac_address: 64,
+      system_setup_multicast_address: 65,
+      routing_multicast_address: 66,
+      ttl: 67,
+      knxnetip_device_capabilities: 68,
+      knxnetip_device_state: 69,
+      knxnetip_routing_capabilities: 70,
+      priority_fifo_enabled: 71,
+      queue_overflow_to_ip: 72,
+      queue_overflow_to_knx: 73,
+      msg_transmit_to_ip: 74,
+      msg_transmit_to_knx: 75,
+      friendly_name: 76,
+      routing_busy_wait_time: 78
     ]
   )
 
@@ -294,5 +350,88 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(host_protocol_code,
+    do: [
+      udp: 1,
+      tcp: 2
+    ]
+  )
 
+  enum(description_type_code,
+    do: [
+      device_info: 1,
+      supp_svc_families: 2,
+      ip_config: 3,
+      ip_cur_config: 4,
+      knx_addresses: 5
+    ]
+  )
+
+  enum(connection_type_code,
+    do: [
+      device_mgmt_con: 3,
+      tunnel_con: 4,
+      remlog_con: 6,
+      remconf_con: 7,
+      objsvr_con: 8
+    ]
+  )
+
+  enum(common_error_code,
+    do: [
+      no_error: 0x00,
+      host_protocol_type: 0x01,
+      version_not_supported: 0x02,
+      sequence_number: 0x04
+    ]
+  )
+
+  enum(connect_response_status_code,
+    do: [
+      no_error: 0x00,
+      connection_type: 0x22,
+      connection_option: 0x23,
+      no_more_connections: 0x24
+    ]
+  )
+
+  enum(connectionstate_response_status_code,
+    do: [
+      no_error: 0x00,
+      connection_id: 0x21,
+      data_connection: 0x26,
+      knx_connection: 0x27
+    ]
+  )
+
+  # TODO is this correct? (not specified)
+  enum(disconnect_response_status_code,
+    do: [
+      no_error: 0x00,
+      connection_id: 0x21
+    ]
+  )
+
+  # TODO is this correct? (not specified)
+  enum(device_configuration_ack_status_code,
+    do: [
+      no_error: 0x00,
+      connection_id: 0x21
+    ]
+  )
+
+  enum(tunneling_connect_ack_error_code,
+    do: [
+      no_error: 0x00,
+      tunneling_layer: 0x29
+    ]
+  )
+
+  enum(tunneling_knx_layer,
+    do: [
+      tunnel_linklayer: 0x02,
+      tunnel_raw: 0x04,
+      tunnel_busmonitor: 0x80
+    ]
+  )
 end
