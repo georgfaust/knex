@@ -110,4 +110,48 @@ defmodule Helper do
       # Error code            28 = PID_ERROR_CODE PDT_ENUM8
     ]
   end
+
+  # TODO do all of these properties have to be implemented?
+  # TODO read and write levels correct?
+  def get_knxnetip_parameter_props() do
+    mac_addr = 0x0
+    knx_addr = 0xFFFF
+    # "KNXnet/IP Device"
+    friendly_name = 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+
+    [
+      P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
+      P.new(:knx_individual_address, [knx_addr], max: 1, write: true, r_lvl: 3, w_lvl: 0),
+      # TODO first entry shall be length of list
+      P.new(:additional_individual_addresses, [0], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      P.new(:current_ip_assignment_method, [0x4], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      P.new(:ip_assignment_method, [0x4], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:ip_capabilities, [0x1], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO shall be set according to Core, 8.5
+      P.new(:current_ip_address, [0xc0a800c7], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:current_subnet_mask, [0xFFFFFF00], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:current_default_gateway, [0xc0a80001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:ip_address, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:subnet_mask, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:default_gateway, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:dhcp_bootp_server, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:system_setup_multicast_address, [0xe000170c], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:routing_multicast_address, [0xe000170c], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:knxnetip_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO if the value of the Property changes the current value shall be sent using M_PropInfo.ind
+      P.new(:knxnetip_device_state, [0x0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # the following properties only have to be implemented by routers
+      # P.new(:knxnetip_routing_capabilities, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # P.new(:priority_fifo_enabled, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # P.new(:queue_overflow_to_ip, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # P.new(:queue_overflow_to_knx, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # P.new(:msg_transmit_to_ip, [device_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # P.new(:msg_transmit_to_knx, [hardware_type], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:friendly_name, [friendly_name], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:routing_busy_wait_time, [0x100], max: 1, write: true, r_lvl: 3, w_lvl: 0)
+    ]
+  end
 end

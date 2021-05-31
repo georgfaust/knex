@@ -5,8 +5,8 @@ defmodule Knx.Knxnetip.ConTabTest do
   alias Knx.Knxnetip.Connection, as: C
 
   @list_1_255 Enum.to_list(1..255)
-  @con_0 %C{id: 0, con_type: :tunnel_con, dest_endpoint: {0xC0A8_B23E, 0x0E75}}
-  @con_1 %C{id: 0, con_type: :device_mgmt_con, dest_endpoint: {0xC0A8_B23E, 0x0E76}}
+  @con_0 %C{id: 0, con_type: :tunnel_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
+  @con_1 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E76}}
 
   @con_tab_01 %{
     :free_ids => Enum.to_list(2..255),
@@ -48,8 +48,8 @@ defmodule Knx.Knxnetip.ConTabTest do
   end
 
   test "external sequence counter correct?" do
-    assert true == ConTab.ext_seq_counter_correct?(@con_tab_0_seq_1, 0, 1)
-    assert false == ConTab.ext_seq_counter_correct?(@con_tab_0_seq_255, 0, 0)
+    assert true == ConTab.ext_seq_counter_equal?(@con_tab_0_seq_1, 0, 1)
+    assert false == ConTab.ext_seq_counter_equal?(@con_tab_0_seq_255, 0, 0)
   end
 
   test "close" do

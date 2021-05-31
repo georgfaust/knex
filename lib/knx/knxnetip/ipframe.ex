@@ -13,7 +13,7 @@ defmodule Knx.Knxnetip.IPFrame do
             channel_id: nil,
             status: :no_error,
             ext_seq_counter: nil,
-            own_seq_counter: nil,
+            int_seq_counter: nil,
             knx_layer: nil,
             cemi_message_code: nil,
             cemi: %CEMIFrame{}

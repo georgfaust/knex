@@ -5,6 +5,7 @@ defmodule Knx.Knxnetip.IPTest do
   alias Knx.Knxnetip.CEMIFrame
   alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.Connection, as: C
+  alias Knx.Knxnetip.Endpoint, as: Ep
 
   require Knx.Defs
   import Knx.Defs
@@ -28,16 +29,22 @@ defmodule Knx.Knxnetip.IPTest do
   @ets_port_discovery 0xEC0B
   # 52250
   @ets_port_control 0xCC1A
+  # 52252
+  @ets_port_config_data 0xCC1C
   @ets_discovery {@ets_ip, @ets_port_discovery}
   @ets_control {@ets_ip, @ets_port_control}
+  @ets_config_data %Ep{protocol: :udp, ip_addr: @ets_ip, port: @ets_port_config_data}
 
   @device_object Helper.get_device_props(1)
-  @con %C{id: 0, con_type: :tunnel_con, dest_endpoint: {0xC0A8_B23E, 0x0E75}}
+  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+
+  @con_0 %C{id: 0, con_type: :tunnel_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
+  @con_254 %C{id: 254, con_type: :device_mgmt_con, dest_data_endpoint: @ets_config_data}
 
   setup do
     Cache.start_link(%{
-      objects: [device: @device_object],
-      con_tab: %{:free_ids => Enum.to_list(1..255), 0 => @con}
+      objects: [device: @device_object, knxnet_ip_parameter: @knxnet_ip_parameter_object],
+      con_tab: %{:free_ids => Enum.to_list(1..253), 0 => @con_0, 254 => @con_254}
     })
 
     :timer.sleep(5)
@@ -274,6 +281,54 @@ defmodule Knx.Knxnetip.IPTest do
                  :from_ip,
                  @ets_control,
                  @disconnect_req
+               },
+               %S{}
+             )
+  end
+
+  ## Device Configuration Request:
+  @device_configuration_req <<0x0610_0310_0011_04FE_0000_FC00_0001_5310_01::unit(8)-size(17)>>
+
+  test("device configuration request") do
+    assert [
+             {:ethernet, :transmit,
+              {@ets_config_data,
+               <<
+                 @header_size::8,
+                 @protocol_version::8,
+                 service_type_id(:device_configuration_ack)::16,
+                 10::16,
+                 4::8,
+                 254::8,
+                 0::8,
+                 device_configuration_ack_status_code(:no_error)::8
+               >>}},
+             {:ethernet, :transmit,
+              {@ets_config_data,
+               <<
+                 @header_size::8,
+                 @protocol_version::8,
+                 service_type_id(:device_configuration_req)::16,
+                 19::16,
+                 4::8,
+                 254::8,
+                 0::8,
+                 0::8,
+                 cemi_message_code(:m_propread_con)::8,
+                 0::16,
+                 1::8,
+                 83::8,
+                 1::4,
+                 1::12,
+                 0x07B0::16
+               >>}}
+           ] =
+             Ip.handle(
+               {
+                 :ip,
+                 :from_ip,
+                 @ets_config_data,
+                 @device_configuration_req
                },
                %S{}
              )

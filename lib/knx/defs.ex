@@ -434,4 +434,21 @@ defmodule Knx.Defs do
       tunnel_busmonitor: 0x80
     ]
   )
+
+  # TODO why are there 2 identical codes?
+  enum(cemi_message_code,
+    do: [
+      m_propread_req: 0xFC,
+      m_propread_con: 0xFB,
+      m_propwrite_req: 0xF6,
+      m_propwrite_con: 0xF5,
+      m_propinfo_ind: 0xF7,
+      m_funcpropcommand_req: 0xF8,
+      m_funcpropcommand_con: 0xFA,
+      m_funcpropstateread_req: 0xF9,
+      m_funcpropstateread_con: 0xFA,
+      m_reset_req: 0xF1,
+      m_reset_ind: 0xF0,
+    ]
+  )
 end

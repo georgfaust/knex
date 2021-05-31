@@ -3,7 +3,9 @@ defmodule Knx.Knxnetip.IpInterface do
   alias Knx.Knxnetip.CEMIFrame
   alias Knx.Knxnetip.MgmtCEMIFrame
   alias Knx.Knxnetip.ConTab
+  alias Knx.Knxnetip.Endpoint, as: Ep
   alias Knx.State, as: S
+  alias Knx.Ail.Property, as: P
   alias Knx.Ail.Device
 
   require Knx.Defs
@@ -18,6 +20,10 @@ defmodule Knx.Knxnetip.IpInterface do
 
   # TODO
   ## - implement heartbeat monitoring
+  ## - implement endpoint struct
+
+  # Open questions
+  ## How does the server deal with ACKs?
 
   def handle({:ip, :from_ip, src, data}, %S{}) do
     # Core
@@ -151,7 +157,14 @@ defmodule Knx.Knxnetip.IpInterface do
       end
 
     con_tab = Cache.get(:con_tab)
-    {con_tab, result} = ConTab.open(con_tab, ip_frame.con_type, ip_frame.control_endpoint)
+
+    {con_tab, result} =
+      ConTab.open(con_tab, ip_frame.con_type, %Ep{
+        protocol: decode_host_protocol(data_host_protocol_code),
+        ip_addr: data_ip_addr,
+        port: data_port
+      })
+
     Cache.put(:con_tab, con_tab)
 
     ip_frame =
@@ -239,46 +252,116 @@ defmodule Knx.Knxnetip.IpInterface do
   end
 
   defp handle_body(
-         src,
+         _src,
          %IPFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
          <<
            _structure_length::8,
            channel_id::8,
            ext_seq_counter::8,
            0::8,
-          #  cemi_message_code::8,
-          #  object_type::16,
-          #  object_instance::8,
-          #  pid::8,
-          #  elems::4,
-          #  start::4,
-          #  data::bits
+           cemi_message_code::8,
+           object_type::16,
+           object_instance::8,
+           pid::8,
+           elems::4,
+           start::12,
+           data::bits
          >>
        ) do
     con_tab = Cache.get(:con_tab)
-    status = if ConTab.is_open?(con_tab, channel_id), do: :no_error, else: :connection_id
 
     # if incorrect, ignore request
-    if ConTab.ext_seq_counter_correct?(con_tab, channel_id, ext_seq_counter) do
+    if ConTab.is_open?(con_tab, channel_id) &&
+         ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter) do
+      con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
+      Cache.put(:con_tab, con_tab)
+
+      mgmt_cemi_frame = %MgmtCEMIFrame{
+        message_code: decode_cemi_message_code(cemi_message_code),
+        object_type: object_type,
+        object_instance: object_instance,
+        pid: pid,
+        elems: elems,
+        start: start,
+        data: data
+      }
+
       ip_frame = %{
         ip_frame
         | channel_id: channel_id,
-          status: status,
-          ext_seq_counter: ext_seq_counter
+          status: :no_error,
+          ext_seq_counter: ext_seq_counter,
+          data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id),
+          cemi: mgmt_cemi_frame
       }
 
-      # mgmt_cemi_frame = %MgmtCEMIFrame{
-      #   cemi_message_code: cemi_message_code,
-      #   object_type: object_type,
-      #   object_instance: object_instance,
-      #   pid: pid,
-      #   elems: elems,
-      #   start: start,
-      #   data: data
-      # }
-
-      [device_configuration_ack(src, ip_frame)]
+      [device_configuration_ack(ip_frame)] ++ device_configuration_req(ip_frame)
+    else
+      []
     end
+  end
+
+  defp handle_body(
+         src,
+         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
+         <<
+           channel_id::8,
+           0::8,
+           control_endpoint::size(@hpai_structure_length)-unit(8)
+         >>
+       ) do
+    {control_host_protocol_code, control_ip_addr, control_port} =
+      handle_hpai(<<control_endpoint::size(@hpai_structure_length)-unit(8)>>)
+
+    {control_ip_addr, control_port} =
+      if control_ip_addr == 0 && control_port == 0,
+        do: src,
+        else: {control_ip_addr, control_port}
+
+    ip_frame = %{
+      ip_frame
+      | control_host_protocol_code: control_host_protocol_code,
+        control_endpoint: {control_ip_addr, control_port},
+        channel_id: channel_id
+    }
+
+    con_tab = Cache.get(:con_tab)
+    {con_tab, result} = ConTab.close(con_tab, channel_id)
+    Cache.put(:con_tab, con_tab)
+
+    ip_frame =
+      case result do
+        # TODO is this correct? (not specified)
+        {:error, :connection_id} ->
+          %{ip_frame | status: :connection_id}
+
+        _id ->
+          ip_frame
+      end
+
+    [disconnect_resp(ip_frame)]
+  end
+
+  defp handle_body(
+         _src,
+         %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
+         <<
+           4::8,
+           channel_id::8,
+           int_seq_counter::8,
+           _status::8
+         >>
+       ) do
+    con_tab = Cache.get(:con_tab)
+
+    # TODO how should ACKs be handled by the server?
+    if ConTab.is_open?(con_tab, channel_id) &&
+         ConTab.int_seq_counter_equal?(con_tab, channel_id, int_seq_counter) do
+      con_tab = ConTab.increment_int_seq_counter(con_tab, channel_id)
+      Cache.put(:con_tab, con_tab)
+    end
+
+    []
   end
 
   defp handle_body(
@@ -470,22 +553,144 @@ defmodule Knx.Knxnetip.IpInterface do
     {:ethernet, :transmit, {decode_host_protocol(control_host_protocol_code), dest, frame}}
   end
 
-  defp device_configuration_ack(
-         dest,
-         %IPFrame{channel_id: channel_id, ext_seq_counter: ext_seq_counter, status: status}
-       ) do
+  defp device_configuration_req(%IPFrame{
+         channel_id: channel_id,
+         data_endpoint: data_endpoint,
+         cemi: received_cemi_frame
+       }) do
+    case mgmt_cemi_frame(received_cemi_frame) do
+      :no_reply ->
+        []
+
+      {cemi_frame_size, conf_cemi_frame} ->
+        con_tab = Cache.get(:con_tab)
+        int_seq_counter = ConTab.get_int_seq_counter(con_tab, channel_id)
+
+        conf_frame =
+          <<
+            @header_size::8,
+            @protocol_version::8,
+            service_type_id(:device_configuration_req)::16,
+            10 + cemi_frame_size::16,
+            4::8,
+            channel_id::8,
+            int_seq_counter::8,
+            0::8
+          >> <> conf_cemi_frame
+
+        [{:ethernet, :transmit, {data_endpoint, conf_frame}}]
+    end
+  end
+
+  defp mgmt_cemi_frame(%MgmtCEMIFrame{
+         message_code: message_code,
+         object_type: object_type,
+         object_instance: object_instance,
+         pid: pid,
+         elems: elems,
+         start: start,
+         data: data
+       }) do
+    # TODO propinfo, funcpropcommand, funcpropstateread, reset
+    case message_code do
+      :m_propread_req ->
+        # TODO properties of device object - how to handle pid overlap?
+        props =
+          case object_type do
+            object_type(:device) -> Cache.get_obj(:device)
+            object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
+          end
+
+        case P.read_prop(props, 0, pid: pid, elems: elems, start: start) do
+          {:ok, _, new_data} ->
+            {7 + byte_size(new_data),
+             <<
+               cemi_message_code(:m_propread_con)::8,
+               object_type::16,
+               object_instance::8,
+               pid::8,
+               elems::4,
+               start::12
+             >> <>
+               new_data}
+
+          # TODO more specific error codes for prop read failure given in 03_06_03, 4.1.7.3.7.2
+          {:error, _} ->
+            {8,
+             <<
+               cemi_message_code(:m_propread_con)::8,
+               object_type::16,
+               object_instance::8,
+               pid::8,
+               0::4,
+               start::12,
+               0::8
+             >>}
+        end
+
+      :m_propread_con ->
+        :no_reply
+
+      :m_propwrite_req ->
+        # TODO properties of device object - how to handle pid overlap?
+        props = Cache.get_obj(decode_object_type(object_type))
+
+        # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
+        case P.write_prop(nil, props, 0,
+               pid: pid,
+               elems: elems,
+               start: start,
+               data: data
+             ) do
+          {:ok, props, _} ->
+            Cache.put_obj(decode_object_type(object_type), props)
+
+            {7,
+             <<
+               cemi_message_code(:m_propwrite_con)::8,
+               object_type::16,
+               object_instance::8,
+               pid::8,
+               elems::4,
+               start::12
+             >>}
+
+          {:error, _} ->
+            {8,
+             <<
+               cemi_message_code(:m_propwrite_con)::8,
+               object_type::16,
+               object_instance::8,
+               pid::8,
+               0::4,
+               start::12,
+               0::8
+             >>}
+        end
+
+      :m_propwrite_con ->
+        :no_reply
+    end
+  end
+
+  defp device_configuration_ack(%IPFrame{
+         channel_id: channel_id,
+         ext_seq_counter: ext_seq_counter,
+         status: status,
+         data_endpoint: data_endpoint
+       }) do
     frame = <<
       @header_size::8,
       @protocol_version::8,
-      service_type_id(:device_configuration_req)::16,
+      service_type_id(:device_configuration_ack)::16,
       10::16,
       4::8,
       channel_id::8,
       ext_seq_counter::8,
-      status::8
+      device_configuration_ack_status_code(status)::8
     >>
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
   defp tunneling_ack(
@@ -598,6 +803,36 @@ defmodule Knx.Knxnetip.IpInterface do
       0x02 -> :tunnel_linklayer
       0x04 -> :tunnel_raw
       0x80 -> :tunnel_busmonitor
+    end
+  end
+
+  defp decode_cemi_message_code(cemi_message_code) do
+    case cemi_message_code do
+      0xFC -> :m_propread_req
+      0xFB -> :m_propread_con
+      0xF6 -> :m_propwrite_req
+      0xF5 -> :m_propwrite_con
+      0xF7 -> :m_propinfo_ind
+      0xF8 -> :m_funcpropcommand_req
+      0xFA -> :m_funcpropcommand_con
+      0xF9 -> :m_funcpropstateread_req
+      0xF1 -> :m_reset_req
+      0xF0 -> :m_reset_ind
+    end
+  end
+
+  defp decode_object_type(object_type) do
+    case object_type do
+      0 -> :device
+      1 -> :addr_tab
+      2 -> :assoc_tab
+      3 -> :app_prog
+      4 -> :interface_prog
+      6 -> :router
+      7 -> :cemi_server
+      9 -> :go_tab
+      11 -> :knxnet_ip_parameter
+      13 -> :file_server
     end
   end
 end

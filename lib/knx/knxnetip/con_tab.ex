@@ -1,7 +1,7 @@
 defmodule Knx.Knxnetip.ConTab do
   alias Knx.Knxnetip.Connection, as: C
 
-  def open(con_tab, con_type, dest_endpoint) do
+  def open(con_tab, con_type, data_endpoint) do
     con_tab = Map.put_new(con_tab, :free_ids, Enum.to_list(0..255))
     free_ids = con_tab[:free_ids]
 
@@ -13,9 +13,9 @@ defmodule Knx.Knxnetip.ConTab do
         new_connection = %C{
           id: new_id,
           con_type: con_type,
-          dest_endpoint: dest_endpoint,
+          dest_data_endpoint: data_endpoint,
           ext_seq_counter: 0,
-          own_seq_counter: 0
+          int_seq_counter: 0
         }
 
         con_tab = Map.put_new(con_tab, new_id, new_connection)
@@ -28,14 +28,47 @@ defmodule Knx.Knxnetip.ConTab do
     Map.has_key?(con_tab, id)
   end
 
+  def check_connection(con_tab, id) do
+    case Map.has_key?(con_tab, id) do
+      true -> :ok
+      false -> {:error, id}
+    end
+  end
+
   def increment_ext_seq_counter(con_tab, id) do
     cur_count = con_tab[id].ext_seq_counter
     <<new_count>> = <<cur_count + 1::8>>
     put_in(con_tab[id].ext_seq_counter, new_count)
   end
 
-  def ext_seq_counter_correct?(con_tab, id, counter) do
+  def increment_int_seq_counter(con_tab, id) do
+    cur_count = con_tab[id].int_seq_counter
+    <<new_count>> = <<cur_count + 1::8>>
+    put_in(con_tab[id].int_seq_counter, new_count)
+  end
+
+  def ext_seq_counter_equal?(con_tab, id, counter) do
     counter == con_tab[id].ext_seq_counter
+  end
+
+  def int_seq_counter_equal?(con_tab, id, counter) do
+    counter == con_tab[id].int_seq_counter
+  end
+
+  def get_int_seq_counter(con_tab, id) do
+    con_tab[id].int_seq_counter
+  end
+
+  # def get_ext_seq_counter(con_tab, id) do
+  #   if is_open?(con_tab, id) do
+  #     con_tab[id].ext_seq_counter
+  #   else
+  #     {:error, :connection_id}
+  #   end
+  # end
+
+  def get_data_endpoint(con_tab, id) do
+    con_tab[id].dest_data_endpoint
   end
 
   def close(con_tab, id) do
