@@ -21,6 +21,8 @@ defmodule Knx.Knxnetip.IpInterface do
   # TODO
   ## - implement heartbeat monitoring
   ## - implement endpoint struct
+  ## - defend additional individual addresses (tunneling, 2.2.2)
+  ## - generate Layer-2 ack frames for additional individual addresses (tunneling, 2.2.2)
 
   # Open questions
   ## How does the server deal with ACKs?
@@ -270,7 +272,7 @@ defmodule Knx.Knxnetip.IpInterface do
        ) do
     con_tab = Cache.get(:con_tab)
 
-    # if incorrect, ignore request
+    # TODO how does the server react if no connection is open? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter) do
       con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
@@ -302,47 +304,6 @@ defmodule Knx.Knxnetip.IpInterface do
   end
 
   defp handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
-         <<
-           channel_id::8,
-           0::8,
-           control_endpoint::size(@hpai_structure_length)-unit(8)
-         >>
-       ) do
-    {control_host_protocol_code, control_ip_addr, control_port} =
-      handle_hpai(<<control_endpoint::size(@hpai_structure_length)-unit(8)>>)
-
-    {control_ip_addr, control_port} =
-      if control_ip_addr == 0 && control_port == 0,
-        do: src,
-        else: {control_ip_addr, control_port}
-
-    ip_frame = %{
-      ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {control_ip_addr, control_port},
-        channel_id: channel_id
-    }
-
-    con_tab = Cache.get(:con_tab)
-    {con_tab, result} = ConTab.close(con_tab, channel_id)
-    Cache.put(:con_tab, con_tab)
-
-    ip_frame =
-      case result do
-        # TODO is this correct? (not specified)
-        {:error, :connection_id} ->
-          %{ip_frame | status: :connection_id}
-
-        _id ->
-          ip_frame
-      end
-
-    [disconnect_resp(ip_frame)]
-  end
-
-  defp handle_body(
          _src,
          %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
          <<
@@ -354,7 +315,7 @@ defmodule Knx.Knxnetip.IpInterface do
        ) do
     con_tab = Cache.get(:con_tab)
 
-    # TODO how should ACKs be handled by the server?
+    # TODO how should ACKs be handled by the server? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.int_seq_counter_equal?(con_tab, channel_id, int_seq_counter) do
       con_tab = ConTab.increment_int_seq_counter(con_tab, channel_id)
@@ -368,25 +329,77 @@ defmodule Knx.Knxnetip.IpInterface do
          src,
          %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
          <<
-           # structure length of connection header
            4::8,
            channel_id::8,
            ext_seq_counter::8,
            0::8,
            cemi_message_code::8,
            0::8,
-           cemi_service_info::bits
+           frame_type::1,
+           0::1,
+           # TODO 1 means, DL repetitions may be sent. how to handle this?
+           repeat::1,
+           _system_broadcast::1,
+           prio::2,
+           # for TP1, L2-Acks are requested independent of value
+           _ack::1,
+           _confirm::1,
+           addr_t::1,
+           hops::3,
+           eff::4,
+           src::16,
+           dest::16,
+           len::8,
+           data::bits
          >>
        ) do
-    ip_frame = %{
-      ip_frame
-      | channel_id: channel_id,
-        ext_seq_counter: ext_seq_counter,
-        cemi_message_code: cemi_message_code,
-        cemi: handle_cemi_service_info(cemi_message_code, cemi_service_info)
-    }
+    con_tab = Cache.get(:con_tab)
 
-    [tunneling_ack(src, ip_frame), {:dl, :req, ip_frame.cemi}]
+    # TODO how does the server react if no connection is open? (not specified)
+    if ConTab.is_open?(con_tab, channel_id) do
+      cemi_frame = %CEMIFrame{
+        message_code: cemi_message_code,
+        frame_type: frame_type,
+        repeat: repeat,
+        prio: prio,
+        addr_t: addr_t,
+        hops: hops,
+        eff: eff,
+        src: src,
+        dest: dest,
+        len: len,
+        data: data
+      }
+
+      ip_frame = %{
+        ip_frame
+        | channel_id: channel_id,
+          ext_seq_counter: ext_seq_counter,
+          data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id),
+          cemi: cemi_frame
+      }
+
+      cond do
+        ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter) ->
+          con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
+          Cache.put(:con_tab, con_tab)
+
+          [tunneling_ack(ip_frame), {:dl, :req, ip_frame.cemi}]
+
+        ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter - 1) ->
+          ip_frame = %{
+            ip_frame
+            | ext_seq_counter: ext_seq_counter - 1
+          }
+
+          [tunneling_ack(ip_frame)]
+
+        true ->
+          []
+      end
+    else
+      []
+    end
   end
 
   defp handle_hpai(<<
@@ -418,43 +431,42 @@ defmodule Knx.Knxnetip.IpInterface do
     end
   end
 
-  # cemi_service_info always has same structure
-  defp handle_cemi_service_info(
-         cemi_message_code,
-         <<
-           # do we need to save the frame type?
-           _frame_type::2,
-           # TODO
-           _repeat::1,
-           # System Broadcast not applicable on TP1
-           _system_broadcast::1,
-           prio::2,
-           # TP1: whether an ack is requested is determined by primitive
-           _ack::1,
-           # how do we handle this confirmation flag? is it identical with ok?
-           confirm::1,
-           addr_t::1,
-           hops::3,
-           eff::4,
-           src::16,
-           dest::16,
-           len::8,
-           data::bits
-         >>
-       ) do
-    %CEMIFrame{
-      message_code: cemi_message_code,
-      src: src,
-      dest: dest,
-      addr_t: addr_t,
-      prio: prio,
-      hops: hops,
-      len: len,
-      data: data,
-      eff: eff,
-      confirm: confirm
-    }
-  end
+  # defp handle_cemi_service_info(
+  #        cemi_message_code,
+  #        <<
+  #          # do we need to save the frame type?
+  #          _frame_type::2,
+  #          # TODO
+  #          _repeat::1,
+  #          # System Broadcast not applicable on TP1
+  #          _system_broadcast::1,
+  #          prio::2,
+  #          # TP1: whether an ack is requested is determined by primitive
+  #          _ack::1,
+  #          # how do we handle this confirmation flag? is it identical with ok?
+  #          confirm::1,
+  #          addr_t::1,
+  #          hops::3,
+  #          eff::4,
+  #          src::16,
+  #          dest::16,
+  #          len::8,
+  #          data::bits
+  #        >>
+  #      ) do
+  #   %CEMIFrame{
+  #     message_code: cemi_message_code,
+  #     src: src,
+  #     dest: dest,
+  #     addr_t: addr_t,
+  #     prio: prio,
+  #     hops: hops,
+  #     len: len,
+  #     data: data,
+  #     eff: eff,
+  #     confirm: confirm
+  #   }
+  # end
 
   defp search_resp(%IPFrame{control_host_protocol_code: code, control_endpoint: dest}) do
     frame =
@@ -594,7 +606,6 @@ defmodule Knx.Knxnetip.IpInterface do
     # TODO propinfo, funcpropcommand, funcpropstateread, reset
     case message_code do
       :m_propread_req ->
-        # TODO properties of device object - how to handle pid overlap?
         props =
           case object_type do
             object_type(:device) -> Cache.get_obj(:device)
@@ -632,8 +643,11 @@ defmodule Knx.Knxnetip.IpInterface do
         :no_reply
 
       :m_propwrite_req ->
-        # TODO properties of device object - how to handle pid overlap?
-        props = Cache.get_obj(decode_object_type(object_type))
+        props =
+          case object_type do
+            object_type(:device) -> Cache.get_obj(:device)
+            object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
+          end
 
         # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
         case P.write_prop(nil, props, 0,
@@ -693,25 +707,23 @@ defmodule Knx.Knxnetip.IpInterface do
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
-  defp tunneling_ack(
-         dest,
-         %IPFrame{channel_id: channel_id, ext_seq_counter: ext_seq_counter}
-       ) do
+  defp tunneling_ack(%IPFrame{
+         channel_id: channel_id,
+         ext_seq_counter: ext_seq_counter,
+         data_endpoint: data_endpoint
+       }) do
     frame = <<
       @header_size::8,
       @protocol_version::8,
       service_type_id(:tunnelling_ack)::16,
-      # total length
       10::16,
-      # structure length of connection header
       4::8,
       channel_id::8,
       ext_seq_counter::8,
-      # TODO status
       0::8
     >>
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
   defp hpai(host_protocol_code) do

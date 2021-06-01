@@ -1,19 +1,13 @@
-# TODO
 defmodule Knx.Knxnetip.CEMIFrame do
-  defstruct src: nil,
-            dest: nil,
-            service: nil,
-            apci: nil,
-            asap: nil,
-            tsap: nil,
+  defstruct message_code: nil,
+            frame_type: nil,
+            repeat: nil,
+            prio: nil,
             addr_t: nil,
-            prio: 0,
             hops: nil,
+            eff: nil,
+            src: nil,
+            dest: nil,
             len: nil,
-            seq: 0,
-            eff: 0,
-            data: <<>>,
-            ok?: nil,
-            message_code: nil,
-            confirm: nil
+            data: <<>>
 end

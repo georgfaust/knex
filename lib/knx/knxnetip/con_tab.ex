@@ -2,25 +2,41 @@ defmodule Knx.Knxnetip.ConTab do
   alias Knx.Knxnetip.Connection, as: C
 
   def open(con_tab, con_type, data_endpoint) do
-    con_tab = Map.put_new(con_tab, :free_ids, Enum.to_list(0..255))
-    free_ids = con_tab[:free_ids]
+    # add once, when first connection is opened
+    con_tab = Map.put_new(con_tab, :free_mgmt_ids, Enum.to_list(0..254))
+    free_mgmt_ids = con_tab[:free_mgmt_ids]
 
-    case List.pop_at(free_ids, 0) do
-      {nil, _free_ids} ->
-        {con_tab, {:error, :no_more_connections}}
+    new_connection = %C{
+      con_type: con_type,
+      dest_data_endpoint: data_endpoint,
+      ext_seq_counter: 0,
+      int_seq_counter: 0
+    }
 
-      {new_id, free_ids} ->
-        new_connection = %C{
-          id: new_id,
-          con_type: con_type,
-          dest_data_endpoint: data_endpoint,
-          ext_seq_counter: 0,
-          int_seq_counter: 0
-        }
+    case con_type do
+      # allow only one open tunneling connection (always has id 255)
+      # TODO allow multiple tunneling connections ?
+      :tunnel_con ->
+        if is_open?(con_tab, 255) do
+          {con_tab, {:error, :no_more_connections}}
+        else
+          new_connection = %C{new_connection | id: 255}
+          con_tab = Map.put_new(con_tab, 255, new_connection)
+          {con_tab, 255}
+        end
 
-        con_tab = Map.put_new(con_tab, new_id, new_connection)
-        con_tab = put_in(con_tab[:free_ids], free_ids)
-        {con_tab, new_id}
+      :device_mgmt_con ->
+        case List.pop_at(free_mgmt_ids, 0) do
+          {nil, _free_mgmt_ids} ->
+            {con_tab, {:error, :no_more_connections}}
+
+          {new_id, free_mgmt_ids} ->
+            new_connection = %C{new_connection | id: new_id}
+
+            con_tab = Map.put_new(con_tab, new_id, new_connection)
+            con_tab = put_in(con_tab[:free_mgmt_ids], free_mgmt_ids)
+            {con_tab, new_id}
+        end
     end
   end
 
@@ -28,12 +44,12 @@ defmodule Knx.Knxnetip.ConTab do
     Map.has_key?(con_tab, id)
   end
 
-  def check_connection(con_tab, id) do
-    case Map.has_key?(con_tab, id) do
-      true -> :ok
-      false -> {:error, id}
-    end
-  end
+  # def check_connection(con_tab, id) do
+  #   case Map.has_key?(con_tab, id) do
+  #     true -> :ok
+  #     false -> {:error, id}
+  #   end
+  # end
 
   def increment_ext_seq_counter(con_tab, id) do
     cur_count = con_tab[id].ext_seq_counter
@@ -76,8 +92,12 @@ defmodule Knx.Knxnetip.ConTab do
       {nil, con_tab} ->
         {con_tab, {:error, :connection_id}}
 
-      {_id, con_tab} ->
-        {put_in(con_tab[:free_ids], [id | con_tab[:free_ids]]), id}
+      {id, con_tab} ->
+        if id == 255 do
+          {con_tab, 255}
+        else
+          {put_in(con_tab[:free_mgmt_ids], [id | con_tab[:free_mgmt_ids]]), id}
+        end
     end
   end
 end

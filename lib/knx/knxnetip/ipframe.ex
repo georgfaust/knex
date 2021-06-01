@@ -15,6 +15,5 @@ defmodule Knx.Knxnetip.IPFrame do
             ext_seq_counter: nil,
             int_seq_counter: nil,
             knx_layer: nil,
-            cemi_message_code: nil,
             cemi: %CEMIFrame{}
 end

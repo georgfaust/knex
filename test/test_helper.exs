@@ -118,7 +118,6 @@ defmodule Helper do
     knx_addr = 0xFFFF
     # "KNXnet/IP Device"
     friendly_name = 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
-
     [
       P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 2),
       # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
