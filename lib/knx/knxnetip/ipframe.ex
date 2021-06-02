@@ -3,9 +3,7 @@ defmodule Knx.Knxnetip.IPFrame do
 
   defstruct header_size: 6,
             protocol_version: 0x10,
-            control_host_protocol_code: nil,
             control_endpoint: nil,
-            data_host_protocol_code: nil,
             data_endpoint: nil,
             service_type_id: nil,
             total_length: nil,

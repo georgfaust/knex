@@ -15,75 +15,49 @@ defmodule Knx.Knxnetip.Core do
   @universal_port 0x0E75
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
-         <<
-           discovery_endpoint::bits
-         >>
-       ) do
-    {control_host_protocol_code, ip_addr, port} = handle_hpai(discovery_endpoint)
+        src,
+        %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
+        <<
+          control_hpai::bits
+        >>
+      ) do
+    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(src)
 
-    {ip_addr, port} =
-      (fn ->
-         if ip_addr == 0 && port == 0, do: src, else: {ip_addr, port}
-       end).()
-
-    ip_frame = %{
-      ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {ip_addr, port}
-    }
+    ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
     [search_resp(ip_frame)]
   end
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
-         <<
-           discovery_endpoint::bits
-         >>
-       ) do
-    {control_host_protocol_code, ip_addr, port} = handle_hpai(discovery_endpoint)
+        src,
+        %IPFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
+        <<
+          control_hpai::bits
+        >>
+      ) do
+    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(src)
 
-    {ip_addr, port} = if ip_addr == 0 && port == 0, do: src, else: {ip_addr, port}
-
-    ip_frame = %{
-      ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {ip_addr, port}
-    }
+    ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
     [description_resp(ip_frame)]
   end
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
-         <<
-           control_endpoint::size(@hpai_structure_length)-unit(8),
-           data_endpoint::size(@hpai_structure_length)-unit(8),
-           cri::bits
-         >>
-       ) do
-    {control_host_protocol_code, control_ip_addr, control_port} =
-      handle_hpai(<<control_endpoint::size(@hpai_structure_length)-unit(8)>>)
+        src,
+        %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
+        <<
+          control_hpai::size(@hpai_structure_length)-unit(8),
+          data_hpai::size(@hpai_structure_length)-unit(8),
+          cri::bits
+        >>
+      ) do
+    control_endpoint =
+      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      |> check_route_back_hpai(src)
 
-    {data_host_protocol_code, data_ip_addr, data_port} =
-      handle_hpai(<<data_endpoint::size(@hpai_structure_length)-unit(8)>>)
+    data_endpoint = handle_hpai(<<data_hpai::size(@hpai_structure_length)-unit(8)>>)
 
-    {control_ip_addr, control_port} =
-      if control_ip_addr == 0 && control_port == 0,
-        do: src,
-        else: {control_ip_addr, control_port}
-
-    ip_frame = %{
-      ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {control_ip_addr, control_port},
-        data_host_protocol_code: data_host_protocol_code,
-        data_endpoint: {data_ip_addr, data_port}
-    }
+    ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
     ip_frame =
       case handle_cri(cri) do
@@ -98,14 +72,7 @@ defmodule Knx.Knxnetip.Core do
       end
 
     con_tab = Cache.get(:con_tab)
-
-    {con_tab, result} =
-      ConTab.open(con_tab, ip_frame.con_type, %Ep{
-        protocol_code: data_host_protocol_code,
-        ip_addr: data_ip_addr,
-        port: data_port
-      })
-
+    {con_tab, result} = ConTab.open(con_tab, ip_frame.con_type, data_endpoint)
     Cache.put(:con_tab, con_tab)
 
     ip_frame =
@@ -121,29 +88,24 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
-         <<
-           channel_id::8,
-           0::8,
-           control_endpoint::size(@hpai_structure_length)-unit(8)
-         >>
-       ) do
-    {control_host_protocol_code, control_ip_addr, control_port} =
-      handle_hpai(<<control_endpoint::size(@hpai_structure_length)-unit(8)>>)
-
-    {control_ip_addr, control_port} =
-      if control_ip_addr == 0 && control_port == 0,
-        do: src,
-        else: {control_ip_addr, control_port}
+        src,
+        %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
+        <<
+          channel_id::8,
+          0::8,
+          control_hpai::size(@hpai_structure_length)-unit(8)
+        >>
+      ) do
+    control_endpoint =
+      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      |> check_route_back_hpai(src)
 
     con_tab = Cache.get(:con_tab)
     status = if ConTab.is_open?(con_tab, channel_id), do: :no_error, else: :connection_id
 
     ip_frame = %{
       ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {control_ip_addr, control_port},
+      | control_endpoint: control_endpoint,
         channel_id: channel_id,
         status: status
     }
@@ -152,26 +114,21 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
-         <<
-           channel_id::8,
-           0::8,
-           control_endpoint::size(@hpai_structure_length)-unit(8)
-         >>
-       ) do
-    {control_host_protocol_code, control_ip_addr, control_port} =
-      handle_hpai(<<control_endpoint::size(@hpai_structure_length)-unit(8)>>)
-
-    {control_ip_addr, control_port} =
-      if control_ip_addr == 0 && control_port == 0,
-        do: src,
-        else: {control_ip_addr, control_port}
+        src,
+        %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
+        <<
+          channel_id::8,
+          0::8,
+          control_hpai::size(@hpai_structure_length)-unit(8)
+        >>
+      ) do
+    control_endpoint =
+      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      |> check_route_back_hpai(src)
 
     ip_frame = %{
       ip_frame
-      | control_host_protocol_code: control_host_protocol_code,
-        control_endpoint: {control_ip_addr, control_port},
+      | control_endpoint: control_endpoint,
         channel_id: channel_id
     }
 
@@ -196,11 +153,11 @@ defmodule Knx.Knxnetip.Core do
 
   defp handle_hpai(<<
          @hpai_structure_length::8,
-         host_protocol_code::8,
+         protocol_code::8,
          ip_addr::32,
          port::16
        >>) do
-    {host_protocol_code, ip_addr, port}
+    %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
   end
 
   defp handle_cri(
@@ -215,7 +172,7 @@ defmodule Knx.Knxnetip.Core do
           _ -> {:error, :connection_option}
         end
 
-        connection_type_code(:device_mgmt_con) ->
+      connection_type_code(:device_mgmt_con) ->
         {:device_mgmt_con, {}}
 
       _ ->
@@ -223,7 +180,7 @@ defmodule Knx.Knxnetip.Core do
     end
   end
 
-  defp search_resp(%IPFrame{control_host_protocol_code: code, control_endpoint: dest}) do
+  defp search_resp(%IPFrame{control_endpoint: dest}) do
     frame =
       <<
         @header_size::8,
@@ -232,15 +189,14 @@ defmodule Knx.Knxnetip.Core do
         @header_size + @hpai_structure_length + @dib_device_info_structure_length +
           @dib_supp_svc_families_structure_length::16
       >> <>
-        hpai(code) <>
+        hpai(dest.protocol_code) <>
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {code, dest, frame}}
+    {:ethernet, :transmit, {dest, frame}}
   end
 
   defp description_resp(%IPFrame{
-         control_host_protocol_code: control_host_protocol_code,
          control_endpoint: dest
        }) do
     frame =
@@ -254,14 +210,13 @@ defmodule Knx.Knxnetip.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
+    {:ethernet, :transmit, {dest, frame}}
   end
 
   defp connect_resp(
          %IPFrame{
-           control_host_protocol_code: control_host_protocol_code,
            control_endpoint: dest,
-           data_host_protocol_code: data_host_protocol_code,
+           data_endpoint: data_endpoint,
            con_type: con_type,
            channel_id: channel_id,
            status: status
@@ -278,14 +233,13 @@ defmodule Knx.Knxnetip.Core do
         channel_id::8,
         connect_response_status_code(status)::8
       >> <>
-        hpai(data_host_protocol_code) <>
+        hpai(data_endpoint.protocol_code) <>
         crd(ip_frame)
 
-    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
+    {:ethernet, :transmit, {dest, frame}}
   end
 
   defp connectionstate_resp(%IPFrame{
-         control_host_protocol_code: control_host_protocol_code,
          control_endpoint: dest,
          channel_id: channel_id,
          status: status
@@ -299,11 +253,10 @@ defmodule Knx.Knxnetip.Core do
       connectionstate_response_status_code(status)::8
     >>
 
-    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
+    {:ethernet, :transmit, {dest, frame}}
   end
 
   defp disconnect_resp(%IPFrame{
-         control_host_protocol_code: control_host_protocol_code,
          control_endpoint: dest,
          channel_id: channel_id,
          status: status
@@ -317,7 +270,7 @@ defmodule Knx.Knxnetip.Core do
       disconnect_response_status_code(status)::8
     >>
 
-    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
+    {:ethernet, :transmit, {dest, frame}}
   end
 
   defp hpai(host_protocol_code) do
@@ -387,4 +340,17 @@ defmodule Knx.Knxnetip.Core do
     end
   end
 
+  # ----------------------------------------------------------------------------
+
+  # [XXIX]
+  defp check_route_back_hpai(
+         %Ep{ip_addr: ip_addr, port: port} = endpoint,
+         src
+       ) do
+    if ip_addr == 0 && port == 0 do
+      src
+    else
+      endpoint
+    end
+  end
 end

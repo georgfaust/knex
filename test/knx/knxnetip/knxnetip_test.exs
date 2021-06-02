@@ -24,15 +24,22 @@ defmodule Knx.Knxnetip.IPTest do
 
   # 192.168.178.21
   @ets_ip 0xC0A8_B215
+
   # 60427
   @ets_port_discovery 0xEC0B
   # 52250
   @ets_port_control 0xCC1A
   # 52252
   @ets_port_config_data 0xCC1C
-  @ets_discovery {@ets_ip, @ets_port_discovery}
-  @ets_control {@ets_ip, @ets_port_control}
-  @ets_config_data %Ep{
+
+  @ets_discovery_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ets_ip,
+    port: @ets_port_discovery
+  }
+  @ets_control_endpoint %Ep{protocol_code: protocol_code(:udp), ip_addr: @ets_ip, port: @ets_port_control}
+
+  @ets_config_data_endpoint %Ep{
     protocol_code: protocol_code(:udp),
     ip_addr: @ets_ip,
     port: @ets_port_config_data
@@ -42,7 +49,7 @@ defmodule Knx.Knxnetip.IPTest do
   @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
 
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
-  @con_254 %C{id: 254, con_type: :device_mgmt_con, dest_data_endpoint: @ets_config_data}
+  @con_254 %C{id: 254, con_type: :device_mgmt_con, dest_data_endpoint: @ets_config_data_endpoint}
 
   setup do
     Cache.start_link(%{
@@ -64,7 +71,7 @@ defmodule Knx.Knxnetip.IPTest do
   test "search request" do
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_discovery,
+              {@ets_discovery_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -102,7 +109,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_discovery,
+                 @ets_discovery_endpoint,
                  @search_req
                },
                %S{}
@@ -118,7 +125,7 @@ defmodule Knx.Knxnetip.IPTest do
   test "description request" do
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_control,
+              {@ets_control_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -151,7 +158,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_control,
+                 @ets_control_endpoint,
                  @description_req
                },
                %S{}
@@ -175,7 +182,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("connect request") do
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_control,
+              {@ets_control_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -196,7 +203,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_control,
+                 @ets_control_endpoint,
                  @connect_req_tunneling
                },
                %S{}
@@ -204,7 +211,7 @@ defmodule Knx.Knxnetip.IPTest do
 
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_control,
+              {@ets_control_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -224,7 +231,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_control,
+                 @ets_control_endpoint,
                  @connect_req_management
                },
                %S{}
@@ -239,7 +246,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("connectionstate request") do
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_control,
+              {@ets_control_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -253,7 +260,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_control,
+                 @ets_control_endpoint,
                  @connectionstate_req
                },
                %S{}
@@ -268,7 +275,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("disconnect request") do
     assert [
              {:ethernet, :transmit,
-              {protocol_code(:udp), @ets_control,
+              {@ets_control_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -282,7 +289,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_control,
+                 @ets_control_endpoint,
                  @disconnect_req
                },
                %S{}
@@ -295,7 +302,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("device configuration request") do
     assert [
              {:ethernet, :transmit,
-              {@ets_config_data,
+              {@ets_config_data_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -307,7 +314,7 @@ defmodule Knx.Knxnetip.IPTest do
                  device_configuration_ack_status_code(:no_error)::8
                >>}},
              {:ethernet, :transmit,
-              {@ets_config_data,
+              {@ets_config_data_endpoint,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -330,7 +337,7 @@ defmodule Knx.Knxnetip.IPTest do
                {
                  :ip,
                  :from_ip,
-                 @ets_config_data,
+                 @ets_config_data_endpoint,
                  @device_configuration_req
                },
                %S{}

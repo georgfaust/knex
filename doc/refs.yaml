@@ -151,3 +151,12 @@ XXVIII: |
   number, i.e. property_index = 0 shall mean the first Property of the associated Interface Object,
   property_index = 1 shall mean the second Property.
   [AL:3.4.33]
+
+XXIX : |
+  Route Back HPAI
+  For UDP “Route Back” HPAIs this means that the KNXnet/IP Server shall use the IP address and the
+  port number in the IP package received as the target IP address or port number for the response
+  to the KNXnet/IP Client.
+  For TCP “Route Back” HPAIs this means that the KNXnet/IP Server shall send his KNXnet/IP Frames
+  over the TCP connection that the KNXnet/IP Client already has created for this purpose.
+  [AN 184:2.2.3.2.4.3]
