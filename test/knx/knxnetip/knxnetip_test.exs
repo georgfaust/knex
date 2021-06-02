@@ -2,6 +2,7 @@ defmodule Knx.Knxnetip.IPTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
+  alias Knx.Knxnetip.CEMIFrame
   alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.Connection, as: C
   alias Knx.Knxnetip.Endpoint, as: Ep
@@ -31,18 +32,31 @@ defmodule Knx.Knxnetip.IPTest do
   @ets_port_control 0xCC1A
   # 52252
   @ets_port_config_data 0xCC1C
+  # 52252
+  @ets_port_tunneling_data 0xCC1C
 
   @ets_discovery_endpoint %Ep{
     protocol_code: protocol_code(:udp),
     ip_addr: @ets_ip,
     port: @ets_port_discovery
   }
-  @ets_control_endpoint %Ep{protocol_code: protocol_code(:udp), ip_addr: @ets_ip, port: @ets_port_control}
+
+  @ets_control_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ets_ip,
+    port: @ets_port_control
+  }
 
   @ets_config_data_endpoint %Ep{
     protocol_code: protocol_code(:udp),
     ip_addr: @ets_ip,
     port: @ets_port_config_data
+  }
+
+  @ets_tunneling_data_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ets_ip,
+    port: @ets_port_tunneling_data
   }
 
   @device_object Helper.get_device_props(1)
@@ -344,68 +358,79 @@ defmodule Knx.Knxnetip.IPTest do
              )
   end
 
-  # TODO repair test
-  ## Tunneling Req:
-  # @tunneling_req_group_value_write <<0x0610_0420_0015_04FF_0000_2900_BCE0_2102_0001_0100_81::unit(
-  #                                      8
-  #                                    )-size(21)>>
-  # # cEMI Frame -----------------------------------------------------------------
-  # @cemi_message_code_l_data_ind 0x29
-  # # @additional_info 0x00
-  # # @frame_type 0x10
-  # @src 0x2102
-  # @dest 0x0001
-  # @prio 3
-  # @hops 6
-  # @len 1
-  # @data <<0x0081::unit(8)-size(2)>>
-  # @eff 0
+  # Tunneling Req:
+  @tunneling_req_group_value_write <<0x0610_0420_0015_04FF_0000_2900_BCE0_2102_0001_0100_81::unit(
+                                       8
+                                     )-size(21)>>
+  # cEMI Frame -----------------------------------------------------------------
+  @cemi_message_code_l_data_ind 0x29
+  # @additional_info 0x00
+  # @frame_type 0x10
+  @src 0x2102
+  @dest 0x0001
+  @prio 3
+  @hops 6
+  @len 1
+  @data <<0x0081::unit(8)-size(2)>>
+  @eff 0
 
-  # ## Tunneling Ack:
-  # # KNXnet/IP Header -----------------------------------------------------------
-  # @service_type_id_tunneling_ack 0x0421
-  # @total_length 0x000A
-  # # Connection Header ----------------------------------------------------------
-  # @structure_length_connection_header 0x04
-  # @channel_id 0x9F
-  # @ext_seq_counter 0x00
-  # @status 0x00
+  ## Tunneling Ack:
+  # KNXnet/IP Header -----------------------------------------------------------
+  @service_type_id_tunneling_ack 0x0421
+  @total_length 0x000A
+  # Connection Header ----------------------------------------------------------
+  @structure_length_connection_header 0x04
+  @channel_id 0xFF
+  @ext_seq_counter 0x00
+  @status 0x00
 
-  # test "tunneling request, group value write" do
-  #   assert [
-  #            {:ethernet, :transmit,
-  #             {@ip_interface,
-  #              <<
-  #                @header_size::8,
-  #                @protocol_version::8,
-  #                @service_type_id_tunneling_ack::16,
-  #                @total_length::16,
-  #                @structure_length_connection_header::8,
-  #                @channel_id::8,
-  #                @ext_seq_counter::8,
-  #                @status::8
-  #              >>}},
-  #            {:dl, :req,
-  #             %CEMIFrame{
-  #               message_code: @cemi_message_code_l_data_ind,
-  #               src: @src,
-  #               dest: @dest,
-  #               addr_t: addr_t(:grp),
-  #               prio: @prio,
-  #               hops: @hops,
-  #               len: @len,
-  #               data: @data,
-  #               eff: @eff
-  #             }}
-  #          ] =
-  #            Ip.handle(
-  #              {
-  #                :ip,
-  #                :from_ip,
-  #                @ip_interface,
-  #                @tunneling_req_group_value_write
-  #              },
-  #              %S{}
-  #            )
-  # end
+  test "tunneling request, group value write" do
+
+    # open tunneling connection first
+    Ip.handle(
+      {
+        :ip,
+        :from_ip,
+        @ets_control_endpoint,
+        @connect_req_tunneling
+      },
+      %S{}
+    )
+
+    assert [
+             {:ethernet, :transmit,
+              {@ets_tunneling_data_endpoint,
+               <<
+                 @header_size::8,
+                 @protocol_version::8,
+                 @service_type_id_tunneling_ack::16,
+                 @total_length::16,
+                 @structure_length_connection_header::8,
+                 @channel_id::8,
+                 @ext_seq_counter::8,
+                 @status::8
+               >>}},
+             {:dl, :req,
+              %CEMIFrame{
+                message_code: @cemi_message_code_l_data_ind,
+                src: @src,
+                dest: @dest,
+                addr_t: addr_t(:grp),
+                prio: @prio,
+                hops: @hops,
+                len: @len,
+                data: @data,
+                eff: @eff
+              }}
+           ] =
+             Ip.handle(
+               {
+                 :ip,
+                 :from_ip,
+                 @ets_tunneling_data_endpoint,
+                 @tunneling_req_group_value_write
+               },
+               %S{}
+             )
+  end
 end

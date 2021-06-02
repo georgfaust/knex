@@ -1,6 +1,7 @@
 defmodule Knx.Knxnetip.IpInterface do
   alias Knx.Knxnetip.Core
   alias Knx.Knxnetip.DeviceManagement
+  alias Knx.Knxnetip.Tunneling
   alias Knx.Knxnetip.IPFrame
   alias Knx.State, as: S
 

@@ -10,33 +10,32 @@ defmodule Knx.Knxnetip.Tunneling do
   @protocol_version 0x10
 
   def handle_body(
-         src,
-         %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
-         <<
-           4::8,
-           channel_id::8,
-           ext_seq_counter::8,
-           0::8,
-           cemi_message_code::8,
-           0::8,
-           frame_type::1,
-           0::1,
-           # TODO 1 means, DL repetitions may be sent. how to handle this?
-           repeat::1,
-           _system_broadcast::1,
-           prio::2,
-           # for TP1, L2-Acks are requested independent of value
-           _ack::1,
-           _confirm::1,
-           addr_t::1,
-           hops::3,
-           eff::4,
-           src::16,
-           dest::16,
-           len::8,
-           data::bits
-         >>
-       ) do
+        _src,
+        %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
+        <<
+          4::8,
+          channel_id::8,
+          ext_seq_counter::8,
+          0::8,
+          cemi_message_code::8,
+          0::8,
+          frame_type::2,
+          # TODO 1 means, DL repetitions may be sent. how to handle this?
+          repeat::1,
+          _system_broadcast::1,
+          prio::2,
+          # for TP1, L2-Acks are requested independent of value
+          _ack::1,
+          _confirm::1,
+          addr_t::1,
+          hops::3,
+          eff::4,
+          src_addr::16,
+          dest_addr::16,
+          len::8,
+          data::bits
+        >>
+      ) do
     con_tab = Cache.get(:con_tab)
 
     # TODO how does the server react if no connection is open? (not specified)
@@ -49,8 +48,8 @@ defmodule Knx.Knxnetip.Tunneling do
         addr_t: addr_t,
         hops: hops,
         eff: eff,
-        src: src,
-        dest: dest,
+        src: src_addr,
+        dest: dest_addr,
         len: len,
         data: data
       }
@@ -85,43 +84,6 @@ defmodule Knx.Knxnetip.Tunneling do
       []
     end
   end
-
-  # defp handle_cemi_service_info(
-  #        cemi_message_code,
-  #        <<
-  #          # do we need to save the frame type?
-  #          _frame_type::2,
-  #          # TODO
-  #          _repeat::1,
-  #          # System Broadcast not applicable on TP1
-  #          _system_broadcast::1,
-  #          prio::2,
-  #          # TP1: whether an ack is requested is determined by primitive
-  #          _ack::1,
-  #          # how do we handle this confirmation flag? is it identical with ok?
-  #          confirm::1,
-  #          addr_t::1,
-  #          hops::3,
-  #          eff::4,
-  #          src::16,
-  #          dest::16,
-  #          len::8,
-  #          data::bits
-  #        >>
-  #      ) do
-  #   %CEMIFrame{
-  #     message_code: cemi_message_code,
-  #     src: src,
-  #     dest: dest,
-  #     addr_t: addr_t,
-  #     prio: prio,
-  #     hops: hops,
-  #     len: len,
-  #     data: data,
-  #     eff: eff,
-  #     confirm: confirm
-  #   }
-  # end
 
   # ----------------------------------------------------------------------------
 
