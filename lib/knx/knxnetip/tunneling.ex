@@ -1,6 +1,6 @@
 defmodule Knx.Knxnetip.Tunneling do
   alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.CEMIFrame
+  alias Knx.Knxnetip.TunnelingCemiFrame
   alias Knx.Knxnetip.ConTab
 
   require Knx.Defs
@@ -39,7 +39,7 @@ defmodule Knx.Knxnetip.Tunneling do
 
     # TODO how does the server react if no connection is open? (not specified)
     if ConTab.is_open?(con_tab, channel_id) do
-      cemi_frame = %CEMIFrame{
+      cemi_frame = %TunnelingCemiFrame{
         message_code: cemi_message_code,
         frame_type: frame_type,
         repeat: repeat,

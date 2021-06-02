@@ -2,7 +2,7 @@ defmodule Knx.Knxnetip.IPTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.Knxnetip.CEMIFrame
+  alias Knx.Knxnetip.TunnelingCemiFrame
   alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.Connection, as: C
   alias Knx.Knxnetip.Endpoint, as: Ep
@@ -99,7 +99,9 @@ defmodule Knx.Knxnetip.IPTest do
                  0x112233445566::48,
                  0xE000170C::32,
                  0x000000000000::48,
-                 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(8)-size(30),
+                 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(
+                   8
+                 )-size(30),
                  # DIB Supported Service Families ------------
                  structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
@@ -148,7 +150,9 @@ defmodule Knx.Knxnetip.IPTest do
                  0x112233445566::48,
                  0xE000170C::32,
                  0x000000000000::48,
-                 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(8)-size(30),
+                 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(
+                   8
+                 )-size(30),
                  # DIB Supported Service Families ------------
                  structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
@@ -403,7 +407,7 @@ defmodule Knx.Knxnetip.IPTest do
                  @status::8
                >>}},
              {:dl, :req,
-              %CEMIFrame{
+              %TunnelingCemiFrame{
                 message_code: @cemi_message_code_l_data_ind,
                 src: @src,
                 dest: @dest,

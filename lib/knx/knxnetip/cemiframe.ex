@@ -1,4 +1,4 @@
-defmodule Knx.Knxnetip.CEMIFrame do
+defmodule Knx.Knxnetip.TunnelingCemiFrame do
   defstruct message_code: nil,
             frame_type: nil,
             repeat: nil,

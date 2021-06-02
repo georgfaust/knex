@@ -1,6 +1,6 @@
 defmodule Knx.Knxnetip.DeviceManagement do
   alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.MgmtCEMIFrame
+  alias Knx.Knxnetip.MgmtCemiFrame
   alias Knx.Knxnetip.ConTab
   alias Knx.Ail.Property, as: P
 
@@ -33,7 +33,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
       con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
       Cache.put(:con_tab, con_tab)
 
-      mgmt_cemi_frame = %MgmtCEMIFrame{
+      mgmt_cemi_frame = %MgmtCemiFrame{
         message_code: cemi_message_code,
         object_type: object_type,
         object_instance: object_instance,
@@ -115,7 +115,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
     end
   end
 
-  defp mgmt_cemi_frame(%MgmtCEMIFrame{
+  defp mgmt_cemi_frame(%MgmtCemiFrame{
          message_code: message_code,
          object_type: object_type,
          object_instance: object_instance,
