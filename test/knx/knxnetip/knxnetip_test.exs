@@ -92,15 +92,14 @@ defmodule Knx.Knxnetip.IPTest do
                  # DIB Device Info --------------------------
                  structure_length(:dib_device_info)::8,
                  description_type_code(:device_info)::8,
-                 # TODO
-                 0x00::8,
+                 0x02::8,
                  1::8,
+                 0x11FF::16,
                  0x0000::16,
-                 0x0000::16,
+                 0x112233445566::48,
+                 0xE000170C::32,
                  0x000000000000::48,
-                 0x00000000::32,
-                 0x000000000000::48,
-                 0x000000000000000000000000000000::unit(8)-size(30),
+                 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(8)-size(30),
                  # DIB Supported Service Families ------------
                  structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
@@ -142,14 +141,14 @@ defmodule Knx.Knxnetip.IPTest do
                  structure_length(:dib_device_info)::8,
                  description_type_code(:device_info)::8,
                  # TODO
-                 0x00::8,
+                 0x02::8,
                  1::8,
+                 0x11FF::16,
                  0x0000::16,
-                 0x0000::16,
+                 0x112233445566::48,
+                 0xE000170C::32,
                  0x000000000000::48,
-                 0x00000000::32,
-                 0x000000000000::48,
-                 0x000000000000000000000000000000::unit(8)-size(30),
+                 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000::unit(8)-size(30),
                  # DIB Supported Service Families ------------
                  structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
@@ -185,7 +184,7 @@ defmodule Knx.Knxnetip.IPTest do
   @total_length_connect_resp_management structure_length(:header) + 2 + structure_length(:hpai) +
                                           2
   # TODO
-  @knx_indv_addr 0x0000
+  @knx_indv_addr 0x11FF
 
   test("connect request") do
     assert [

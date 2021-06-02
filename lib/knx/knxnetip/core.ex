@@ -3,6 +3,7 @@ defmodule Knx.Knxnetip.Core do
   alias Knx.Knxnetip.ConTab
   alias Knx.Knxnetip.Endpoint, as: Ep
   alias Knx.Ail.Device
+  alias Knx.Ail.Property, as: P
 
   require Knx.Defs
   import Knx.Defs
@@ -267,8 +268,8 @@ defmodule Knx.Knxnetip.Core do
   end
 
   defp hpai(host_protocol_code) do
-    # TODO
-    ip_addr = 0xC0A8_B23E
+    props = Cache.get_obj(:knxnet_ip_parameter)
+    ip_addr = P.read_prop_value(props, :current_ip_address)
 
     <<
       structure_length(:hpai)::8,
@@ -279,22 +280,22 @@ defmodule Knx.Knxnetip.Core do
   end
 
   defp dib_device_information() do
-    props = Cache.get_obj(:device)
-    device_status = Device.get_prog_mode(props)
+    device_props = Cache.get_obj(:device)
+    knxnet_ip_props = Cache.get_obj(:knxnet_ip_parameter)
 
-    # TODO
-    knx_medium = 0x00
-    knx_individual_addr = 0x0000
+    knx_medium = knx_medium_code(:tp1)
+    device_status = Device.get_prog_mode(device_props)
+    knx_individual_addr = P.read_prop_value(knxnet_ip_props, :knx_individual_address)
+    # TODO how is this supposed to be assigned? (core, 7.5.4.2)
     project_installation_id = 0x0000
-    knx_serial_number = 0x000000000000
-    routing_multicast_addr = 0x00000000
-    mac_address = 0x000000000000
-    friendly_name = 0x000000000000000000000000000000
+    knx_serial_number = P.read_prop_value(device_props, :serial)
+    routing_multicast_addr = P.read_prop_value(knxnet_ip_props, :routing_multicast_address)
+    mac_address = P.read_prop_value(knxnet_ip_props, :mac_address)
+    friendly_name = P.read_prop_value(knxnet_ip_props, :friendly_name)
 
     <<
       structure_length(:dib_device_info)::8,
       description_type_code(:device_info)::8,
-      # TODO where do we get this info from?
       knx_medium::8,
       device_status::8,
       knx_individual_addr::16,
@@ -310,26 +311,25 @@ defmodule Knx.Knxnetip.Core do
     <<
       structure_length(:dib_supp_svc_families)::8,
       description_type_code(:supp_svc_families)::8,
-      # all services: version 1
       service_family_id(:core)::8,
-      0x01::8,
+      protocol_version(:core)::8,
       service_family_id(:device_management)::8,
-      0x01::8,
+      protocol_version(:device_management)::8,
       service_family_id(:tunneling)::8,
-      0x01::8
+      protocol_version(:tunneling)::8
     >>
   end
 
   defp crd(%IPFrame{con_type: con_type}) do
-    # TODO
-    knx_ind_addr = 0x0000
+    props = Cache.get_obj(:knxnet_ip_parameter)
+    knx_individual_addr = P.read_prop_value(props, :knx_individual_address)
 
     case con_type do
       :device_mgmt_con ->
         <<2::8, connection_type_code(con_type)::8>>
 
       :tunnel_con ->
-        <<4::8, connection_type_code(con_type), knx_ind_addr::16>>
+        <<4::8, connection_type_code(con_type), knx_individual_addr::16>>
     end
   end
 

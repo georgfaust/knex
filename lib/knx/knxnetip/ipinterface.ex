@@ -12,7 +12,6 @@ defmodule Knx.Knxnetip.IpInterface do
 
   # TODO
   ## - implement heartbeat monitoring
-  ## - implement endpoint struct
   ## - defend additional individual addresses (tunneling, 2.2.2)
   ## - generate Layer-2 ack frames for additional individual addresses (tunneling, 2.2.2)
 

@@ -339,6 +339,13 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(knx_medium_code,
+  do: [
+    tp1: 0x02,
+    knx_ip: 0x20,
+  ]
+)
+
   enum(structure_length,
     do: [
       header: 0x06,
