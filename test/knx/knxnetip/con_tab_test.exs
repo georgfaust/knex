@@ -6,13 +6,13 @@ defmodule Knx.Knxnetip.ConTabTest do
 
   @list_1_254 Enum.to_list(1..254)
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
-  @con_1 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E76}}
+  # @con_1 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E76}}
 
-  @con_tab_01 %{
-    :free_mgmt_ids => Enum.to_list(2..255),
-    0 => @con_0,
-    1 => @con_1
-  }
+  # @con_tab_01 %{
+  #   :free_mgmt_ids => Enum.to_list(2..255),
+  #   0 => @con_0,
+  #   1 => @con_1
+  # }
 
   @con_tab_0 %{
     :free_mgmt_ids => Enum.to_list(1..255),

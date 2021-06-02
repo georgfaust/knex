@@ -2,7 +2,6 @@ defmodule Knx.Knxnetip.IPTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.Knxnetip.CEMIFrame
   alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.Connection, as: C
   alias Knx.Knxnetip.Endpoint, as: Ep
@@ -21,7 +20,7 @@ defmodule Knx.Knxnetip.IPTest do
   @ip_interface_ip 0xC0A8_B23E
   # 3701 (14, 117)
   @ip_interface_port 0x0E75
-  @ip_interface {@ip_interface_ip, @ip_interface_port}
+  # @ip_interface {@ip_interface_ip, @ip_interface_port}
 
   # 192.168.178.21
   @ets_ip 0xC0A8_B215
@@ -168,21 +167,6 @@ defmodule Knx.Knxnetip.IPTest do
   @total_length_connect_resp_management @header_size + 2 + @hpai_structure_length + 2
   # TODO
   @knx_indv_addr 0x0000
-
-  IO.inspect(<<
-    @header_size::8,
-    @protocol_version::8,
-    service_type_id(:connect_resp)::16,
-    @total_length_connect_resp_management::16,
-    1::8,
-    connect_response_status_code(:no_error)::8,
-    @hpai_structure_length::8,
-    host_protocol_code(:udp)::8,
-    @ip_interface_ip::32,
-    @ip_interface_port::16,
-    2::8,
-    connection_type_code(:device_mgmt_con)::8
-  >>)
 
   test("connect request") do
     assert [

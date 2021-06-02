@@ -1,0 +1,146 @@
+defmodule Knx.Knxnetip.Tunneling do
+  alias Knx.Knxnetip.IPFrame
+  alias Knx.Knxnetip.CEMIFrame
+  alias Knx.Knxnetip.ConTab
+
+  require Knx.Defs
+  import Knx.Defs
+
+  @header_size 6
+  @protocol_version 0x10
+
+  def handle_body(
+         src,
+         %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
+         <<
+           4::8,
+           channel_id::8,
+           ext_seq_counter::8,
+           0::8,
+           cemi_message_code::8,
+           0::8,
+           frame_type::1,
+           0::1,
+           # TODO 1 means, DL repetitions may be sent. how to handle this?
+           repeat::1,
+           _system_broadcast::1,
+           prio::2,
+           # for TP1, L2-Acks are requested independent of value
+           _ack::1,
+           _confirm::1,
+           addr_t::1,
+           hops::3,
+           eff::4,
+           src::16,
+           dest::16,
+           len::8,
+           data::bits
+         >>
+       ) do
+    con_tab = Cache.get(:con_tab)
+
+    # TODO how does the server react if no connection is open? (not specified)
+    if ConTab.is_open?(con_tab, channel_id) do
+      cemi_frame = %CEMIFrame{
+        message_code: cemi_message_code,
+        frame_type: frame_type,
+        repeat: repeat,
+        prio: prio,
+        addr_t: addr_t,
+        hops: hops,
+        eff: eff,
+        src: src,
+        dest: dest,
+        len: len,
+        data: data
+      }
+
+      ip_frame = %{
+        ip_frame
+        | channel_id: channel_id,
+          ext_seq_counter: ext_seq_counter,
+          data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id),
+          cemi: cemi_frame
+      }
+
+      cond do
+        ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter) ->
+          con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
+          Cache.put(:con_tab, con_tab)
+
+          [tunneling_ack(ip_frame), {:dl, :req, ip_frame.cemi}]
+
+        ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter - 1) ->
+          ip_frame = %{
+            ip_frame
+            | ext_seq_counter: ext_seq_counter - 1
+          }
+
+          [tunneling_ack(ip_frame)]
+
+        true ->
+          []
+      end
+    else
+      []
+    end
+  end
+
+  # defp handle_cemi_service_info(
+  #        cemi_message_code,
+  #        <<
+  #          # do we need to save the frame type?
+  #          _frame_type::2,
+  #          # TODO
+  #          _repeat::1,
+  #          # System Broadcast not applicable on TP1
+  #          _system_broadcast::1,
+  #          prio::2,
+  #          # TP1: whether an ack is requested is determined by primitive
+  #          _ack::1,
+  #          # how do we handle this confirmation flag? is it identical with ok?
+  #          confirm::1,
+  #          addr_t::1,
+  #          hops::3,
+  #          eff::4,
+  #          src::16,
+  #          dest::16,
+  #          len::8,
+  #          data::bits
+  #        >>
+  #      ) do
+  #   %CEMIFrame{
+  #     message_code: cemi_message_code,
+  #     src: src,
+  #     dest: dest,
+  #     addr_t: addr_t,
+  #     prio: prio,
+  #     hops: hops,
+  #     len: len,
+  #     data: data,
+  #     eff: eff,
+  #     confirm: confirm
+  #   }
+  # end
+
+  # ----------------------------------------------------------------------------
+
+  defp tunneling_ack(%IPFrame{
+         channel_id: channel_id,
+         ext_seq_counter: ext_seq_counter,
+         data_endpoint: data_endpoint
+       }) do
+    frame = <<
+      @header_size::8,
+      @protocol_version::8,
+      service_type_id(:tunnelling_ack)::16,
+      10::16,
+      4::8,
+      channel_id::8,
+      ext_seq_counter::8,
+      0::8
+    >>
+
+    {:ethernet, :transmit, {data_endpoint, frame}}
+  end
+end
