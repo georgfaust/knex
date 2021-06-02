@@ -6,6 +6,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
 
   require Knx.Defs
   import Knx.Defs
+  import PureLogger
 
   def handle_body(
         _src,
@@ -77,6 +78,10 @@ defmodule Knx.Knxnetip.DeviceManagement do
     end
 
     []
+  end
+
+  def handle_body(_src, _ip_frame, _frame) do
+    error(:unknown_service_type_id)
   end
 
   # ----------------------------------------------------------------------------

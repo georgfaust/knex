@@ -5,6 +5,7 @@ defmodule Knx.Knxnetip.Tunneling do
 
   require Knx.Defs
   import Knx.Defs
+  import PureLogger
 
   def handle_body(
         _src,
@@ -81,6 +82,10 @@ defmodule Knx.Knxnetip.Tunneling do
     else
       []
     end
+  end
+
+  def handle_body(_src, _ip_frame, _frame) do
+    error(:unknown_service_type_id)
   end
 
   # ----------------------------------------------------------------------------

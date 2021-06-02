@@ -7,6 +7,7 @@ defmodule Knx.Knxnetip.Core do
 
   require Knx.Defs
   import Knx.Defs
+  import PureLogger
 
   def handle_body(
         src,
@@ -143,6 +144,10 @@ defmodule Knx.Knxnetip.Core do
     [disconnect_resp(ip_frame)]
   end
 
+  def handle_body(_src, _ip_frame, _frame) do
+    error(:unknown_service_type_id)
+  end
+
   # ----------------------------------------------------------------------------
 
   defp handle_hpai(<<
@@ -173,6 +178,8 @@ defmodule Knx.Knxnetip.Core do
         {:error, :connection_type}
     end
   end
+
+  # ----------------------------------------------------------------------------
 
   defp search_resp(%IPFrame{control_endpoint: dest}) do
     frame =
@@ -266,6 +273,8 @@ defmodule Knx.Knxnetip.Core do
 
     {:ethernet, :transmit, {dest, frame}}
   end
+
+  # ----------------------------------------------------------------------------
 
   defp hpai(host_protocol_code) do
     props = Cache.get_obj(:knxnet_ip_parameter)
