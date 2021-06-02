@@ -331,6 +331,26 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(knxnetip_constant,
+    do: [
+      port: 3671,
+      system_setup_multicast_addr: 0xE000_170C,
+      reserved: 0x00
+    ]
+  )
+
+  enum(structure_length,
+    do: [
+      header: 0x06,
+      hpai: 0x08,
+      dib_device_info: 0x36,
+      dib_supp_svc_families: 0x08,
+      connection_header: 0x04,
+      device_configuration_ack: 0x0A,
+      tunneling_ack: 0x0A
+    ]
+  )
+
   enum(service_type_id,
     do: [
       search_req: 0x0201,
@@ -347,6 +367,23 @@ defmodule Knx.Defs do
       device_configuration_ack: 0x0311,
       tunnelling_req: 0x0420,
       tunnelling_ack: 0x0421
+    ]
+  )
+
+  enum(service_family_id,
+    do: [
+      core: 0x02,
+      device_management: 0x03,
+      tunneling: 0x04
+    ]
+  )
+
+  enum(protocol_version,
+    do: [
+      knxnetip: 0x10,
+      core: 0x01,
+      device_management: 0x01,
+      tunneling: 0x01
     ]
   )
 
@@ -420,6 +457,14 @@ defmodule Knx.Defs do
     ]
   )
 
+  # TODO is this correct? (not specified)
+  enum(tunneling_ack_status_code,
+    do: [
+      no_error: 0x00,
+      connection_id: 0x21
+    ]
+  )
+
   enum(tunneling_connect_ack_error_code,
     do: [
       no_error: 0x00,
@@ -448,7 +493,23 @@ defmodule Knx.Defs do
       m_funcpropstateread_req: 0xF9,
       m_funcpropstateread_con: 0xFA,
       m_reset_req: 0xF1,
-      m_reset_ind: 0xF0,
+      m_reset_ind: 0xF0
+    ]
+  )
+
+  enum(cemi_error_code,
+    do: [
+      unspecific: 0x00,
+      out_of_range: 0x01,
+      out_of_max_range: 0x02,
+      out_of_min_range: 0x03,
+      memory_error: 0x04,
+      read_only: 0x05,
+      illegal_command: 0x06,
+      void_dp: 0x07,
+      type_conflict: 0x08,
+      prop_index_range: 0x09,
+      value_temporarily_not_writeable: 0x0A
     ]
   )
 end

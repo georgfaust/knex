@@ -10,17 +10,10 @@ defmodule Knx.Knxnetip.IPTest do
   require Knx.Defs
   import Knx.Defs
 
-  @header_size 0x06
-  @protocol_version 0x10
-
-  @hpai_structure_length 8
-  @dib_device_info_structure_length 0x36
-  @dib_supp_svc_families_structure_length 8
-
   # 192.168.178.62
   @ip_interface_ip 0xC0A8_B23E
-  # 3701 (14, 117)
-  @ip_interface_port 0x0E75
+  # 3671 (14, 87)
+  @ip_interface_port 0x0E57
   # @ip_interface {@ip_interface_ip, @ip_interface_port}
 
   # 192.168.178.21
@@ -78,26 +71,26 @@ defmodule Knx.Knxnetip.IPTest do
   ## Search Req:
   @search_req <<0x0610_0201_000E_0801_C0A8_B215_EC0B::unit(8)-size(14)>>
 
-  @total_length_search_resp @header_size + @hpai_structure_length +
-                              @dib_device_info_structure_length +
-                              @dib_supp_svc_families_structure_length
+  @total_length_search_resp structure_length(:header) + structure_length(:hpai) +
+                              structure_length(:dib_device_info) +
+                              structure_length(:dib_supp_svc_families)
 
   test "search request" do
     assert [
              {:ethernet, :transmit,
               {@ets_discovery_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:search_resp)::16,
                  @total_length_search_resp::16,
                  # HPAI -------------------------------------
-                 @hpai_structure_length::8,
+                 structure_length(:hpai)::8,
                  protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
                  # DIB Device Info --------------------------
-                 @dib_device_info_structure_length::8,
+                 structure_length(:dib_device_info)::8,
                  description_type_code(:device_info)::8,
                  # TODO
                  0x00::8,
@@ -109,7 +102,7 @@ defmodule Knx.Knxnetip.IPTest do
                  0x000000000000::48,
                  0x000000000000000000000000000000::unit(8)-size(30),
                  # DIB Supported Service Families ------------
-                 @dib_supp_svc_families_structure_length::8,
+                 structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
                  0x02::8,
                  0x01::8,
@@ -133,20 +126,20 @@ defmodule Knx.Knxnetip.IPTest do
   ## Description Req:
   @description_req <<0x0610_0203_000E_0801_0000_0000_0000::unit(8)-size(14)>>
 
-  @total_length_description_resp @header_size + @dib_device_info_structure_length +
-                                   @dib_supp_svc_families_structure_length
+  @total_length_description_resp structure_length(:header) + structure_length(:dib_device_info) +
+                                   structure_length(:dib_supp_svc_families)
 
   test "description request" do
     assert [
              {:ethernet, :transmit,
               {@ets_control_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:search_resp)::16,
                  @total_length_description_resp::16,
                  # DIB Device Info --------------------------
-                 @dib_device_info_structure_length::8,
+                 structure_length(:dib_device_info)::8,
                  description_type_code(:device_info)::8,
                  # TODO
                  0x00::8,
@@ -158,7 +151,7 @@ defmodule Knx.Knxnetip.IPTest do
                  0x000000000000::48,
                  0x000000000000000000000000000000::unit(8)-size(30),
                  # DIB Supported Service Families ------------
-                 @dib_supp_svc_families_structure_length::8,
+                 structure_length(:dib_supp_svc_families)::8,
                  description_type_code(:supp_svc_families)::8,
                  0x02::8,
                  0x01::8,
@@ -188,8 +181,9 @@ defmodule Knx.Knxnetip.IPTest do
                               24
                             )>>
 
-  @total_length_connect_resp_tunneling @header_size + 2 + @hpai_structure_length + 4
-  @total_length_connect_resp_management @header_size + 2 + @hpai_structure_length + 2
+  @total_length_connect_resp_tunneling structure_length(:header) + 2 + structure_length(:hpai) + 4
+  @total_length_connect_resp_management structure_length(:header) + 2 + structure_length(:hpai) +
+                                          2
   # TODO
   @knx_indv_addr 0x0000
 
@@ -198,13 +192,13 @@ defmodule Knx.Knxnetip.IPTest do
              {:ethernet, :transmit,
               {@ets_control_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:connect_resp)::16,
                  @total_length_connect_resp_tunneling::16,
                  255::8,
                  connect_response_status_code(:no_error)::8,
-                 @hpai_structure_length::8,
+                 structure_length(:hpai)::8,
                  protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
@@ -227,13 +221,13 @@ defmodule Knx.Knxnetip.IPTest do
              {:ethernet, :transmit,
               {@ets_control_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:connect_resp)::16,
                  @total_length_connect_resp_management::16,
                  1::8,
                  connect_response_status_code(:no_error)::8,
-                 @hpai_structure_length::8,
+                 structure_length(:hpai)::8,
                  protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
@@ -255,15 +249,15 @@ defmodule Knx.Knxnetip.IPTest do
   ## Connectionstate Req:
   @connectionstate_req <<0x0610_0207_0010_0000_0801_C0A8_B215_CC1A::unit(8)-size(16)>>
 
-  @total_length_connectionstate_resp @header_size + 2
+  @total_length_connectionstate_resp structure_length(:header) + 2
 
   test("connectionstate request") do
     assert [
              {:ethernet, :transmit,
               {@ets_control_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:connectionstate_resp)::16,
                  @total_length_connectionstate_resp::16,
                  0::8,
@@ -284,15 +278,15 @@ defmodule Knx.Knxnetip.IPTest do
   ## Disconnect Req:
   @disconnect_req <<0x0610_0209_0010_0000_0801_C0A8_B215_CC1A::unit(8)-size(16)>>
 
-  @total_length_disconnect_resp @header_size + 2
+  @total_length_disconnect_resp structure_length(:header) + 2
 
   test("disconnect request") do
     assert [
              {:ethernet, :transmit,
               {@ets_control_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:disconnect_resp)::16,
                  @total_length_disconnect_resp::16,
                  0::8,
@@ -318,8 +312,8 @@ defmodule Knx.Knxnetip.IPTest do
              {:ethernet, :transmit,
               {@ets_config_data_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:device_configuration_ack)::16,
                  10::16,
                  4::8,
@@ -330,8 +324,8 @@ defmodule Knx.Knxnetip.IPTest do
              {:ethernet, :transmit,
               {@ets_config_data_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  service_type_id(:device_configuration_req)::16,
                  19::16,
                  4::8,
@@ -385,7 +379,6 @@ defmodule Knx.Knxnetip.IPTest do
   @status 0x00
 
   test "tunneling request, group value write" do
-
     # open tunneling connection first
     Ip.handle(
       {
@@ -401,8 +394,8 @@ defmodule Knx.Knxnetip.IPTest do
              {:ethernet, :transmit,
               {@ets_tunneling_data_endpoint,
                <<
-                 @header_size::8,
-                 @protocol_version::8,
+                 structure_length(:header)::8,
+                 protocol_version(:knxnetip)::8,
                  @service_type_id_tunneling_ack::16,
                  @total_length::16,
                  @structure_length_connection_header::8,

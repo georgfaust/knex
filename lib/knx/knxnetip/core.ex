@@ -7,13 +7,6 @@ defmodule Knx.Knxnetip.Core do
   require Knx.Defs
   import Knx.Defs
 
-  @header_size 6
-  @protocol_version 0x10
-  @hpai_structure_length 8
-  @dib_device_info_structure_length 0x36
-  @dib_supp_svc_families_structure_length 8
-  @universal_port 0x0E75
-
   def handle_body(
         src,
         %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
@@ -46,16 +39,16 @@ defmodule Knx.Knxnetip.Core do
         src,
         %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
         <<
-          control_hpai::size(@hpai_structure_length)-unit(8),
-          data_hpai::size(@hpai_structure_length)-unit(8),
+          control_hpai::size(structure_length(:hpai))-unit(8),
+          data_hpai::size(structure_length(:hpai))-unit(8),
           cri::bits
         >>
       ) do
     control_endpoint =
-      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
       |> check_route_back_hpai(src)
 
-    data_endpoint = handle_hpai(<<data_hpai::size(@hpai_structure_length)-unit(8)>>)
+    data_endpoint = handle_hpai(<<data_hpai::size(structure_length(:hpai))-unit(8)>>)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
@@ -92,12 +85,12 @@ defmodule Knx.Knxnetip.Core do
         %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
         <<
           channel_id::8,
-          0::8,
-          control_hpai::size(@hpai_structure_length)-unit(8)
+          knxnetip_constant(:reserved)::8,
+          control_hpai::size(structure_length(:hpai))-unit(8)
         >>
       ) do
     control_endpoint =
-      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
       |> check_route_back_hpai(src)
 
     con_tab = Cache.get(:con_tab)
@@ -118,12 +111,12 @@ defmodule Knx.Knxnetip.Core do
         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
         <<
           channel_id::8,
-          0::8,
-          control_hpai::size(@hpai_structure_length)-unit(8)
+          knxnetip_constant(:reserved)::8,
+          control_hpai::size(structure_length(:hpai))-unit(8)
         >>
       ) do
     control_endpoint =
-      handle_hpai(<<control_hpai::size(@hpai_structure_length)-unit(8)>>)
+      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
       |> check_route_back_hpai(src)
 
     ip_frame = %{
@@ -152,7 +145,7 @@ defmodule Knx.Knxnetip.Core do
   # ----------------------------------------------------------------------------
 
   defp handle_hpai(<<
-         @hpai_structure_length::8,
+         structure_length(:hpai)::8,
          protocol_code::8,
          ip_addr::32,
          port::16
@@ -165,7 +158,7 @@ defmodule Knx.Knxnetip.Core do
        ) do
     case connection_type_code do
       connection_type_code(:tunnel_con) ->
-        <<tunneling_knx_layer::8, 0::8>> = connection_specific_info
+        <<tunneling_knx_layer::8, knxnetip_constant(:reserved)::8>> = connection_specific_info
 
         case tunneling_knx_layer do
           tunneling_knx_layer(:tunnel_linklayer) -> {:tunnel_con, {tunneling_knx_layer}}
@@ -183,11 +176,11 @@ defmodule Knx.Knxnetip.Core do
   defp search_resp(%IPFrame{control_endpoint: dest}) do
     frame =
       <<
-        @header_size::8,
-        @protocol_version::8,
+        structure_length(:header)::8,
+        protocol_version(:knxnetip)::8,
         service_type_id(:search_resp)::16,
-        @header_size + @hpai_structure_length + @dib_device_info_structure_length +
-          @dib_supp_svc_families_structure_length::16
+        structure_length(:header) + structure_length(:hpai) + structure_length(:dib_device_info) +
+          structure_length(:dib_supp_svc_families)::16
       >> <>
         hpai(dest.protocol_code) <>
         dib_device_information() <>
@@ -201,11 +194,11 @@ defmodule Knx.Knxnetip.Core do
        }) do
     frame =
       <<
-        @header_size::8,
-        @protocol_version::8,
+        structure_length(:header)::8,
+        protocol_version(:knxnetip)::8,
         service_type_id(:search_resp)::16,
-        @header_size + @dib_device_info_structure_length +
-          @dib_supp_svc_families_structure_length::16
+        structure_length(:header) + structure_length(:dib_device_info) +
+          structure_length(:dib_supp_svc_families)::16
       >> <>
         dib_device_information() <>
         dib_supp_svc_families()
@@ -226,10 +219,10 @@ defmodule Knx.Knxnetip.Core do
 
     frame =
       <<
-        @header_size::8,
-        @protocol_version::8,
+        structure_length(:header)::8,
+        protocol_version(:knxnetip)::8,
         service_type_id(:connect_resp)::16,
-        @header_size + 2 + @hpai_structure_length + crd_structure_length::16,
+        structure_length(:header) + 2 + structure_length(:hpai) + crd_structure_length::16,
         channel_id::8,
         connect_response_status_code(status)::8
       >> <>
@@ -245,10 +238,10 @@ defmodule Knx.Knxnetip.Core do
          status: status
        }) do
     frame = <<
-      @header_size::8,
-      @protocol_version::8,
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id(:connectionstate_resp)::16,
-      @header_size + 2::16,
+      structure_length(:header) + 2::16,
       channel_id::8,
       connectionstate_response_status_code(status)::8
     >>
@@ -262,10 +255,10 @@ defmodule Knx.Knxnetip.Core do
          status: status
        }) do
     frame = <<
-      @header_size::8,
-      @protocol_version::8,
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id(:disconnect_resp)::16,
-      @header_size + 2::16,
+      structure_length(:header) + 2::16,
       channel_id::8,
       disconnect_response_status_code(status)::8
     >>
@@ -278,10 +271,10 @@ defmodule Knx.Knxnetip.Core do
     ip_addr = 0xC0A8_B23E
 
     <<
-      @hpai_structure_length::8,
+      structure_length(:hpai)::8,
       host_protocol_code::8,
       ip_addr::32,
-      @universal_port::16
+      knxnetip_constant(:port)::16
     >>
   end
 
@@ -299,7 +292,7 @@ defmodule Knx.Knxnetip.Core do
     friendly_name = 0x000000000000000000000000000000
 
     <<
-      @dib_device_info_structure_length::8,
+      structure_length(:dib_device_info)::8,
       description_type_code(:device_info)::8,
       # TODO where do we get this info from?
       knx_medium::8,
@@ -315,14 +308,14 @@ defmodule Knx.Knxnetip.Core do
 
   defp dib_supp_svc_families() do
     <<
-      @dib_supp_svc_families_structure_length::8,
+      structure_length(:dib_supp_svc_families)::8,
       description_type_code(:supp_svc_families)::8,
       # all services: version 1
-      0x02::8,
+      service_family_id(:core)::8,
       0x01::8,
-      0x03::8,
+      service_family_id(:device_management)::8,
       0x01::8,
-      0x04::8,
+      service_family_id(:tunneling)::8,
       0x01::8
     >>
   end

@@ -7,17 +7,14 @@ defmodule Knx.Knxnetip.DeviceManagement do
   require Knx.Defs
   import Knx.Defs
 
-  @header_size 6
-  @protocol_version 0x10
-
   def handle_body(
         _src,
         %IPFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
-          _structure_length::8,
+          structure_length(:connection_header)::8,
           channel_id::8,
           ext_seq_counter::8,
-          0::8,
+          knxnetip_constant(:reserved)::8,
           cemi_message_code::8,
           object_type::16,
           object_instance::8,
@@ -64,7 +61,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
         _src,
         %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
-          4::8,
+          structure_length(:connection_header)::8,
           channel_id::8,
           int_seq_counter::8,
           _status::8
@@ -99,14 +96,14 @@ defmodule Knx.Knxnetip.DeviceManagement do
 
         conf_frame =
           <<
-            @header_size::8,
-            @protocol_version::8,
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
             service_type_id(:device_configuration_req)::16,
-            10 + cemi_frame_size::16,
-            4::8,
+            structure_length(:header) + structure_length(:connection_header) + cemi_frame_size::16,
+            structure_length(:connection_header)::8,
             channel_id::8,
             int_seq_counter::8,
-            0::8
+            knxnetip_constant(:reserved)::8
           >> <> conf_cemi_frame
 
         [{:ethernet, :transmit, {data_endpoint, conf_frame}}]
@@ -152,6 +149,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
                object_type::16,
                object_instance::8,
                pid::8,
+               # 0 elems signals error
                0::4,
                start::12,
                0::8
@@ -195,9 +193,10 @@ defmodule Knx.Knxnetip.DeviceManagement do
                object_type::16,
                object_instance::8,
                pid::8,
+               # 0 elems signals error
                0::4,
                start::12,
-               0::8
+               cemi_error_code(:unspecific)
              >>}
         end
 
@@ -213,11 +212,11 @@ defmodule Knx.Knxnetip.DeviceManagement do
          data_endpoint: data_endpoint
        }) do
     frame = <<
-      @header_size::8,
-      @protocol_version::8,
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id(:device_configuration_ack)::16,
-      10::16,
-      4::8,
+      structure_length(:device_configuration_ack)::16,
+      structure_length(:connection_header)::8,
       channel_id::8,
       ext_seq_counter::8,
       device_configuration_ack_status_code(status)::8

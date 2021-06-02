@@ -6,25 +6,23 @@ defmodule Knx.Knxnetip.Tunneling do
   require Knx.Defs
   import Knx.Defs
 
-  @header_size 6
-  @protocol_version 0x10
-
   def handle_body(
         _src,
         %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
         <<
-          4::8,
+          structure_length(:connection_header)::8,
           channel_id::8,
           ext_seq_counter::8,
-          0::8,
+          knxnetip_constant(:reserved)::8,
           cemi_message_code::8,
+          # additional information: none
           0::8,
           frame_type::2,
           # TODO 1 means, DL repetitions may be sent. how to handle this?
           repeat::1,
           _system_broadcast::1,
           prio::2,
-          # for TP1, L2-Acks are requested independent of value
+          # TODO for TP1, L2-Acks are requested independent of value
           _ack::1,
           _confirm::1,
           addr_t::1,
@@ -93,14 +91,14 @@ defmodule Knx.Knxnetip.Tunneling do
          data_endpoint: data_endpoint
        }) do
     frame = <<
-      @header_size::8,
-      @protocol_version::8,
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id(:tunnelling_ack)::16,
-      10::16,
-      4::8,
+      structure_length(:tunneling_ack)::16,
+      structure_length(:connection_header)::8,
       channel_id::8,
       ext_seq_counter::8,
-      0::8
+      tunneling_ack_status_code(:no_error)::8
     >>
 
     {:ethernet, :transmit, {data_endpoint, frame}}

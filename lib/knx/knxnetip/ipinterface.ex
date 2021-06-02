@@ -6,9 +6,9 @@ defmodule Knx.Knxnetip.IpInterface do
   alias Knx.State, as: S
 
   import PureLogger
-
-  @header_size 6
-  @protocol_version 0x10
+  require Knx.Defs
+  import Knx.Defs
+  use Bitwise
 
   # TODO
   ## - implement heartbeat monitoring
@@ -42,22 +42,29 @@ defmodule Knx.Knxnetip.IpInterface do
 
     {ip_frame, body} = handle_header(data)
 
-    module = cond do
-      ip_frame.service_type_id < 0x300 -> Core
-      ip_frame.service_type_id < 0x400 -> DeviceManagement
-      ip_frame.service_type_id < 0x500 -> Tunneling
-      true -> error(:unknown_service_familiy)
-    end
+    module =
+      cond do
+        ip_frame.service_type_id >>> 8 == service_family_id(:core) ->
+          Core
+
+        ip_frame.service_type_id >>> 8 == service_family_id(:device_management) ->
+          DeviceManagement
+
+        ip_frame.service_type_id >>> 8 == service_family_id(:tunneling) ->
+          Tunneling
+
+        true ->
+          error(:unknown_service_familiy)
+      end
 
     module.handle_body(src, ip_frame, body)
-
   end
 
   # ----------------------------------------------------------------------------
 
   defp handle_header(<<
-         @header_size::8,
-         @protocol_version::8,
+         structure_length(:header)::8,
+         protocol_version(:knxnetip)::8,
          service_type_id::16,
          total_length::16,
          body::bits
@@ -69,5 +76,4 @@ defmodule Knx.Knxnetip.IpInterface do
 
     {ip_frame, body}
   end
-
 end
