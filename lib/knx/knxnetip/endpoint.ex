@@ -1,5 +1,5 @@
 defmodule Knx.Knxnetip.Endpoint do
-  defstruct protocol: nil,
+  defstruct protocol_code: nil,
             ip_addr: nil,
             port: nil
 end

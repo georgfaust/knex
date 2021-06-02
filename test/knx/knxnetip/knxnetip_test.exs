@@ -32,7 +32,11 @@ defmodule Knx.Knxnetip.IPTest do
   @ets_port_config_data 0xCC1C
   @ets_discovery {@ets_ip, @ets_port_discovery}
   @ets_control {@ets_ip, @ets_port_control}
-  @ets_config_data %Ep{protocol: :udp, ip_addr: @ets_ip, port: @ets_port_config_data}
+  @ets_config_data %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ets_ip,
+    port: @ets_port_config_data
+  }
 
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
@@ -60,7 +64,7 @@ defmodule Knx.Knxnetip.IPTest do
   test "search request" do
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_discovery,
+              {protocol_code(:udp), @ets_discovery,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -68,7 +72,7 @@ defmodule Knx.Knxnetip.IPTest do
                  @total_length_search_resp::16,
                  # HPAI -------------------------------------
                  @hpai_structure_length::8,
-                 host_protocol_code(:udp)::8,
+                 protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
                  # DIB Device Info --------------------------
@@ -114,7 +118,7 @@ defmodule Knx.Knxnetip.IPTest do
   test "description request" do
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_control,
+              {protocol_code(:udp), @ets_control,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -171,7 +175,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("connect request") do
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_control,
+              {protocol_code(:udp), @ets_control,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -180,7 +184,7 @@ defmodule Knx.Knxnetip.IPTest do
                  255::8,
                  connect_response_status_code(:no_error)::8,
                  @hpai_structure_length::8,
-                 host_protocol_code(:udp)::8,
+                 protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
                  4::8,
@@ -200,7 +204,7 @@ defmodule Knx.Knxnetip.IPTest do
 
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_control,
+              {protocol_code(:udp), @ets_control,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -209,7 +213,7 @@ defmodule Knx.Knxnetip.IPTest do
                  1::8,
                  connect_response_status_code(:no_error)::8,
                  @hpai_structure_length::8,
-                 host_protocol_code(:udp)::8,
+                 protocol_code(:udp)::8,
                  @ip_interface_ip::32,
                  @ip_interface_port::16,
                  2::8,
@@ -235,7 +239,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("connectionstate request") do
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_control,
+              {protocol_code(:udp), @ets_control,
                <<
                  @header_size::8,
                  @protocol_version::8,
@@ -264,7 +268,7 @@ defmodule Knx.Knxnetip.IPTest do
   test("disconnect request") do
     assert [
              {:ethernet, :transmit,
-              {:udp, @ets_control,
+              {protocol_code(:udp), @ets_control,
                <<
                  @header_size::8,
                  @protocol_version::8,

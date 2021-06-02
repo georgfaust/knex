@@ -36,7 +36,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
       Cache.put(:con_tab, con_tab)
 
       mgmt_cemi_frame = %MgmtCEMIFrame{
-        message_code: decode_cemi_message_code(cemi_message_code),
+        message_code: cemi_message_code,
         object_type: object_type,
         object_instance: object_instance,
         pid: pid,
@@ -124,7 +124,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
        }) do
     # TODO propinfo, funcpropcommand, funcpropstateread, reset
     case message_code do
-      :m_propread_req ->
+      cemi_message_code(:m_propread_req) ->
         props =
           case object_type do
             object_type(:device) -> Cache.get_obj(:device)
@@ -158,10 +158,10 @@ defmodule Knx.Knxnetip.DeviceManagement do
              >>}
         end
 
-      :m_propread_con ->
+      cemi_message_code(:m_propread_con) ->
         :no_reply
 
-      :m_propwrite_req ->
+      cemi_message_code(:m_propwrite_req) ->
         props =
           case object_type do
             object_type(:device) -> Cache.get_obj(:device)
@@ -201,7 +201,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
              >>}
         end
 
-      :m_propwrite_con ->
+      cemi_message_code(:m_propwrite_con) ->
         :no_reply
     end
   end
@@ -227,21 +227,6 @@ defmodule Knx.Knxnetip.DeviceManagement do
   end
 
   # ----------------------------------------------------------------------------
-
-  defp decode_cemi_message_code(cemi_message_code) do
-    case cemi_message_code do
-      0xFC -> :m_propread_req
-      0xFB -> :m_propread_con
-      0xF6 -> :m_propwrite_req
-      0xF5 -> :m_propwrite_con
-      0xF7 -> :m_propinfo_ind
-      0xF8 -> :m_funcpropcommand_req
-      0xFA -> :m_funcpropcommand_con
-      0xF9 -> :m_funcpropstateread_req
-      0xF1 -> :m_reset_req
-      0xF0 -> :m_reset_ind
-    end
-  end
 
   defp decode_object_type(object_type) do
     case object_type do

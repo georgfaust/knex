@@ -350,7 +350,7 @@ defmodule Knx.Defs do
     ]
   )
 
-  enum(host_protocol_code,
+  enum(protocol_code,
     do: [
       udp: 1,
       tcp: 2

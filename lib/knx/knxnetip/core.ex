@@ -101,7 +101,7 @@ defmodule Knx.Knxnetip.Core do
 
     {con_tab, result} =
       ConTab.open(con_tab, ip_frame.con_type, %Ep{
-        protocol: decode_host_protocol(data_host_protocol_code),
+        protocol_code: data_host_protocol_code,
         ip_addr: data_ip_addr,
         port: data_port
       })
@@ -206,16 +206,16 @@ defmodule Knx.Knxnetip.Core do
   defp handle_cri(
          <<_cri_structure_length::8, connection_type_code::8, connection_specific_info::bits>>
        ) do
-    case decode_connection_type(connection_type_code) do
-      :tunnel_con ->
-        <<knx_layer::8, 0::8>> = connection_specific_info
+    case connection_type_code do
+      connection_type_code(:tunnel_con) ->
+        <<tunneling_knx_layer::8, 0::8>> = connection_specific_info
 
-        case decode_knx_layer(knx_layer) do
-          :tunnel_linklayer -> {:tunnel_con, {knx_layer}}
+        case tunneling_knx_layer do
+          tunneling_knx_layer(:tunnel_linklayer) -> {:tunnel_con, {tunneling_knx_layer}}
           _ -> {:error, :connection_option}
         end
 
-      :device_mgmt_con ->
+        connection_type_code(:device_mgmt_con) ->
         {:device_mgmt_con, {}}
 
       _ ->
@@ -236,7 +236,7 @@ defmodule Knx.Knxnetip.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {decode_host_protocol(code), dest, frame}}
+    {:ethernet, :transmit, {code, dest, frame}}
   end
 
   defp description_resp(%IPFrame{
@@ -254,7 +254,7 @@ defmodule Knx.Knxnetip.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {decode_host_protocol(control_host_protocol_code), dest, frame}}
+    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
   end
 
   defp connect_resp(
@@ -281,7 +281,7 @@ defmodule Knx.Knxnetip.Core do
         hpai(data_host_protocol_code) <>
         crd(ip_frame)
 
-    {:ethernet, :transmit, {decode_host_protocol(control_host_protocol_code), dest, frame}}
+    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
   end
 
   defp connectionstate_resp(%IPFrame{
@@ -299,7 +299,7 @@ defmodule Knx.Knxnetip.Core do
       connectionstate_response_status_code(status)::8
     >>
 
-    {:ethernet, :transmit, {decode_host_protocol(control_host_protocol_code), dest, frame}}
+    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
   end
 
   defp disconnect_resp(%IPFrame{
@@ -317,7 +317,7 @@ defmodule Knx.Knxnetip.Core do
       disconnect_response_status_code(status)::8
     >>
 
-    {:ethernet, :transmit, {decode_host_protocol(control_host_protocol_code), dest, frame}}
+    {:ethernet, :transmit, {control_host_protocol_code, dest, frame}}
   end
 
   defp hpai(host_protocol_code) do
@@ -387,28 +387,4 @@ defmodule Knx.Knxnetip.Core do
     end
   end
 
-  defp decode_host_protocol(host_protocol_code) do
-    case host_protocol_code do
-      1 -> :udp
-      2 -> :tcp
-    end
-  end
-
-  defp decode_connection_type(connection_type_code) do
-    case connection_type_code do
-      3 -> :device_mgmt_con
-      4 -> :tunnel_con
-      6 -> :remlog_con
-      7 -> :remconf_con
-      8 -> :objsvr_con
-    end
-  end
-
-  defp decode_knx_layer(knx_layer) do
-    case knx_layer do
-      0x02 -> :tunnel_linklayer
-      0x04 -> :tunnel_raw
-      0x80 -> :tunnel_busmonitor
-    end
-  end
 end
