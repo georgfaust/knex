@@ -14,8 +14,8 @@ defmodule Knx.Knxnetip.ConTab do
     }
 
     case con_type do
-      # allows only one open tunneling connection (always has id 255)
-      # TODO allow multiple tunneling connections ?
+      # allows only one open tunnelling connection (always has id 255)
+      # TODO allow multiple tunnelling connections ?
       :tunnel_con ->
         if is_open?(con_tab, 255) do
           {con_tab, {:error, :no_more_connections}}

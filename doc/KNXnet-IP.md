@@ -19,10 +19,10 @@
   
 --> increment sequence counter
 
-### Tunneling
+### Tunnelling
   * TUNNELING_REQUEST -> TUNNELING_ACK, tp_frame
 
---> [{:ethernet, :transmit, ip_frame}, {:dl, :req, %TunnelingCemiFrame{}}]
+--> [{:ethernet, :transmit, ip_frame}, {:dl, :req, %TunnelCemiFrame{}}]
 
   * TUNNELING_ACK
   
@@ -32,8 +32,8 @@
 
 ## TODO
   * implement heartbeat monitoring
-  * defend additional individual addresses (tunneling, 2.2.2)
-  * generate Layer-2 ack frames for additional individual addresses (tunneling, 2.2.2)
+  * defend additional individual addresses (tunnelling, 2.2.2)
+  * generate Layer-2 ack frames for additional individual addresses (tunnelling, 2.2.2)
 
 ---
 

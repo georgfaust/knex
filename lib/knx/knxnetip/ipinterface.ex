@@ -1,7 +1,7 @@
 defmodule Knx.Knxnetip.IpInterface do
   alias Knx.Knxnetip.Core
   alias Knx.Knxnetip.DeviceManagement
-  alias Knx.Knxnetip.Tunneling
+  alias Knx.Knxnetip.Tunnelling
   alias Knx.Knxnetip.IPFrame
   alias Knx.State, as: S
   alias Knx.Frame, as: F
@@ -12,7 +12,7 @@ defmodule Knx.Knxnetip.IpInterface do
   use Bitwise
 
   def handle({:ip, :from_knx, %F{} = frame}, %S{}) do
-    Tunneling.handle_knx_frame(frame)
+    Tunnelling.handle_knx_frame(frame)
   end
 
   def handle({:ip, :from_ip, src, <<header::8*structure_length(:header), body::bits>>}, %S{}) do
@@ -47,8 +47,8 @@ defmodule Knx.Knxnetip.IpInterface do
         service_family_id(:device_management) ->
           DeviceManagement
 
-        service_family_id(:tunneling) ->
-          Tunneling
+        service_family_id(:tunnelling) ->
+          Tunnelling
 
         _ ->
           error(:unknown_service_familiy)

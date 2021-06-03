@@ -159,10 +159,10 @@ defmodule Knx.Knxnetip.Core do
        ) do
     case connection_type_code do
       connection_type_code(:tunnel_con) ->
-        <<tunneling_knx_layer::8, knxnetip_constant(:reserved)::8>> = connection_specific_info
+        <<tunnelling_knx_layer::8, knxnetip_constant(:reserved)::8>> = connection_specific_info
 
-        case tunneling_knx_layer do
-          tunneling_knx_layer(:tunnel_linklayer) -> {:tunnel_con, {tunneling_knx_layer}}
+        case tunnelling_knx_layer do
+          tunnelling_knx_layer(:tunnel_linklayer) -> {:tunnel_con, {tunnelling_knx_layer}}
           _ -> {:error, :connection_option}
         end
 
@@ -319,8 +319,8 @@ defmodule Knx.Knxnetip.Core do
       protocol_version(:core)::8,
       service_family_id(:device_management)::8,
       protocol_version(:device_management)::8,
-      service_family_id(:tunneling)::8,
-      protocol_version(:tunneling)::8
+      service_family_id(:tunnelling)::8,
+      protocol_version(:tunnelling)::8
     >>
   end
 

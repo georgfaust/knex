@@ -1,6 +1,6 @@
-defmodule Knx.Knxnetip.Tunneling do
+defmodule Knx.Knxnetip.Tunnelling do
   alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.TunnelingCemiFrame
+  alias Knx.Knxnetip.TunnelCemiFrame
   alias Knx.Knxnetip.ConTab
   alias Knx.Frame, as: F
   alias Knx.Ail.Property, as: P
@@ -10,7 +10,7 @@ defmodule Knx.Knxnetip.Tunneling do
   import PureLogger
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunneling_req)},
+        %IPFrame{service_type_id: service_type_id(:tunnelling_req)},
         <<
           structure_length(:connection_header)::8,
           _channel_id::8,
@@ -23,7 +23,7 @@ defmodule Knx.Knxnetip.Tunneling do
   end
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunneling_req)} = ip_frame,
+        %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -53,7 +53,7 @@ defmodule Knx.Knxnetip.Tunneling do
 
     # TODO how does the server react if no connection is open? (not specified)
     if ConTab.is_open?(con_tab, channel_id) do
-      cemi_frame = %TunnelingCemiFrame{
+      cemi_frame = %TunnelCemiFrame{
         message_code: cemi_message_code(:l_data_con),
         frame_type: frame_type,
         repeat: repeat,
@@ -83,9 +83,9 @@ defmodule Knx.Knxnetip.Tunneling do
           Cache.put(:con_tab, con_tab)
 
           [
-            tunneling_ack(ip_frame),
+            tunnelling_ack(ip_frame),
             {:dl, :req, knx_frame(ip_frame.cemi)},
-            tunneling_req(ip_frame)
+            tunnelling_req(ip_frame)
           ]
 
         ConTab.ext_seq_counter_equal?(con_tab, channel_id, decremeted_ext_seq_counter) ->
@@ -94,7 +94,7 @@ defmodule Knx.Knxnetip.Tunneling do
             | ext_seq_counter: ext_seq_counter - 1
           }
 
-          [tunneling_ack(ip_frame)]
+          [tunnelling_ack(ip_frame)]
 
         true ->
           []
@@ -105,7 +105,7 @@ defmodule Knx.Knxnetip.Tunneling do
   end
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunneling_ack)},
+        %IPFrame{service_type_id: service_type_id(:tunnelling_ack)},
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -140,7 +140,7 @@ defmodule Knx.Knxnetip.Tunneling do
         len: len,
         data: data
       }) do
-    cemi_frame = %TunnelingCemiFrame{
+    cemi_frame = %TunnelCemiFrame{
       message_code: cemi_message_code(:l_data_ind),
       frame_type: if(len <= 15, do: 1, else: 0),
       # TODO 03_06_03 4.1.5.3.5
@@ -166,12 +166,12 @@ defmodule Knx.Knxnetip.Tunneling do
       data_endpoint: data_endpoint
     }
 
-    [tunneling_req(ip_frame)]
+    [tunnelling_req(ip_frame)]
   end
 
   # ----------------------------------------------------------------------------
 
-  defp tunneling_req(%IPFrame{
+  defp tunnelling_req(%IPFrame{
          channel_id: channel_id,
          cemi: req_cemi,
          data_endpoint: data_endpoint
@@ -191,7 +191,7 @@ defmodule Knx.Knxnetip.Tunneling do
     frame = <<
       structure_length(:header)::8,
       protocol_version(:knxnetip)::8,
-      service_type_id(:tunneling_req)::16,
+      service_type_id(:tunnelling_req)::16,
       structure_length(:header) + structure_length(:connection_header) +
         structure_length(:cemi_l_data_without_data) + byte_size(req_cemi.data)::16,
       structure_length(:connection_header)::8,
@@ -219,7 +219,7 @@ defmodule Knx.Knxnetip.Tunneling do
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
-  defp tunneling_ack(%IPFrame{
+  defp tunnelling_ack(%IPFrame{
          channel_id: channel_id,
          ext_seq_counter: ext_seq_counter,
          data_endpoint: data_endpoint
@@ -227,18 +227,18 @@ defmodule Knx.Knxnetip.Tunneling do
     frame = <<
       structure_length(:header)::8,
       protocol_version(:knxnetip)::8,
-      service_type_id(:tunneling_ack)::16,
-      structure_length(:tunneling_ack)::16,
+      service_type_id(:tunnelling_ack)::16,
+      structure_length(:tunnelling_ack)::16,
       structure_length(:connection_header)::8,
       channel_id::8,
       ext_seq_counter::8,
-      tunneling_ack_status_code(:no_error)::8
+      tunnelling_ack_status_code(:no_error)::8
     >>
 
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
-  defp knx_frame(%TunnelingCemiFrame{
+  defp knx_frame(%TunnelCemiFrame{
          prio: prio,
          addr_t: addr_t,
          hops: hops,

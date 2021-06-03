@@ -340,11 +340,11 @@ defmodule Knx.Defs do
   )
 
   enum(knx_medium_code,
-  do: [
-    tp1: 0x02,
-    knx_ip: 0x20,
-  ]
-)
+    do: [
+      tp1: 0x02,
+      knx_ip: 0x20
+    ]
+  )
 
   enum(structure_length,
     do: [
@@ -354,7 +354,7 @@ defmodule Knx.Defs do
       dib_supp_svc_families: 0x08,
       connection_header: 0x04,
       device_configuration_ack: 0x0A,
-      tunneling_ack: 0x0A,
+      tunnelling_ack: 0x0A,
       cemi_l_data_without_data: 0x09
     ]
   )
@@ -373,8 +373,8 @@ defmodule Knx.Defs do
       disconnect_resp: 0x020A,
       device_configuration_req: 0x0310,
       device_configuration_ack: 0x0311,
-      tunneling_req: 0x0420,
-      tunneling_ack: 0x0421
+      tunnelling_req: 0x0420,
+      tunnelling_ack: 0x0421
     ]
   )
 
@@ -382,7 +382,7 @@ defmodule Knx.Defs do
     do: [
       core: 0x02,
       device_management: 0x03,
-      tunneling: 0x04
+      tunnelling: 0x04
     ]
   )
 
@@ -391,7 +391,7 @@ defmodule Knx.Defs do
       knxnetip: 0x10,
       core: 0x01,
       device_management: 0x01,
-      tunneling: 0x01
+      tunnelling: 0x01
     ]
   )
 
@@ -466,21 +466,21 @@ defmodule Knx.Defs do
   )
 
   # TODO is this correct? (not specified)
-  enum(tunneling_ack_status_code,
+  enum(tunnelling_ack_status_code,
     do: [
       no_error: 0x00,
       connection_id: 0x21
     ]
   )
 
-  enum(tunneling_connect_ack_error_code,
+  enum(tunnelling_connect_ack_error_code,
     do: [
       no_error: 0x00,
-      tunneling_layer: 0x29
+      tunnelling_layer: 0x29
     ]
   )
 
-  enum(tunneling_knx_layer,
+  enum(tunnelling_knx_layer,
     do: [
       tunnel_linklayer: 0x02,
       tunnel_raw: 0x04,

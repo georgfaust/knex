@@ -1,5 +1,5 @@
 defmodule Knx.Knxnetip.IPFrame do
-  alias Knx.Knxnetip.TunnelingCemiFrame
+  alias Knx.Knxnetip.TunnelCemiFrame
 
   defstruct ip_src: nil,
             header_size: 6,
@@ -14,5 +14,5 @@ defmodule Knx.Knxnetip.IPFrame do
             ext_seq_counter: nil,
             int_seq_counter: nil,
             knx_layer: nil,
-            cemi: %TunnelingCemiFrame{}
+            cemi: %TunnelCemiFrame{}
 end
