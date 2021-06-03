@@ -14,7 +14,7 @@ defmodule Knx.Knxnetip.ConTab do
     }
 
     case con_type do
-      # allow only one open tunneling connection (always has id 255)
+      # allows only one open tunneling connection (always has id 255)
       # TODO allow multiple tunneling connections ?
       :tunnel_con ->
         if is_open?(con_tab, 255) do
@@ -40,16 +40,10 @@ defmodule Knx.Knxnetip.ConTab do
     end
   end
 
+  # TODO this is insecure - also check source
   def is_open?(con_tab, id) do
     Map.has_key?(con_tab, id)
   end
-
-  # def check_connection(con_tab, id) do
-  #   case Map.has_key?(con_tab, id) do
-  #     true -> :ok
-  #     false -> {:error, id}
-  #   end
-  # end
 
   def increment_ext_seq_counter(con_tab, id) do
     cur_count = con_tab[id].ext_seq_counter
@@ -75,13 +69,9 @@ defmodule Knx.Knxnetip.ConTab do
     con_tab[id].int_seq_counter
   end
 
-  # def get_ext_seq_counter(con_tab, id) do
-  #   if is_open?(con_tab, id) do
-  #     con_tab[id].ext_seq_counter
-  #   else
-  #     {:error, :connection_id}
-  #   end
-  # end
+  def get_ext_seq_counter(con_tab, id) do
+    con_tab[id].ext_seq_counter
+  end
 
   def get_data_endpoint(con_tab, id) do
     con_tab[id].dest_data_endpoint

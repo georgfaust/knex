@@ -1,7 +1,8 @@
 defmodule Knx.Knxnetip.IPFrame do
   alias Knx.Knxnetip.TunnelingCemiFrame
 
-  defstruct header_size: 6,
+  defstruct ip_src: nil,
+            header_size: 6,
             protocol_version: 0x10,
             control_endpoint: nil,
             data_endpoint: nil,

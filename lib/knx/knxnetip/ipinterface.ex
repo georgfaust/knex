@@ -4,48 +4,56 @@ defmodule Knx.Knxnetip.IpInterface do
   alias Knx.Knxnetip.Tunneling
   alias Knx.Knxnetip.IPFrame
   alias Knx.State, as: S
+  alias Knx.Frame, as: F
 
   import PureLogger
   require Knx.Defs
   import Knx.Defs
   use Bitwise
 
-  def handle({:ip, :from_ip, src, data}, %S{}) do
+  def handle({:ip, :from_knx, %F{} = frame}, %S{}) do
+    Tunneling.handle_knx_frame(frame)
+  end
 
-    {ip_frame, body} = handle_header(data)
-
-    module =
-      cond do
-        ip_frame.service_type_id >>> 8 == service_family_id(:core) ->
-          Core
-
-        ip_frame.service_type_id >>> 8 == service_family_id(:device_management) ->
-          DeviceManagement
-
-        ip_frame.service_type_id >>> 8 == service_family_id(:tunneling) ->
-          Tunneling
-
-        true ->
-          error(:unknown_service_familiy)
-      end
-
-    module.handle_body(src, ip_frame, body)
+  def handle({:ip, :from_ip, src, <<header::8*structure_length(:header), body::bits>>}, %S{}) do
+    %IPFrame{ip_src: src}
+    |> handle_header(<<header::8*structure_length(:header)>>)
+    |> handle_body(body)
   end
 
   # ----------------------------------------------------------------------------
 
-  defp handle_header(<<
-         structure_length(:header)::8,
-         protocol_version(:knxnetip)::8,
-         service_type_id::16,
-         total_length::16,
-         body::bits
-       >>) do
-    ip_frame = %IPFrame{
-      service_type_id: service_type_id,
-      total_length: total_length
-    }
+  defp handle_header(
+         ip_frame,
+         <<
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_type_id::16,
+           total_length::16
+         >>
+       ) do
+    %IPFrame{ip_frame | service_type_id: service_type_id, total_length: total_length}
+  end
 
-    {ip_frame, body}
+  defp handle_body(
+         %IPFrame{service_type_id: service_type_id} = ip_frame,
+         body
+       ) do
+    module =
+      case service_type_id >>> 8 do
+        service_family_id(:core) ->
+          Core
+
+        service_family_id(:device_management) ->
+          DeviceManagement
+
+        service_family_id(:tunneling) ->
+          Tunneling
+
+        _ ->
+          error(:unknown_service_familiy)
+      end
+
+    module.handle_body(ip_frame, body)
   end
 end

@@ -354,7 +354,8 @@ defmodule Knx.Defs do
       dib_supp_svc_families: 0x08,
       connection_header: 0x04,
       device_configuration_ack: 0x0A,
-      tunneling_ack: 0x0A
+      tunneling_ack: 0x0A,
+      cemi_l_data_without_data: 0x09
     ]
   )
 
@@ -372,8 +373,8 @@ defmodule Knx.Defs do
       disconnect_resp: 0x020A,
       device_configuration_req: 0x0310,
       device_configuration_ack: 0x0311,
-      tunnelling_req: 0x0420,
-      tunnelling_ack: 0x0421
+      tunneling_req: 0x0420,
+      tunneling_ack: 0x0421
     ]
   )
 
@@ -490,6 +491,9 @@ defmodule Knx.Defs do
   # TODO why are there 2 identical codes?
   enum(cemi_message_code,
     do: [
+      l_data_req: 0x11,
+      l_data_con: 0x2E,
+      l_data_ind: 0x29,
       m_propread_req: 0xFC,
       m_propread_con: 0xFB,
       m_propwrite_req: 0xF6,

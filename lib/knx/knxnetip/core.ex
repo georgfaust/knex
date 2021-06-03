@@ -10,13 +10,12 @@ defmodule Knx.Knxnetip.Core do
   import PureLogger
 
   def handle_body(
-        src,
         %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
         <<
           control_hpai::bits
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(src)
+    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
@@ -24,13 +23,12 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-        src,
         %IPFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
         <<
           control_hpai::bits
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(src)
+    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
@@ -38,7 +36,6 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-        src,
         %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
         <<
           control_hpai::size(structure_length(:hpai))-unit(8),
@@ -48,7 +45,7 @@ defmodule Knx.Knxnetip.Core do
       ) do
     control_endpoint =
       handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(src)
+      |> check_route_back_hpai(ip_frame.ip_src)
 
     data_endpoint = handle_hpai(<<data_hpai::size(structure_length(:hpai))-unit(8)>>)
 
@@ -83,7 +80,6 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-        src,
         %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
         <<
           channel_id::8,
@@ -93,7 +89,7 @@ defmodule Knx.Knxnetip.Core do
       ) do
     control_endpoint =
       handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(src)
+      |> check_route_back_hpai(ip_frame.ip_src)
 
     con_tab = Cache.get(:con_tab)
     status = if ConTab.is_open?(con_tab, channel_id), do: :no_error, else: :connection_id
@@ -109,7 +105,6 @@ defmodule Knx.Knxnetip.Core do
   end
 
   def handle_body(
-        src,
         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
         <<
           channel_id::8,
@@ -119,7 +114,7 @@ defmodule Knx.Knxnetip.Core do
       ) do
     control_endpoint =
       handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(src)
+      |> check_route_back_hpai(ip_frame.ip_src)
 
     ip_frame = %{
       ip_frame
@@ -144,7 +139,7 @@ defmodule Knx.Knxnetip.Core do
     [disconnect_resp(ip_frame)]
   end
 
-  def handle_body(_src, _ip_frame, _frame) do
+  def handle_body(_ip_frame, _src, _frame) do
     error(:unknown_service_type_id)
   end
 
@@ -347,10 +342,10 @@ defmodule Knx.Knxnetip.Core do
   # [XXIX]
   defp check_route_back_hpai(
          %Ep{ip_addr: ip_addr, port: port} = endpoint,
-         src
+         ip_src
        ) do
     if ip_addr == 0 && port == 0 do
-      src
+      ip_src
     else
       endpoint
     end

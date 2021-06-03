@@ -9,7 +9,6 @@ defmodule Knx.Knxnetip.DeviceManagement do
   import PureLogger
 
   def handle_body(
-        _src,
         %IPFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
           structure_length(:connection_header)::8,
@@ -59,7 +58,6 @@ defmodule Knx.Knxnetip.DeviceManagement do
   end
 
   def handle_body(
-        _src,
         %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
           structure_length(:connection_header)::8,
@@ -80,7 +78,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
     []
   end
 
-  def handle_body(_src, _ip_frame, _frame) do
+  def handle_body(_ip_frame, _frame) do
     error(:unknown_service_type_id)
   end
 
@@ -115,8 +113,52 @@ defmodule Knx.Knxnetip.DeviceManagement do
     end
   end
 
+  # TODO propinfo, funcpropcommand, funcpropstateread, reset
   defp mgmt_cemi_frame(%MgmtCemiFrame{
-         message_code: message_code,
+         message_code: cemi_message_code(:m_propread_req),
+         object_type: object_type,
+         object_instance: object_instance,
+         pid: pid,
+         elems: elems,
+         start: start
+       }) do
+    props =
+      case object_type do
+        object_type(:device) -> Cache.get_obj(:device)
+        object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
+      end
+
+    case P.read_prop(props, 0, pid: pid, elems: elems, start: start) do
+      {:ok, _, new_data} ->
+        {7 + byte_size(new_data),
+         <<
+           cemi_message_code(:m_propread_con)::8,
+           object_type::16,
+           object_instance::8,
+           pid::8,
+           elems::4,
+           start::12
+         >> <>
+           new_data}
+
+      # TODO more specific error codes for prop read failure given in 03_06_03, 4.1.7.3.7.2
+      {:error, _} ->
+        {8,
+         <<
+           cemi_message_code(:m_propread_con)::8,
+           object_type::16,
+           object_instance::8,
+           pid::8,
+           # 0 elems signals error
+           0::4,
+           start::12,
+           0::8
+         >>}
+    end
+  end
+
+  defp mgmt_cemi_frame(%MgmtCemiFrame{
+         message_code: cemi_message_code(:m_propwrite_req),
          object_type: object_type,
          object_instance: object_instance,
          pid: pid,
@@ -124,90 +166,53 @@ defmodule Knx.Knxnetip.DeviceManagement do
          start: start,
          data: data
        }) do
-    # TODO propinfo, funcpropcommand, funcpropstateread, reset
-    case message_code do
-      cemi_message_code(:m_propread_req) ->
-        props =
-          case object_type do
-            object_type(:device) -> Cache.get_obj(:device)
-            object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
-          end
+    props =
+      case object_type do
+        object_type(:device) -> Cache.get_obj(:device)
+        object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
+      end
 
-        case P.read_prop(props, 0, pid: pid, elems: elems, start: start) do
-          {:ok, _, new_data} ->
-            {7 + byte_size(new_data),
-             <<
-               cemi_message_code(:m_propread_con)::8,
-               object_type::16,
-               object_instance::8,
-               pid::8,
-               elems::4,
-               start::12
-             >> <>
-               new_data}
+    # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
+    case P.write_prop(nil, props, 0,
+           pid: pid,
+           elems: elems,
+           start: start,
+           data: data
+         ) do
+      {:ok, props, _} ->
+        Cache.put_obj(decode_object_type(object_type), props)
 
-          # TODO more specific error codes for prop read failure given in 03_06_03, 4.1.7.3.7.2
-          {:error, _} ->
-            {8,
-             <<
-               cemi_message_code(:m_propread_con)::8,
-               object_type::16,
-               object_instance::8,
-               pid::8,
-               # 0 elems signals error
-               0::4,
-               start::12,
-               0::8
-             >>}
-        end
+        {7,
+         <<
+           cemi_message_code(:m_propwrite_con)::8,
+           object_type::16,
+           object_instance::8,
+           pid::8,
+           elems::4,
+           start::12
+         >>}
 
-      cemi_message_code(:m_propread_con) ->
-        :no_reply
-
-      cemi_message_code(:m_propwrite_req) ->
-        props =
-          case object_type do
-            object_type(:device) -> Cache.get_obj(:device)
-            object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
-          end
-
-        # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
-        case P.write_prop(nil, props, 0,
-               pid: pid,
-               elems: elems,
-               start: start,
-               data: data
-             ) do
-          {:ok, props, _} ->
-            Cache.put_obj(decode_object_type(object_type), props)
-
-            {7,
-             <<
-               cemi_message_code(:m_propwrite_con)::8,
-               object_type::16,
-               object_instance::8,
-               pid::8,
-               elems::4,
-               start::12
-             >>}
-
-          {:error, _} ->
-            {8,
-             <<
-               cemi_message_code(:m_propwrite_con)::8,
-               object_type::16,
-               object_instance::8,
-               pid::8,
-               # 0 elems signals error
-               0::4,
-               start::12,
-               cemi_error_code(:unspecific)
-             >>}
-        end
-
-      cemi_message_code(:m_propwrite_con) ->
-        :no_reply
+      {:error, _} ->
+        {8,
+         <<
+           cemi_message_code(:m_propwrite_con)::8,
+           object_type::16,
+           object_instance::8,
+           pid::8,
+           # 0 elems signals error
+           0::4,
+           start::12,
+           cemi_error_code(:unspecific)
+         >>}
     end
+  end
+
+  defp mgmt_cemi_frame(%MgmtCemiFrame{message_code: cemi_message_code(:m_propread_con)}) do
+    :no_reply
+  end
+
+  defp mgmt_cemi_frame(%MgmtCemiFrame{message_code: cemi_message_code(:m_propwrite_con)}) do
+    :no_reply
   end
 
   defp device_configuration_ack(%IPFrame{

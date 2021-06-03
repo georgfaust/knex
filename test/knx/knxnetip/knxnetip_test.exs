@@ -1,11 +1,12 @@
-defmodule Knx.Knxnetip.IPTest do
+defmodule Knx.Knxnetip.KnxNetIpTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.Knxnetip.TunnelingCemiFrame
+  alias Knx.Frame, as: F
   alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.Connection, as: C
   alias Knx.Knxnetip.Endpoint, as: Ep
+  alias Knx.Knxnetip.ConTab
 
   require Knx.Defs
   import Knx.Defs
@@ -14,7 +15,12 @@ defmodule Knx.Knxnetip.IPTest do
   @ip_interface_ip 0xC0A8_B23E
   # 3671 (14, 87)
   @ip_interface_port 0x0E57
-  # @ip_interface {@ip_interface_ip, @ip_interface_port}
+
+  @ip_interface_universal_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ip_interface_ip,
+    port: @ip_interface_port
+  }
 
   # 192.168.178.21
   @ets_ip 0xC0A8_B215
@@ -355,33 +361,20 @@ defmodule Knx.Knxnetip.IPTest do
              )
   end
 
-  # Tunneling Req:
-  @tunneling_req_group_value_write <<0x0610_0420_0015_04FF_0000_2900_BCE0_2102_0001_0100_81::unit(
-                                       8
-                                     )-size(21)>>
-  # cEMI Frame -----------------------------------------------------------------
-  @cemi_message_code_l_data_ind 0x29
-  # @additional_info 0x00
-  # @frame_type 0x10
-  @src 0x2102
-  @dest 0x0001
-  @prio 3
-  @hops 6
-  @len 1
-  @data <<0x0081::unit(8)-size(2)>>
-  @eff 0
+  ## Tunneling Request, L_Data.req:
+  @_1_tunneling_req_l_data_req <<0x0610_0420_0019_04FF_0000_1100_B070_0000_2102_0547_D500_0B10_01::8*25>>
+  @_1_knx_frame %F{
+    data: <<0x47D5_000B_1001::8*6>>,
+    prio: 0,
+    src: @knx_indv_addr,
+    dest: 0x2102,
+    addr_t: 0,
+    hops: 7
+  }
+  @_1_tunneling_ack <<0x0610_0421_000A_04FF_0000::8*10>>
+  @_1_tunneling_req_l_data_con <<0x0610_0420_0019_04FF_0000_2E00_8070_11FF_2102_0547_D500_0B10_01::8*25>>
 
-  ## Tunneling Ack:
-  # KNXnet/IP Header -----------------------------------------------------------
-  @service_type_id_tunneling_ack 0x0421
-  @total_length 0x000A
-  # Connection Header ----------------------------------------------------------
-  @structure_length_connection_header 0x04
-  @channel_id 0xFF
-  @ext_seq_counter 0x00
-  @status 0x00
-
-  test "tunneling request, group value write" do
+  test("tunneling request, l_data.req") do
     # open tunneling connection first
     Ip.handle(
       {
@@ -394,38 +387,74 @@ defmodule Knx.Knxnetip.IPTest do
     )
 
     assert [
-             {:ethernet, :transmit,
-              {@ets_tunneling_data_endpoint,
-               <<
-                 structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
-                 @service_type_id_tunneling_ack::16,
-                 @total_length::16,
-                 @structure_length_connection_header::8,
-                 @channel_id::8,
-                 @ext_seq_counter::8,
-                 @status::8
-               >>}},
-             {:dl, :req,
-              %TunnelingCemiFrame{
-                message_code: @cemi_message_code_l_data_ind,
-                src: @src,
-                dest: @dest,
-                addr_t: addr_t(:grp),
-                prio: @prio,
-                hops: @hops,
-                len: @len,
-                data: @data,
-                eff: @eff
-              }}
+             {:ethernet, :transmit, {@ets_tunneling_data_endpoint, @_1_tunneling_ack}},
+             {:dl, :req, @_1_knx_frame},
+             {:ethernet, :transmit, {@ets_tunneling_data_endpoint, @_1_tunneling_req_l_data_con}}
            ] =
              Ip.handle(
-               {
-                 :ip,
-                 :from_ip,
-                 @ets_tunneling_data_endpoint,
-                 @tunneling_req_group_value_write
-               },
+               {:ip, :from_ip, @ets_tunneling_data_endpoint, @_1_tunneling_req_l_data_req},
+               %S{}
+             )
+
+    con_tab = Cache.get(:con_tab)
+    assert 1 == ConTab.get_ext_seq_counter(con_tab, 0xFF)
+  end
+
+  ## Tunneling ACK
+  @_2_tunneling_ack <<0x0610_0421_000A_04FF_0000::8*10>>
+
+  test("tunneling ack") do
+    # open tunneling connection first
+    Ip.handle(
+      {
+        :ip,
+        :from_ip,
+        @ets_control_endpoint,
+        @connect_req_tunneling
+      },
+      %S{}
+    )
+
+    assert [] =
+             Ip.handle(
+               {:ip, :from_ip, @ip_interface_universal_endpoint, @_2_tunneling_ack},
+               %S{}
+             )
+
+    con_tab = Cache.get(:con_tab)
+    assert 1 == ConTab.get_int_seq_counter(con_tab, 0xFF)
+  end
+
+  ## Tunneling Request, L_Data.ind:
+  @_3_knx_frame %F{
+    prio: 0,
+    addr_t: 0,
+    hops: 7,
+    src: 0x2102,
+    dest: @knx_indv_addr,
+    len: 0,
+    data: <<0xC6>>
+  }
+
+  @_3_tunneling_req_l_data_ind <<0x0610_0420_0014_04FF_0000_2900_8070_2102_11FF_00C6::8*20>>
+
+  test("tunneling request, l_data.ind") do
+    # open tunneling connection first
+    Ip.handle(
+      {
+        :ip,
+        :from_ip,
+        @ets_control_endpoint,
+        @connect_req_tunneling
+      },
+      %S{}
+    )
+
+    assert [
+             {:ethernet, :transmit, {@ets_tunneling_data_endpoint, @_3_tunneling_req_l_data_ind}}
+           ] =
+             Ip.handle(
+               {:ip, :from_knx, @_3_knx_frame},
                %S{}
              )
   end

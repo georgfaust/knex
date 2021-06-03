@@ -160,3 +160,9 @@ XXIX : |
   For TCP “Route Back” HPAIs this means that the KNXnet/IP Server shall send his KNXnet/IP Frames
   over the TCP connection that the KNXnet/IP Client already has created for this purpose.
   [AN 184:2.2.3.2.4.3]
+
+XXX : |
+  If a cEMI Server receives the L_Data.req message with Source Address set to 0000h, then the 
+  cEMI Server shall fill in the Source Address field before sending the message onto the KNX 
+  network. Typically, this is the cEMI Server device’s own Individual Address.
+  [03_06_03:4.1.5.3.3]

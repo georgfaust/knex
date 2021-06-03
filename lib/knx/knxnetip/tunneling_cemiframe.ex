@@ -5,7 +5,7 @@ defmodule Knx.Knxnetip.TunnelingCemiFrame do
             prio: nil,
             addr_t: nil,
             hops: nil,
-            eff: nil,
+            eff: 0,
             src: nil,
             dest: nil,
             len: nil,
