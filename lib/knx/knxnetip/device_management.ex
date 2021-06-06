@@ -51,7 +51,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
           cemi: mgmt_cemi_frame
       }
 
-      [device_configuration_ack(ip_frame)] ++ device_configuration_req(ip_frame)
+      [{:timer, :restart, {:ip_connection, channel_id}}, device_configuration_ack(ip_frame)] ++ device_configuration_req(ip_frame)
     else
       []
     end
@@ -75,7 +75,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
       Cache.put(:con_tab, con_tab)
     end
 
-    []
+    [{:timer, :restart, {:ip_connection, channel_id}}]
   end
 
   def handle_body(_ip_frame, _frame) do

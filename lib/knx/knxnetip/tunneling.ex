@@ -85,7 +85,8 @@ defmodule Knx.Knxnetip.Tunnelling do
           [
             tunnelling_ack(ip_frame),
             {:dl, :req, knx_frame(ip_frame.cemi)},
-            tunnelling_req(ip_frame)
+            tunnelling_req(ip_frame),
+            {:timer, :restart, {:ip_connection, channel_id}}
           ]
 
         ConTab.ext_seq_counter_equal?(con_tab, channel_id, decremeted_ext_seq_counter) ->
@@ -122,7 +123,7 @@ defmodule Knx.Knxnetip.Tunnelling do
       Cache.put(:con_tab, con_tab)
     end
 
-    []
+    [{:timer, :restart, {:ip_connection, channel_id}}]
   end
 
   def handle_body(_ip_frame, _frame) do

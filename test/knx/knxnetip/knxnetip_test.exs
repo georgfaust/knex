@@ -148,7 +148,6 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  # DIB Device Info --------------------------
                  structure_length(:dib_device_info)::8,
                  description_type_code(:device_info)::8,
-                 # TODO
                  0x02::8,
                  1::8,
                  0x11FF::16,
@@ -215,7 +214,8 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  4::8,
                  connection_type_code(:tunnel_con)::8,
                  @knx_indv_addr::16
-               >>}}
+               >>}},
+             {:timer, :start, {:ip_connection, 255}}
            ] =
              Ip.handle(
                {
@@ -243,7 +243,8 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  @ip_interface_port::16,
                  2::8,
                  connection_type_code(:device_mgmt_con)::8
-               >>}}
+               >>}},
+             {:timer, :start, {:ip_connection, 1}}
            ] =
              Ip.handle(
                {
@@ -272,7 +273,8 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  @total_length_connectionstate_resp::16,
                  0::8,
                  connectionstate_response_status_code(:no_error)::8
-               >>}}
+               >>}},
+             {:timer, :restart, {:ip_connection, 0}}
            ] =
              Ip.handle(
                {
@@ -301,7 +303,8 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  @total_length_disconnect_resp::16,
                  0::8,
                  disconnect_response_status_code(:no_error)::8
-               >>}}
+               >>}},
+             {:timer, :stop, {:ip_connection, 0}}
            ] =
              Ip.handle(
                {
@@ -319,6 +322,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
 
   test("device configuration request") do
     assert [
+             {:timer, :restart, {:ip_connection, 254}},
              {:ethernet, :transmit,
               {@ets_config_data_endpoint,
                <<
@@ -364,6 +368,27 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
 
   ## Tunnelling Request, L_Data.req:
   @_1_tunnelling_req_l_data_req <<0x0610_0420_0019_04FF_0000_1100_B070_0000_2102_0547_D500_0B10_01::8*25>>
+  # @_1_tunnelling_req_l_data_req Helper.tunneling_req(
+  #                                 channel_id: 0xFF,
+  #                                 int_seq_counter: 00,
+  #                                 cemi:
+  #                                   Helper.tunnel_cemi_frame(
+  #                                     message_code: 0x11,
+  #                                     frame_type: 0,
+  #                                     repeat: 0,
+  #                                     system_broadcast: 0,
+  #                                     prio: 0,
+  #                                     ack: 0,
+  #                                     confirm: 0,
+  #                                     addr_t: 0,
+  #                                     hops: 7,
+  #                                     src: 0x0000,
+  #                                     dest: 0x2102,
+  #                                     len: 5,
+  #                                     data: <<0x47D5_000B_1001::8*6>>
+  #                                   )
+  #                               )
+
   @_1_knx_frame %F{
     data: <<0x47D5_000B_1001::8*6>>,
     prio: 0,
@@ -391,7 +416,8 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
              {:ethernet, :transmit, {@ets_tunnelling_data_endpoint, @_1_tunnelling_ack}},
              {:dl, :req, @_1_knx_frame},
              {:ethernet, :transmit,
-              {@ets_tunnelling_data_endpoint, @_1_tunnelling_req_l_data_con}}
+              {@ets_tunnelling_data_endpoint, @_1_tunnelling_req_l_data_con}},
+              {:timer, :restart, {:ip_connection, 255}}
            ] =
              Ip.handle(
                {:ip, :from_ip, @ets_tunnelling_data_endpoint, @_1_tunnelling_req_l_data_req},
@@ -417,7 +443,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
       %S{}
     )
 
-    assert [] =
+    assert [{:timer, :restart, {:ip_connection, 255}}] =
              Ip.handle(
                {:ip, :from_ip, @ip_interface_universal_endpoint, @_2_tunnelling_ack},
                %S{}
@@ -461,4 +487,20 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                %S{}
              )
   end
+
+  # def create_binary(list) do
+  #   create_binary_(list, <<>>)
+  # end
+
+  # defp create_binary_([[_atom, data, bits] | rest], acc) do
+  #   <<data::size(bit_size(data))>> <> create_binary_(rest, acc)
+  # end
+
+  # defp create_binary_([], acc) do
+  #   acc
+  # end
+
+  # test("dings") do
+  #   IO.inspect(create_binary([[:okay, 8, 8], [:okay, 8, 16]]))
+  # end
 end

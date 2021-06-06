@@ -67,16 +67,22 @@ defmodule Knx.Knxnetip.Core do
     {con_tab, result} = ConTab.open(con_tab, ip_frame.con_type, data_endpoint)
     Cache.put(:con_tab, con_tab)
 
-    ip_frame =
-      case result do
-        {:error, :no_more_connections} ->
-          if ip_frame.status == :no_error, do: %{ip_frame | status: :no_more_connections}
+    case result do
+      {:error, :no_more_connections} ->
+        ip_frame =
+          if ip_frame.status == :no_error do
+            %{ip_frame | status: :no_more_connections}
+          else
+            ip_frame
+          end
 
-        channel_id ->
-          %{ip_frame | channel_id: channel_id}
-      end
+        [connect_resp(ip_frame)]
 
-    [connect_resp(ip_frame)]
+      channel_id ->
+        ip_frame = %{ip_frame | channel_id: channel_id}
+        # TODO set timer timeout (120s)
+        [connect_resp(ip_frame), {:timer, :start, {:ip_connection, ip_frame.channel_id}}]
+    end
   end
 
   def handle_body(
@@ -91,17 +97,21 @@ defmodule Knx.Knxnetip.Core do
       handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
       |> check_route_back_hpai(ip_frame.ip_src)
 
-    con_tab = Cache.get(:con_tab)
-    status = if ConTab.is_open?(con_tab, channel_id), do: :no_error, else: :connection_id
-
     ip_frame = %{
       ip_frame
       | control_endpoint: control_endpoint,
-        channel_id: channel_id,
-        status: status
+        channel_id: channel_id
     }
 
-    [connectionstate_resp(ip_frame)]
+    con_tab = Cache.get(:con_tab)
+    # TODO could also indicate error concerning connection or knx subnetwork
+    if ConTab.is_open?(con_tab, channel_id) do
+      ip_frame = %{ip_frame | status: :no_error}
+      [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]
+    else
+      ip_frame = %{ip_frame | status: :connection_id}
+      [connectionstate_resp(ip_frame)]
+    end
   end
 
   def handle_body(
@@ -136,7 +146,7 @@ defmodule Knx.Knxnetip.Core do
           ip_frame
       end
 
-    [disconnect_resp(ip_frame)]
+    [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
   end
 
   def handle_body(_ip_frame, _src, _frame) do
