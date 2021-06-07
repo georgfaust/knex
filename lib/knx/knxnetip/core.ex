@@ -1,4 +1,5 @@
 defmodule Knx.Knxnetip.Core do
+  alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.IPFrame
   alias Knx.Knxnetip.ConTab
   alias Knx.Knxnetip.Endpoint, as: Ep
@@ -17,6 +18,7 @@ defmodule Knx.Knxnetip.Core do
       ) do
     control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(ip_frame.ip_src)
 
+    # Discovery?
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
     [search_resp(ip_frame)]
@@ -54,7 +56,7 @@ defmodule Knx.Knxnetip.Core do
     ip_frame =
       case handle_cri(cri) do
         {:error, error_type} ->
-          %{ip_frame | status: error_type}
+          %{ip_frame | status: connect_response_status_code(error_type)}
 
         {:tunnel_con, {knx_layer}} ->
           %{ip_frame | con_type: :tunnel_con, knx_layer: knx_layer}
@@ -67,11 +69,12 @@ defmodule Knx.Knxnetip.Core do
     {con_tab, result} = ConTab.open(con_tab, ip_frame.con_type, data_endpoint)
     Cache.put(:con_tab, con_tab)
 
+    # TODO errors
     case result do
       {:error, :no_more_connections} ->
         ip_frame =
           if ip_frame.status == :no_error do
-            %{ip_frame | status: :no_more_connections}
+            %{ip_frame | status: connect_response_status_code(:no_more_connections)}
           else
             ip_frame
           end
@@ -106,10 +109,10 @@ defmodule Knx.Knxnetip.Core do
     con_tab = Cache.get(:con_tab)
     # TODO could also indicate error concerning connection or knx subnetwork
     if ConTab.is_open?(con_tab, channel_id) do
-      ip_frame = %{ip_frame | status: :no_error}
+      ip_frame = %{ip_frame | status: connectionstate_response_status_code(:no_error)}
       [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]
     else
-      ip_frame = %{ip_frame | status: :connection_id}
+      ip_frame = %{ip_frame | status: connectionstate_response_status_code(:connection_id)}
       [connectionstate_resp(ip_frame)]
     end
   end
@@ -140,7 +143,7 @@ defmodule Knx.Knxnetip.Core do
       case result do
         # TODO is this correct? (not specified)
         {:error, :connection_id} ->
-          %{ip_frame | status: :connection_id}
+          %{ip_frame | status: disconnect_response_status_code(:connection_id)}
 
         _id ->
           ip_frame
@@ -167,6 +170,7 @@ defmodule Knx.Knxnetip.Core do
   defp handle_cri(
          <<_cri_structure_length::8, connection_type_code::8, connection_specific_info::bits>>
        ) do
+    # TODO with ?
     case connection_type_code do
       connection_type_code(:tunnel_con) ->
         <<tunnelling_knx_layer::8, knxnetip_constant(:reserved)::8>> = connection_specific_info
@@ -188,13 +192,11 @@ defmodule Knx.Knxnetip.Core do
 
   defp search_resp(%IPFrame{control_endpoint: dest}) do
     frame =
-      <<
-        structure_length(:header)::8,
-        protocol_version(:knxnetip)::8,
-        service_type_id(:search_resp)::16,
+      Ip.header(
+        service_type_id(:search_resp),
         structure_length(:header) + structure_length(:hpai) + structure_length(:dib_device_info) +
-          structure_length(:dib_supp_svc_families)::16
-      >> <>
+          structure_length(:dib_supp_svc_families)
+      ) <>
         hpai(dest.protocol_code) <>
         dib_device_information() <>
         dib_supp_svc_families()
@@ -202,17 +204,13 @@ defmodule Knx.Knxnetip.Core do
     {:ethernet, :transmit, {dest, frame}}
   end
 
-  defp description_resp(%IPFrame{
-         control_endpoint: dest
-       }) do
+  defp description_resp(%IPFrame{control_endpoint: dest}) do
     frame =
-      <<
-        structure_length(:header)::8,
-        protocol_version(:knxnetip)::8,
-        service_type_id(:search_resp)::16,
+      Ip.header(
+        service_type_id(:description_resp),
         structure_length(:header) + structure_length(:dib_device_info) +
-          structure_length(:dib_supp_svc_families)::16
-      >> <>
+          structure_length(:dib_supp_svc_families)
+      ) <>
         dib_device_information() <>
         dib_supp_svc_families()
 
@@ -228,17 +226,14 @@ defmodule Knx.Knxnetip.Core do
            status: status
          } = ip_frame
        ) do
-    crd_structure_length = if con_type == :device_mgmt_con, do: 2, else: 4
-
     frame =
-      <<
-        structure_length(:header)::8,
-        protocol_version(:knxnetip)::8,
-        service_type_id(:connect_resp)::16,
-        structure_length(:header) + 2 + structure_length(:hpai) + crd_structure_length::16,
-        channel_id::8,
-        connect_response_status_code(status)::8
-      >> <>
+      Ip.header(
+        service_type_id(:connect_resp),
+        structure_length(:header) + connection_header_structure_length(:core) +
+          structure_length(:hpai) +
+          crd_structure_length(con_type)
+      ) <>
+        connection_header(channel_id, status) <>
         hpai(data_endpoint.protocol_code) <>
         crd(ip_frame)
 
@@ -250,14 +245,12 @@ defmodule Knx.Knxnetip.Core do
          channel_id: channel_id,
          status: status
        }) do
-    frame = <<
-      structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
-      service_type_id(:connectionstate_resp)::16,
-      structure_length(:header) + 2::16,
-      channel_id::8,
-      connectionstate_response_status_code(status)::8
-    >>
+    frame =
+      Ip.header(
+        service_type_id(:connectionstate_resp),
+        structure_length(:header) + connection_header_structure_length(:core)
+      ) <>
+        connection_header(channel_id, status)
 
     {:ethernet, :transmit, {dest, frame}}
   end
@@ -267,14 +260,12 @@ defmodule Knx.Knxnetip.Core do
          channel_id: channel_id,
          status: status
        }) do
-    frame = <<
-      structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
-      service_type_id(:disconnect_resp)::16,
-      structure_length(:header) + 2::16,
-      channel_id::8,
-      disconnect_response_status_code(status)::8
-    >>
+    frame =
+      Ip.header(
+        service_type_id(:disconnect_resp),
+        structure_length(:header) + connection_header_structure_length(:core)
+      ) <>
+        connection_header(channel_id, status)
 
     {:ethernet, :transmit, {dest, frame}}
   end
@@ -297,6 +288,7 @@ defmodule Knx.Knxnetip.Core do
     device_props = Cache.get_obj(:device)
     knxnet_ip_props = Cache.get_obj(:knxnet_ip_parameter)
 
+    # TODO wrapper für read props
     knx_medium = knx_medium_code(:tp1)
     device_status = Device.get_prog_mode(device_props)
     knx_individual_addr = P.read_prop_value(knxnet_ip_props, :knx_individual_address)
@@ -331,6 +323,13 @@ defmodule Knx.Knxnetip.Core do
       protocol_version(:device_management)::8,
       service_family_id(:tunnelling)::8,
       protocol_version(:tunnelling)::8
+    >>
+  end
+
+  defp connection_header(channel_id, status) do
+    <<
+      channel_id::8,
+      status::8
     >>
   end
 

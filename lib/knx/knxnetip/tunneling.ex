@@ -1,4 +1,5 @@
 defmodule Knx.Knxnetip.Tunnelling do
+  alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.IPFrame
   alias Knx.Knxnetip.TunnelCemiFrame
   alias Knx.Knxnetip.ConTab
@@ -189,33 +190,31 @@ defmodule Knx.Knxnetip.Tunnelling do
     # TODO: does every knx frame get the hop count value 7?
     hops = 7
 
-    frame = <<
-      structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
-      service_type_id(:tunnelling_req)::16,
-      structure_length(:header) + structure_length(:connection_header) +
-        structure_length(:cemi_l_data_without_data) + byte_size(req_cemi.data)::16,
-      structure_length(:connection_header)::8,
-      channel_id::8,
-      int_seq_counter::8,
-      knxnetip_constant(:reserved)::8,
-      req_cemi.message_code::8,
-      0::8,
-      req_cemi.frame_type::1,
-      0::1,
-      repeat::1,
-      system_broadcast::1,
-      req_cemi.prio::2,
-      ack::1,
-      confirm::1,
-      req_cemi.addr_t::1,
-      hops::3,
-      0::4,
-      check_src_addr(req_cemi.src)::16,
-      req_cemi.dest::16,
-      req_cemi.len::8,
-      req_cemi.data::bits
-    >>
+    frame =
+      Ip.header(
+        service_type_id(:tunnelling_req),
+        structure_length(:header) + structure_length(:connection_header) +
+          structure_length(:cemi_l_data_without_data) + byte_size(req_cemi.data)
+      ) <>
+        connection_header(channel_id, int_seq_counter, knxnetip_constant(:reserved)) <>
+        <<
+          req_cemi.message_code::8,
+          0::8,
+          req_cemi.frame_type::1,
+          0::1,
+          repeat::1,
+          system_broadcast::1,
+          req_cemi.prio::2,
+          ack::1,
+          confirm::1,
+          req_cemi.addr_t::1,
+          hops::3,
+          0::4,
+          check_src_addr(req_cemi.src)::16,
+          req_cemi.dest::16,
+          req_cemi.len::8,
+          req_cemi.data::bits
+        >>
 
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
@@ -225,19 +224,17 @@ defmodule Knx.Knxnetip.Tunnelling do
          ext_seq_counter: ext_seq_counter,
          data_endpoint: data_endpoint
        }) do
-    frame = <<
-      structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
-      service_type_id(:tunnelling_ack)::16,
-      structure_length(:tunnelling_ack)::16,
-      structure_length(:connection_header)::8,
-      channel_id::8,
-      ext_seq_counter::8,
-      tunnelling_ack_status_code(:no_error)::8
-    >>
+    frame =
+      Ip.header(
+        service_type_id(:tunnelling_ack),
+        structure_length(:header) + connection_header_structure_length(:tunneling)
+      ) <>
+        connection_header(channel_id, ext_seq_counter, tunnelling_ack_status_code(:no_error))
 
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
+
+  # ----------------------------------------------------------------------------
 
   defp knx_frame(%TunnelCemiFrame{
          prio: prio,
@@ -248,6 +245,15 @@ defmodule Knx.Knxnetip.Tunnelling do
          data: data
        }) do
     %F{data: data, prio: prio, src: check_src_addr(src), dest: dest, addr_t: addr_t, hops: hops}
+  end
+
+  defp connection_header(channel_id, seq_counter, last_octet) do
+    <<
+      connection_header_structure_length(:device_management),
+      channel_id::8,
+      seq_counter::8,
+      last_octet::8
+    >>
   end
 
   # ----------------------------------------------------------------------------

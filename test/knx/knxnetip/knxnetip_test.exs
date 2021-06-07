@@ -143,7 +143,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                <<
                  structure_length(:header)::8,
                  protocol_version(:knxnetip)::8,
-                 service_type_id(:search_resp)::16,
+                 service_type_id(:description_resp)::16,
                  @total_length_description_resp::16,
                  # DIB Device Info --------------------------
                  structure_length(:dib_device_info)::8,
@@ -417,7 +417,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
              {:dl, :req, @_1_knx_frame},
              {:ethernet, :transmit,
               {@ets_tunnelling_data_endpoint, @_1_tunnelling_req_l_data_con}},
-              {:timer, :restart, {:ip_connection, 255}}
+             {:timer, :restart, {:ip_connection, 255}}
            ] =
              Ip.handle(
                {:ip, :from_ip, @ets_tunnelling_data_endpoint, @_1_tunnelling_req_l_data_req},

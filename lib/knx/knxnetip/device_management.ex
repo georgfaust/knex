@@ -1,4 +1,5 @@
 defmodule Knx.Knxnetip.DeviceManagement do
+  alias Knx.Knxnetip.IpInterface, as: Ip
   alias Knx.Knxnetip.IPFrame
   alias Knx.Knxnetip.MgmtCemiFrame
   alias Knx.Knxnetip.ConTab
@@ -51,7 +52,8 @@ defmodule Knx.Knxnetip.DeviceManagement do
           cemi: mgmt_cemi_frame
       }
 
-      [{:timer, :restart, {:ip_connection, channel_id}}, device_configuration_ack(ip_frame)] ++ device_configuration_req(ip_frame)
+      [{:timer, :restart, {:ip_connection, channel_id}}, device_configuration_ack(ip_frame)] ++
+        device_configuration_req(ip_frame)
     else
       []
     end
@@ -98,20 +100,39 @@ defmodule Knx.Knxnetip.DeviceManagement do
         int_seq_counter = ConTab.get_int_seq_counter(con_tab, channel_id)
 
         conf_frame =
-          <<
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_type_id(:device_configuration_req)::16,
-            structure_length(:header) + structure_length(:connection_header) + cemi_frame_size::16,
-            structure_length(:connection_header)::8,
-            channel_id::8,
-            int_seq_counter::8,
-            knxnetip_constant(:reserved)::8
-          >> <> conf_cemi_frame
+          Ip.header(
+            service_type_id(:device_configuration_req),
+            structure_length(:header) + cemi_frame_size +
+              connection_header_structure_length(:device_management)
+          ) <>
+            connection_header(channel_id, int_seq_counter, knxnetip_constant(:reserved)) <>
+            conf_cemi_frame
 
         [{:ethernet, :transmit, {data_endpoint, conf_frame}}]
     end
   end
+
+  defp device_configuration_ack(%IPFrame{
+         channel_id: channel_id,
+         ext_seq_counter: ext_seq_counter,
+         status: status,
+         data_endpoint: data_endpoint
+       }) do
+    frame =
+      Ip.header(
+        service_type_id(:device_configuration_ack),
+        structure_length(:header) + connection_header_structure_length(:device_management)
+      ) <>
+        connection_header(
+          channel_id,
+          ext_seq_counter,
+          device_configuration_ack_status_code(status)
+        )
+
+    {:ethernet, :transmit, {data_endpoint, frame}}
+  end
+
+  # ----------------------------------------------------------------------------
 
   # TODO propinfo, funcpropcommand, funcpropstateread, reset
   defp mgmt_cemi_frame(%MgmtCemiFrame{
@@ -215,24 +236,13 @@ defmodule Knx.Knxnetip.DeviceManagement do
     :no_reply
   end
 
-  defp device_configuration_ack(%IPFrame{
-         channel_id: channel_id,
-         ext_seq_counter: ext_seq_counter,
-         status: status,
-         data_endpoint: data_endpoint
-       }) do
-    frame = <<
-      structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
-      service_type_id(:device_configuration_ack)::16,
-      structure_length(:device_configuration_ack)::16,
-      structure_length(:connection_header)::8,
+  defp connection_header(channel_id, seq_counter, last_octet) do
+    <<
+      connection_header_structure_length(:device_management),
       channel_id::8,
-      ext_seq_counter::8,
-      device_configuration_ack_status_code(status)::8
+      seq_counter::8,
+      last_octet::8
     >>
-
-    {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------
