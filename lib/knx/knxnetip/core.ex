@@ -1,9 +1,9 @@
-defmodule Knx.Knxnetip.Core do
-  alias Knx.Knxnetip.IpInterface, as: Ip
-  alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.ConTab
-  alias Knx.Knxnetip.Endpoint, as: Ep
-  alias Knx.Knxnetip.KnxnetipParameter, as: KnxnetipProps
+defmodule Knx.KnxnetIp.Core do
+  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.ConTab
+  alias Knx.KnxnetIp.Endpoint, as: Ep
+  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpProps
   alias Knx.Ail.Device
 
   require Knx.Defs
@@ -20,7 +20,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
         <<
           discovery_hpai::structure_length(:hpai)*8
         >>
@@ -43,7 +43,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
         <<
           control_hpai::structure_length(:hpai)*8
         >>
@@ -62,7 +62,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
         <<
           control_hpai::structure_length(:hpai)*8,
           data_hpai::structure_length(:hpai)*8,
@@ -75,7 +75,6 @@ defmodule Knx.Knxnetip.Core do
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
-    # !info: not sure why dialyser raises a problem here; tests work fine
     with {:ok, con_type} <- handle_cri(cri),
          {:ok, con_tab, channel_id} <- ConTab.open(Cache.get(:con_tab), con_type, ip_frame) do
       Cache.put(:con_tab, con_tab)
@@ -106,7 +105,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
@@ -143,7 +142,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
@@ -241,7 +240,7 @@ defmodule Knx.Knxnetip.Core do
   Structure: 7.6.2
   '''
 
-  defp search_resp(%IPFrame{discovery_endpoint: discovery_endpoint}) do
+  defp search_resp(%IpFrame{discovery_endpoint: discovery_endpoint}) do
     frame =
       Ip.header(
         service_type_id(:search_resp),
@@ -261,7 +260,7 @@ defmodule Knx.Knxnetip.Core do
   Structure: 7.7.2
   '''
 
-  defp description_resp(%IPFrame{control_endpoint: control_endpoint}) do
+  defp description_resp(%IpFrame{control_endpoint: control_endpoint}) do
     frame =
       Ip.header(
         service_type_id(:description_resp),
@@ -281,7 +280,7 @@ defmodule Knx.Knxnetip.Core do
   '''
 
   defp connect_resp(
-         %IPFrame{
+         %IpFrame{
            control_endpoint: control_endpoint,
            data_endpoint: data_endpoint,
            con_type: con_type,
@@ -309,7 +308,7 @@ defmodule Knx.Knxnetip.Core do
   Structure: 7.8.4
   '''
 
-  defp connectionstate_resp(%IPFrame{
+  defp connectionstate_resp(%IpFrame{
          control_endpoint: control_endpoint,
          channel_id: channel_id,
          status: status
@@ -330,7 +329,7 @@ defmodule Knx.Knxnetip.Core do
   Structure: 7.8.6
   '''
 
-  defp disconnect_resp(%IPFrame{
+  defp disconnect_resp(%IpFrame{
          control_endpoint: control_endpoint,
          channel_id: channel_id,
          status: status
@@ -377,7 +376,7 @@ defmodule Knx.Knxnetip.Core do
 
   defp hpai(host_protocol_code) do
     props = Cache.get_obj(:knxnet_ip_parameter)
-    ip_addr = KnxnetipProps.get_current_ip_addr(props)
+    ip_addr = KnxnetIpProps.get_current_ip_addr(props)
 
     <<
       structure_length(:hpai)::8,
@@ -402,13 +401,13 @@ defmodule Knx.Knxnetip.Core do
       # TODO alternatively knx ip has to be set as knx_medium
       knx_medium_code(:tp1)::8,
       Device.get_prog_mode(device_props)::8,
-      KnxnetipProps.get_knx_indv_addr(knxnet_ip_props)::16,
+      KnxnetIpProps.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
       Device.get_serial(device_props)::48,
-      KnxnetipProps.get_routing_multicast_addr(knxnet_ip_props)::32,
-      KnxnetipProps.get_mac_addr(knxnet_ip_props)::48,
-      KnxnetipProps.get_friendly_name(knxnet_ip_props)::unit(8)-size(30)
+      KnxnetIpProps.get_routing_multicast_addr(knxnet_ip_props)::32,
+      KnxnetIpProps.get_mac_addr(knxnet_ip_props)::48,
+      KnxnetIpProps.get_friendly_name(knxnet_ip_props)::unit(8)-size(30)
     >>
   end
 
@@ -448,7 +447,7 @@ defmodule Knx.Knxnetip.Core do
   Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
   '''
 
-  defp crd(%IPFrame{con_type: con_type}) do
+  defp crd(%IpFrame{con_type: con_type}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 
     case con_type do
@@ -456,7 +455,7 @@ defmodule Knx.Knxnetip.Core do
         <<2::8, connection_type_code(con_type)::8>>
 
       :tunnel_con ->
-        <<4::8, connection_type_code(con_type), KnxnetipProps.get_knx_indv_addr(props)::16>>
+        <<4::8, connection_type_code(con_type), KnxnetIpProps.get_knx_indv_addr(props)::16>>
     end
   end
 end

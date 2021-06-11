@@ -1,4 +1,4 @@
-defmodule Knx.Knxnetip.TunnelCemiFrame do
+defmodule Knx.KnxnetIp.TunnelCemiFrame do
   defstruct message_code: nil,
             frame_type: nil,
             repeat: nil,

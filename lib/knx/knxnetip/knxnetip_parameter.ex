@@ -1,10 +1,6 @@
-defmodule Knx.Knxnetip.KnxnetipParameter do
+defmodule Knx.KnxnetIp.KnxnetIpParameter do
   alias Knx.Ail.Property, as: P
-  import Knx.Defs
-  require Knx.Defs
   use Bitwise
-
-  
 
   def get_current_ip_addr(props),
     do: P.read_prop_value(props, :current_ip_address)
@@ -20,5 +16,4 @@ defmodule Knx.Knxnetip.KnxnetipParameter do
 
   def get_friendly_name(props),
     do: P.read_prop_value(props, :friendly_name)
-
 end

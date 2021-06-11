@@ -1,8 +1,8 @@
-defmodule Knx.Knxnetip.IpInterface do
-  alias Knx.Knxnetip.Core
-  alias Knx.Knxnetip.DeviceManagement
-  alias Knx.Knxnetip.Tunnelling
-  alias Knx.Knxnetip.IPFrame
+defmodule Knx.KnxnetIp.IpInterface do
+  alias Knx.KnxnetIp.Core
+  alias Knx.KnxnetIp.DeviceManagement
+  alias Knx.KnxnetIp.Tunnelling
+  alias Knx.KnxnetIp.IpFrame
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
@@ -16,14 +16,14 @@ defmodule Knx.Knxnetip.IpInterface do
   end
 
   def handle({:ip, :from_ip, src, <<header::8*structure_length(:header), body::bits>>}, %S{}) do
-    %IPFrame{ip_src: src}
+    %IpFrame{ip_src: src}
     |> handle_header(<<header::8*structure_length(:header)>>)
     |> handle_body(body)
   end
 
   # ----------------------------------------------------------------------------
 
-  # !info: keep service_type_id as only field in IPFrame struct, since
+  # !info: keep service_type_id as only field in IpFrame struct, since
   # no name for lower octet of service type id is defined in knx standard
   # and apart from code in this module, only full service type id is needed
   # Instead, use function to retrieve service family from service type id
@@ -31,12 +31,12 @@ defmodule Knx.Knxnetip.IpInterface do
          ip_frame,
          <<
            structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
+           protocol_version(:KnxnetIp)::8,
            service_type_id::16,
            total_length::16
          >>
        ) do
-    %IPFrame{
+    %IpFrame{
       ip_frame
       | service_type_id: service_type_id,
         total_length: total_length
@@ -44,7 +44,7 @@ defmodule Knx.Knxnetip.IpInterface do
   end
 
   defp handle_body(
-         %IPFrame{service_type_id: service_type_id} = ip_frame,
+         %IpFrame{service_type_id: service_type_id} = ip_frame,
          body
        ) do
     case get_service_familiy(service_type_id) do
@@ -67,7 +67,7 @@ defmodule Knx.Knxnetip.IpInterface do
   def header(service_type_id, total_length) do
     <<
       structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
+      protocol_version(:KnxnetIp)::8,
       service_type_id::16,
       total_length::16
     >>

@@ -1,4 +1,4 @@
-defmodule Knx.Knxnetip.Connection do
+defmodule Knx.KnxnetIp.Connection do
   defstruct id: nil,
             con_type: nil,
             client_seq_counter: 0,

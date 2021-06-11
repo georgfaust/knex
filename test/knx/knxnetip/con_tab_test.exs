@@ -1,9 +1,9 @@
-defmodule Knx.Knxnetip.ConTabTest do
+defmodule Knx.KnxnetIp.ConTabTest do
   use ExUnit.Case
 
-  alias Knx.Knxnetip.ConTab
-  alias Knx.Knxnetip.Connection, as: C
-  alias Knx.Knxnetip.IPFrame
+  alias Knx.KnxnetIp.ConTab
+  alias Knx.KnxnetIp.Connection, as: C
+  alias Knx.KnxnetIp.IpFrame
 
   @list_1_254 Enum.to_list(1..254)
   @con_0 %C{
@@ -42,7 +42,7 @@ defmodule Knx.Knxnetip.ConTabTest do
              ConTab.open(
                %{},
                :device_mgmt_con,
-               %IPFrame{
+               %IpFrame{
                  control_endpoint: {0xC0A8_B23E, 0x0E75},
                  data_endpoint: {0xC0A8_B23E, 0x0E75}
                }
@@ -52,7 +52,7 @@ defmodule Knx.Knxnetip.ConTabTest do
              ConTab.open(
                %{:free_mgmt_ids => []},
                :device_mgmt_con,
-               %IPFrame{
+               %IpFrame{
                  control_endpoint: {0xC0A8_B23E, 0x0E75},
                  data_endpoint: {0xC0A8_B23E, 0x0E75}
                }

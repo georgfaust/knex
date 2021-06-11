@@ -1,4 +1,4 @@
-defmodule Knx.Knxnetip.MgmtCemiFrame do
+defmodule Knx.KnxnetIp.MgmtCemiFrame do
   defstruct message_code: nil,
             object_type: nil,
             object_instance: nil,

@@ -1,4 +1,4 @@
-# KNXnetIP
+# KnxnetIp
 ## Reaction to incoming telegrams
 
 ### Core

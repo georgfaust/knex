@@ -1,9 +1,9 @@
-defmodule Knx.Knxnetip.Tunnelling do
-  alias Knx.Knxnetip.IpInterface, as: Ip
-  alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.TunnelCemiFrame
-  alias Knx.Knxnetip.ConTab
-  alias Knx.Knxnetip.KnxnetipParameter, as: KnxnetipProps
+defmodule Knx.KnxnetIp.Tunnelling do
+  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.TunnelCemiFrame
+  alias Knx.KnxnetIp.ConTab
+  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpProps
   alias Knx.Frame, as: F
 
   require Knx.Defs
@@ -20,7 +20,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -115,7 +115,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunnelling_req)},
+        %IpFrame{service_type_id: service_type_id(:tunnelling_req)},
         <<
           structure_length(:connection_header)::8,
           _channel_id::8,
@@ -134,7 +134,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:tunnelling_ack)},
+        %IpFrame{service_type_id: service_type_id(:tunnelling_ack)},
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -189,7 +189,7 @@ defmodule Knx.Knxnetip.Tunnelling do
     }
 
     # TODO if multiple indv knx addresses will be supported, correct channel must be identified
-    ip_frame = %IPFrame{
+    ip_frame = %IpFrame{
       channel_id: 0xFF,
       cemi: cemi_frame,
       data_endpoint: ConTab.get_data_endpoint(Cache.get(:con_tab), 0xFF)
@@ -210,7 +210,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   Description & Structure: 03_06_03:4.1.5.3.3 f.
   '''
 
-  defp tunnelling_req(%IPFrame{
+  defp tunnelling_req(%IpFrame{
          channel_id: channel_id,
          cemi: req_cemi,
          data_endpoint: data_endpoint
@@ -263,7 +263,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   Structure: 4.4.7
   '''
 
-  defp tunnelling_ack(%IPFrame{
+  defp tunnelling_ack(%IpFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
          data_endpoint: data_endpoint
@@ -308,7 +308,7 @@ defmodule Knx.Knxnetip.Tunnelling do
   defp check_src_addr(src) do
     # TODO if multiple individual addresses will be supported, src might not be replaced
     if src == 0 do
-      KnxnetipProps.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+      KnxnetIpProps.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
     else
       src
     end

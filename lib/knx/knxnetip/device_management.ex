@@ -1,8 +1,8 @@
-defmodule Knx.Knxnetip.DeviceManagement do
-  alias Knx.Knxnetip.IpInterface, as: Ip
-  alias Knx.Knxnetip.IPFrame
-  alias Knx.Knxnetip.MgmtCemiFrame
-  alias Knx.Knxnetip.ConTab
+defmodule Knx.KnxnetIp.DeviceManagement do
+  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.MgmtCemiFrame
+  alias Knx.KnxnetIp.ConTab
   alias Knx.Ail.Property, as: P
 
   require Knx.Defs
@@ -19,7 +19,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -74,7 +74,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:device_configuration_req)},
+        %IpFrame{service_type_id: service_type_id(:device_configuration_req)},
         <<
           structure_length(:connection_header)::8,
           _channel_id::8,
@@ -93,7 +93,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   '''
 
   def handle_body(
-        %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
+        %IpFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
@@ -125,7 +125,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   Structure: 4.2.6
   '''
 
-  defp device_configuration_req(%IPFrame{
+  defp device_configuration_req(%IpFrame{
          channel_id: channel_id,
          data_endpoint: data_endpoint,
          cemi: received_cemi_frame
@@ -158,7 +158,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   Structure: 4.2.7
   '''
 
-  defp device_configuration_ack(%IPFrame{
+  defp device_configuration_ack(%IpFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
          status: status,
@@ -195,7 +195,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
          elems: elems,
          start: start
        }) do
-    # !info: alternatively, use a wrapper function for P.read_prop in Device and Knxnetip_parameter?
+    # !info: alternatively, use a wrapper function for P.read_prop in Device and KnxnetIp_parameter?
     case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
       {:ok, _, new_data} ->
         <<
@@ -295,7 +295,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
   #      ) do
   #   # !info: instead of atom, use object_type(atom) as key in Cache?
 
-  #   # !info: alternatively, use a wrapper function for P.read_prop in Device and Knxnetip_parameter?
+  #   # !info: alternatively, use a wrapper function for P.read_prop in Device and KnxnetIp_parameter?
   #   case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
   #     {:ok, _, new_data} ->
   #       <<

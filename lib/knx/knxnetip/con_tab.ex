@@ -1,8 +1,8 @@
-defmodule Knx.Knxnetip.ConTab do
-  alias Knx.Knxnetip.Connection, as: C
-  alias Knx.Knxnetip.IPFrame
+defmodule Knx.KnxnetIp.ConTab do
+  alias Knx.KnxnetIp.Connection, as: C
+  alias Knx.KnxnetIp.IpFrame
 
-  def open(con_tab, con_type, %IPFrame{} = ip_frame) do
+  def open(con_tab, con_type, %IpFrame{} = ip_frame) do
     # add once, when first connection is opened
     con_tab = Map.put_new(con_tab, :free_mgmt_ids, Enum.to_list(0..254))
     free_mgmt_ids = con_tab[:free_mgmt_ids]

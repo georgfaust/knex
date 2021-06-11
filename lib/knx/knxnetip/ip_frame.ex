@@ -1,5 +1,5 @@
-defmodule Knx.Knxnetip.IPFrame do
-  alias Knx.Knxnetip.TunnelCemiFrame
+defmodule Knx.KnxnetIp.IpFrame do
+  alias Knx.KnxnetIp.TunnelCemiFrame
 
   require Knx.Defs
   import Knx.Defs

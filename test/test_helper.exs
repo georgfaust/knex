@@ -113,7 +113,7 @@ defmodule Helper do
 
   # TODO do all of these properties have to be implemented?
   # TODO read and write levels correct?
-  def get_knxnetip_parameter_props() do
+  def get_KnxnetIp_parameter_props() do
     mac_addr = 0x0
     knx_addr = 0x11FF
     # "KNXnet/IP Device"
@@ -145,11 +145,11 @@ defmodule Helper do
       ),
       P.new(:routing_multicast_address, [0xE000170C], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      P.new(:knxnetip_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:KnxnetIp_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # TODO if the value of the Property changes the current value shall be sent using M_PropInfo.ind
-      P.new(:knxnetip_device_state, [0x0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:KnxnetIp_device_state, [0x0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # the following properties only have to be implemented by routers
-      # P.new(:knxnetip_routing_capabilities, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # P.new(:KnxnetIp_routing_capabilities, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # P.new(:priority_fifo_enabled, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # P.new(:queue_overflow_to_ip, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # P.new(:queue_overflow_to_knx, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
@@ -167,7 +167,7 @@ defmodule Helper do
       ) do
     <<
       structure_length(:header)::8,
-      protocol_version(:knxnetip)::8,
+      protocol_version(:KnxnetIp)::8,
       service_type_id(:tunnelling_req)::16,
       structure_length(:header) + structure_length(:connection_header) +
         byte_size(cemi)::16,

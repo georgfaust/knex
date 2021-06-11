@@ -1,12 +1,12 @@
-defmodule Knx.Knxnetip.KnxNetIpTest do
+defmodule Knx.KnxnetIp.KnxnetIpTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
   alias Knx.Frame, as: F
-  alias Knx.Knxnetip.IpInterface, as: Ip
-  alias Knx.Knxnetip.Connection, as: C
-  alias Knx.Knxnetip.Endpoint, as: Ep
-  alias Knx.Knxnetip.ConTab
+  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Connection, as: C
+  alias Knx.KnxnetIp.Endpoint, as: Ep
+  alias Knx.KnxnetIp.ConTab
 
   require Knx.Defs
   import Knx.Defs
@@ -59,7 +59,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object Helper.get_KnxnetIp_parameter_props()
 
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
   @con_254 %C{id: 254, con_type: :device_mgmt_con, dest_data_endpoint: @ets_config_data_endpoint}
@@ -87,7 +87,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_discovery_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:search_resp)::16,
                  @total_length_search_resp::16,
                  # HPAI -------------------------------------
@@ -142,7 +142,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_control_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:description_resp)::16,
                  @total_length_description_resp::16,
                  # DIB Device Info --------------------------
@@ -202,7 +202,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_control_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:connect_resp)::16,
                  @total_length_connect_resp_tunnelling::16,
                  255::8,
@@ -232,7 +232,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_control_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:connect_resp)::16,
                  @total_length_connect_resp_management::16,
                  1::8,
@@ -268,7 +268,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_control_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:connectionstate_resp)::16,
                  @total_length_connectionstate_resp::16,
                  0::8,
@@ -298,7 +298,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_control_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:disconnect_resp)::16,
                  @total_length_disconnect_resp::16,
                  0::8,
@@ -327,7 +327,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_config_data_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:device_configuration_ack)::16,
                  10::16,
                  4::8,
@@ -339,7 +339,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
               {@ets_config_data_endpoint,
                <<
                  structure_length(:header)::8,
-                 protocol_version(:knxnetip)::8,
+                 protocol_version(:KnxnetIp)::8,
                  service_type_id(:device_configuration_req)::16,
                  19::16,
                  4::8,
