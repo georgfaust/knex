@@ -22,8 +22,7 @@ defmodule Knx.KnxnetIp.ConTab do
         if is_open?(con_tab, 255) do
           {con_tab, {:error, :no_more_connections}}
         else
-          new_connection = %C{new_connection | id: 255}
-          con_tab = Map.put_new(con_tab, 255, new_connection)
+          con_tab = Map.put_new(con_tab, 255, %C{new_connection | id: 255})
           {:ok, con_tab, 255}
         end
 
@@ -33,9 +32,7 @@ defmodule Knx.KnxnetIp.ConTab do
             {con_tab, {:error, :no_more_connections}}
 
           {new_id, free_mgmt_ids} ->
-            new_connection = %C{new_connection | id: new_id}
-
-            con_tab = Map.put_new(con_tab, new_id, new_connection)
+            con_tab = Map.put_new(con_tab, new_id, %C{new_connection | id: new_id})
             con_tab = put_in(con_tab[:free_mgmt_ids], free_mgmt_ids)
             {:ok, con_tab, new_id}
         end
