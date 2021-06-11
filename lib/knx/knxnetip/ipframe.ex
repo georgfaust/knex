@@ -7,6 +7,7 @@ defmodule Knx.Knxnetip.IPFrame do
   defstruct ip_src: nil,
             header_size: 6,
             protocol_version: 0x10,
+            discovery_endpoint: nil,
             control_endpoint: nil,
             data_endpoint: nil,
             service_type_id: nil,
@@ -14,8 +15,8 @@ defmodule Knx.Knxnetip.IPFrame do
             con_type: nil,
             channel_id: nil,
             status: common_error_code(:no_error),
-            ext_seq_counter: nil,
-            int_seq_counter: nil,
+            client_seq_counter: nil,
+            server_seq_counter: nil,
             knx_layer: nil,
             cemi: %TunnelCemiFrame{}
 end

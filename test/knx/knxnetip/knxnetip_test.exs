@@ -302,7 +302,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  service_type_id(:disconnect_resp)::16,
                  @total_length_disconnect_resp::16,
                  0::8,
-                 disconnect_response_status_code(:no_error)::8
+                 common_error_code(:no_error)::8
                >>}},
              {:timer, :stop, {:ip_connection, 0}}
            ] =
@@ -333,7 +333,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                  4::8,
                  254::8,
                  0::8,
-                 device_configuration_ack_status_code(:no_error)::8
+                 common_error_code(:no_error)::8
                >>}},
              {:ethernet, :transmit,
               {@ets_config_data_endpoint,
@@ -370,7 +370,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
   @_1_tunnelling_req_l_data_req <<0x0610_0420_0019_04FF_0000_1100_B070_0000_2102_0547_D500_0B10_01::8*25>>
   # @_1_tunnelling_req_l_data_req Helper.tunneling_req(
   #                                 channel_id: 0xFF,
-  #                                 int_seq_counter: 00,
+  #                                 server_seq_counter: 00,
   #                                 cemi:
   #                                   Helper.tunnel_cemi_frame(
   #                                     message_code: 0x11,
@@ -425,7 +425,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
              )
 
     con_tab = Cache.get(:con_tab)
-    assert 1 == ConTab.get_ext_seq_counter(con_tab, 0xFF)
+    assert 1 == ConTab.get_client_seq_counter(con_tab, 0xFF)
   end
 
   ## Tunnelling ACK
@@ -450,7 +450,7 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
              )
 
     con_tab = Cache.get(:con_tab)
-    assert 1 == ConTab.get_int_seq_counter(con_tab, 0xFF)
+    assert 1 == ConTab.get_server_seq_counter(con_tab, 0xFF)
   end
 
   ## Tunnelling Request, L_Data.ind:
@@ -487,20 +487,4 @@ defmodule Knx.Knxnetip.KnxNetIpTest do
                %S{}
              )
   end
-
-  # def create_binary(list) do
-  #   create_binary_(list, <<>>)
-  # end
-
-  # defp create_binary_([[_atom, data, bits] | rest], acc) do
-  #   <<data::size(bit_size(data))>> <> create_binary_(rest, acc)
-  # end
-
-  # defp create_binary_([], acc) do
-  #   acc
-  # end
-
-  # test("dings") do
-  #   IO.inspect(create_binary([[:okay, 8, 8], [:okay, 8, 16]]))
-  # end
 end

@@ -117,7 +117,8 @@ defmodule Helper do
     mac_addr = 0x0
     knx_addr = 0x11FF
     # "KNXnet/IP Device"
-    friendly_name = 0x4b4e_586e_6574_2f49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+    friendly_name = 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+
     [
       P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 2),
       # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
@@ -136,7 +137,12 @@ defmodule Helper do
       P.new(:default_gateway, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:dhcp_bootp_server, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:system_setup_multicast_address, [0xE000170C], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:system_setup_multicast_address, [0xE000170C],
+        max: 1,
+        write: false,
+        r_lvl: 3,
+        w_lvl: 0
+      ),
       P.new(:routing_multicast_address, [0xE000170C], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:knxnetip_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
@@ -153,4 +159,57 @@ defmodule Helper do
       P.new(:routing_busy_wait_time, [0x100], max: 1, write: true, r_lvl: 3, w_lvl: 0)
     ]
   end
+
+  def tunneling_req(
+        channel_id: channel_id,
+        server_seq_counter: server_seq_counter,
+        cemi: cemi
+      ) do
+    <<
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
+      service_type_id(:tunnelling_req)::16,
+      structure_length(:header) + structure_length(:connection_header) +
+        byte_size(cemi)::16,
+      structure_length(:connection_header)::8,
+      channel_id::8,
+      server_seq_counter::8,
+      knxnetip_constant(:reserved)::8
+    >> <> cemi
+  end
+
+  # def tunnel_cemi_frame(
+  #       message_code: message_code,
+  #       frame_type: frame_type,
+  #       repeat: repeat,
+  #       system_broadcast: system_broadcast,
+  #       prio: prio,
+  #       ack: ack,
+  #       confirm: confirm,
+  #       addr_t: addr_t,
+  #       hops: hops,
+  #       src: src,
+  #       dest: dest,
+  #       len: len,
+  #       data: data
+  #     ) do
+  #   <<
+  #     message_code::8,
+  #     0::8,
+  #     frame_type::1,
+  #     0::1,
+  #     repeat::1,
+  #     system_broadcast::1,
+  #     prio::2,
+  #     ack::1,
+  #     confirm::1,
+  #     addr_t::1,
+  #     hops::3,
+  #     0::4,
+  #     src::16,
+  #     dest::16,
+  #     len::8,
+  #     data::bits
+  #   >>
+  # end
 end

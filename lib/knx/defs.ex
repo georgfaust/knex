@@ -462,30 +462,6 @@ defmodule Knx.Defs do
     ]
   )
 
-  # TODO is this correct? (not specified)
-  enum(disconnect_response_status_code,
-    do: [
-      no_error: 0x00,
-      connection_id: 0x21
-    ]
-  )
-
-  # TODO is this correct? (not specified)
-  enum(device_configuration_ack_status_code,
-    do: [
-      no_error: 0x00,
-      connection_id: 0x21
-    ]
-  )
-
-  # TODO is this correct? (not specified)
-  enum(tunnelling_ack_status_code,
-    do: [
-      no_error: 0x00,
-      connection_id: 0x21
-    ]
-  )
-
   enum(tunnelling_connect_ack_error_code,
     do: [
       no_error: 0x00,

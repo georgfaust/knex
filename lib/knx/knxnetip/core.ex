@@ -3,102 +3,117 @@ defmodule Knx.Knxnetip.Core do
   alias Knx.Knxnetip.IPFrame
   alias Knx.Knxnetip.ConTab
   alias Knx.Knxnetip.Endpoint, as: Ep
+  alias Knx.Knxnetip.KnxnetipParameter, as: KnxnetipProps
   alias Knx.Ail.Device
-  alias Knx.Ail.Property, as: P
 
   require Knx.Defs
   import Knx.Defs
   import PureLogger
 
+  # ----------------------------------------------------------------------------
+  # body handlers
+
+  '''
+  SEARCH REQUEST
+  Description: 4.2
+  Structure: 7.6.1
+  '''
+
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
         <<
-          control_hpai::bits
+          discovery_hpai::structure_length(:hpai)*8
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(ip_frame.ip_src)
+    # TODO How does this work if client frames pass routers with NAT?
+    #  search_request is sent via multicast, i.e., src ip address from
+    #  ip package cannot be used to replace HPAI (see 8.6.3.2). how can client know
+    #  ip address to be written into hpai?
+    discovery_endpoint = handle_hpai(<<discovery_hpai::structure_length(:hpai)*8>>)
 
-    # Discovery?
-    ip_frame = %{ip_frame | control_endpoint: control_endpoint}
+    ip_frame = %{ip_frame | discovery_endpoint: discovery_endpoint}
 
     [search_resp(ip_frame)]
   end
 
+  '''
+  DESCRIPTION REQUEST
+  Description: 4.3
+  Structure: 7.7.1
+  '''
+
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
         <<
-          control_hpai::bits
+          control_hpai::structure_length(:hpai)*8
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai) |> check_route_back_hpai(ip_frame.ip_src)
+    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
     [description_resp(ip_frame)]
   end
 
+  '''
+  CONNECT REQUEST
+  Description: 5.2
+  Structure: 7.8.1
+  '''
+
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
         <<
-          control_hpai::size(structure_length(:hpai))-unit(8),
-          data_hpai::size(structure_length(:hpai))-unit(8),
+          control_hpai::structure_length(:hpai)*8,
+          data_hpai::structure_length(:hpai)*8,
           cri::bits
         >>
       ) do
-    control_endpoint =
-      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(ip_frame.ip_src)
+    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
 
-    data_endpoint = handle_hpai(<<data_hpai::size(structure_length(:hpai))-unit(8)>>)
+    data_endpoint = handle_hpai(<<data_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
-    ip_frame =
-      case handle_cri(cri) do
-        {:error, error_type} ->
-          %{ip_frame | status: connect_response_status_code(error_type)}
+    # !info: not sure why dialyser raises a problem here; tests work fine
+    with {:ok, con_type} <- handle_cri(cri),
+         {:ok, con_tab, channel_id} <- ConTab.open(Cache.get(:con_tab), con_type, ip_frame) do
+      Cache.put(:con_tab, con_tab)
 
-        {:tunnel_con, {knx_layer}} ->
-          %{ip_frame | con_type: :tunnel_con, knx_layer: knx_layer}
+      ip_frame = %{
+        ip_frame
+        | status: connect_response_status_code(:no_error),
+          channel_id: channel_id,
+          con_type: con_type
+      }
 
-        {:device_mgmt_con, _} ->
-          %{ip_frame | con_type: :device_mgmt_con}
-      end
-
-    con_tab = Cache.get(:con_tab)
-    {con_tab, result} = ConTab.open(con_tab, ip_frame.con_type, data_endpoint)
-    Cache.put(:con_tab, con_tab)
-
-    # TODO errors
-    case result do
-      {:error, :no_more_connections} ->
-        ip_frame =
-          if ip_frame.status == :no_error do
-            %{ip_frame | status: connect_response_status_code(:no_more_connections)}
-          else
-            ip_frame
-          end
-
-        [connect_resp(ip_frame)]
-
-      channel_id ->
-        ip_frame = %{ip_frame | channel_id: channel_id}
+      [
+        connect_resp(ip_frame),
         # TODO set timer timeout (120s)
-        [connect_resp(ip_frame), {:timer, :start, {:ip_connection, ip_frame.channel_id}}]
+        {:timer, :start, {:ip_connection, channel_id}}
+      ]
+    else
+      {:error, error_type} ->
+        %{ip_frame | status: connect_response_status_code(error_type)}
+        [connect_resp(ip_frame)]
     end
   end
+
+  '''
+  CONNECTIONSTATE REQUEST
+  Description: 5.4
+  Structure: 7.8.3
+  '''
 
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
-          control_hpai::size(structure_length(:hpai))-unit(8)
+          control_hpai::structure_length(:hpai)*8
         >>
       ) do
-    control_endpoint =
-      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(ip_frame.ip_src)
+    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
 
     ip_frame = %{
       ip_frame
@@ -106,28 +121,36 @@ defmodule Knx.Knxnetip.Core do
         channel_id: channel_id
     }
 
-    con_tab = Cache.get(:con_tab)
-    # TODO could also indicate error concerning connection or knx subnetwork
-    if ConTab.is_open?(con_tab, channel_id) do
+    # TODO if errors occur concerning the connection or knx subnetwork this could also
+    #  be indicated here
+    if ConTab.is_open?(Cache.get(:con_tab), channel_id) do
       ip_frame = %{ip_frame | status: connectionstate_response_status_code(:no_error)}
-      [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]
+
+      [
+        connectionstate_resp(ip_frame),
+        {:timer, :restart, {:ip_connection, channel_id}}
+      ]
     else
       ip_frame = %{ip_frame | status: connectionstate_response_status_code(:connection_id)}
       [connectionstate_resp(ip_frame)]
     end
   end
 
+  '''
+  DISCONNECT REQUEST
+  Description: 5.5
+  Structure: 7.8.5
+  '''
+
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
-          control_hpai::size(structure_length(:hpai))-unit(8)
+          control_hpai::structure_length(:hpai)*8
         >>
       ) do
-    control_endpoint =
-      handle_hpai(<<control_hpai::size(structure_length(:hpai))-unit(8)>>)
-      |> check_route_back_hpai(ip_frame.ip_src)
+    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
 
     ip_frame = %{
       ip_frame
@@ -135,53 +158,74 @@ defmodule Knx.Knxnetip.Core do
         channel_id: channel_id
     }
 
-    con_tab = Cache.get(:con_tab)
-    {con_tab, result} = ConTab.close(con_tab, channel_id)
-    Cache.put(:con_tab, con_tab)
+    case ConTab.close(Cache.get(:con_tab), channel_id) do
+      {:error, _error_reason} ->
+        # !info: standard does not specify what to do if connection does not exist
+        #  only says that invalid data packets shall be ignored (6.2)
+        #  therefore: do nothing
+        []
 
-    ip_frame =
-      case result do
-        # TODO is this correct? (not specified)
-        {:error, :connection_id} ->
-          %{ip_frame | status: disconnect_response_status_code(:connection_id)}
-
-        _id ->
-          ip_frame
-      end
-
-    [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
+      {:ok, con_tab, _id} ->
+        Cache.put(:con_tab, con_tab)
+        ip_frame = %{ip_frame | status: common_error_code(:no_error)}
+        [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
+    end
   end
 
   def handle_body(_ip_frame, _src, _frame) do
-    error(:unknown_service_type_id)
+    warning(:no_matching_handler)
   end
 
   # ----------------------------------------------------------------------------
+  # placeholder handlers
 
-  defp handle_hpai(<<
-         structure_length(:hpai)::8,
-         protocol_code::8,
-         ip_addr::32,
-         port::16
-       >>) do
-    %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
+  '''
+  HPAI
+  Description: 3.2, 8.6.3
+  Structure: 7.5.1
+  '''
+
+  defp handle_hpai(
+         <<
+           structure_length(:hpai)::8,
+           protocol_code::8,
+           ip_addr::32,
+           port::16
+         >>,
+         ip_src \\ nil
+       ) do
+    # [XXIX]
+    if (ip_addr == 0 || port == 0) && ip_src do
+      ip_src
+    else
+      %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
+    end
   end
+
+  '''
+  CRI (Connection Request Information)
+  Core - Description/Structure: 7.5.2,
+  Device Management - Structure: 4.2.3, Tunneling - Structure: 4.4.3
+  '''
 
   defp handle_cri(
          <<_cri_structure_length::8, connection_type_code::8, connection_specific_info::bits>>
        ) do
-    # TODO with ?
+    # !info: Kept nested case statements here since "with" and other options don't make it simpler.
+    #   Instead made it more readable
     case connection_type_code do
       connection_type_code(:tunnel_con) ->
-        <<tunnelling_knx_layer::8, knxnetip_constant(:reserved)::8>> = connection_specific_info
+        case connection_specific_info do
+          # TODO optionally also support layers RAW and BUSMONITOR
+          <<tunnelling_knx_layer(:tunnel_linklayer)::8, knxnetip_constant(:reserved)::8>> ->
+            {:ok, :tunnel_con}
 
-        case tunnelling_knx_layer do
-          tunnelling_knx_layer(:tunnel_linklayer) -> {:tunnel_con, {tunnelling_knx_layer}}
-          _ -> {:error, :connection_option}
+          _ ->
+            {:error, :connection_option}
         end
 
       connection_type_code(:device_mgmt_con) ->
-        {:device_mgmt_con, {}}
+        {:ok, :device_mgmt_con}
 
       _ ->
         {:error, :connection_type}
@@ -189,22 +233,35 @@ defmodule Knx.Knxnetip.Core do
   end
 
   # ----------------------------------------------------------------------------
+  # impulse creators
 
-  defp search_resp(%IPFrame{control_endpoint: dest}) do
+  '''
+  SEARCH RESPONSE
+  Description: 4.2
+  Structure: 7.6.2
+  '''
+
+  defp search_resp(%IPFrame{discovery_endpoint: discovery_endpoint}) do
     frame =
       Ip.header(
         service_type_id(:search_resp),
         structure_length(:header) + structure_length(:hpai) + structure_length(:dib_device_info) +
           structure_length(:dib_supp_svc_families)
       ) <>
-        hpai(dest.protocol_code) <>
+        hpai(discovery_endpoint.protocol_code) <>
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {discovery_endpoint, frame}}
   end
 
-  defp description_resp(%IPFrame{control_endpoint: dest}) do
+  '''
+  DESCRIPTION RESPONSE
+  Description: 4.3
+  Structure: 7.7.2
+  '''
+
+  defp description_resp(%IPFrame{control_endpoint: control_endpoint}) do
     frame =
       Ip.header(
         service_type_id(:description_resp),
@@ -214,12 +271,18 @@ defmodule Knx.Knxnetip.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {control_endpoint, frame}}
   end
+
+  '''
+  CONNECT RESPONSE
+  Description: 5.2
+  Structure: 7.8.2
+  '''
 
   defp connect_resp(
          %IPFrame{
-           control_endpoint: dest,
+           control_endpoint: control_endpoint,
            data_endpoint: data_endpoint,
            con_type: con_type,
            channel_id: channel_id,
@@ -237,11 +300,17 @@ defmodule Knx.Knxnetip.Core do
         hpai(data_endpoint.protocol_code) <>
         crd(ip_frame)
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {control_endpoint, frame}}
   end
 
+  '''
+  CONNECTIONSTATE RESPONSE
+  Description: 5.4
+  Structure: 7.8.4
+  '''
+
   defp connectionstate_resp(%IPFrame{
-         control_endpoint: dest,
+         control_endpoint: control_endpoint,
          channel_id: channel_id,
          status: status
        }) do
@@ -252,11 +321,17 @@ defmodule Knx.Knxnetip.Core do
       ) <>
         connection_header(channel_id, status)
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {control_endpoint, frame}}
   end
 
+  '''
+  DISCONNECT RESPONSE
+  Description: 5.5
+  Structure: 7.8.6
+  '''
+
   defp disconnect_resp(%IPFrame{
-         control_endpoint: dest,
+         control_endpoint: control_endpoint,
          channel_id: channel_id,
          status: status
        }) do
@@ -267,14 +342,42 @@ defmodule Knx.Knxnetip.Core do
       ) <>
         connection_header(channel_id, status)
 
-    {:ethernet, :transmit, {dest, frame}}
+    {:ethernet, :transmit, {control_endpoint, frame}}
+  end
+
+  '''
+  DISCONNECT REQUEST
+  Description: 5.5
+  Structure: 7.8.5
+  '''
+
+  # TODO to be sent when timer of associated channel runs out
+  def disconnect_req(channel_id) do
+    con_tab = Cache.get_obj(:con_tab)
+    control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
+    data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
+
+    frame = <<
+      channel_id::8,
+      knxnetip_constant(:reserved)::8,
+      hpai(data_endpoint.protocol_code)::structure_length(:hpai)*8
+    >>
+
+    {:ethernet, :transmit, {control_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------
+  # placeholder creators
+
+  '''
+  HPAI
+  Description: 3.2, 8.6.2
+  Structure: 7.5.1
+  '''
 
   defp hpai(host_protocol_code) do
     props = Cache.get_obj(:knxnet_ip_parameter)
-    ip_addr = P.read_prop_value(props, :current_ip_address)
+    ip_addr = KnxnetipProps.get_current_ip_addr(props)
 
     <<
       structure_length(:hpai)::8,
@@ -284,34 +387,35 @@ defmodule Knx.Knxnetip.Core do
     >>
   end
 
+  '''
+  DIB Device Information
+  Description/Structure: 7.5.4.2
+  '''
+
   defp dib_device_information() do
     device_props = Cache.get_obj(:device)
     knxnet_ip_props = Cache.get_obj(:knxnet_ip_parameter)
 
-    # TODO wrapper für read props
-    knx_medium = knx_medium_code(:tp1)
-    device_status = Device.get_prog_mode(device_props)
-    knx_individual_addr = P.read_prop_value(knxnet_ip_props, :knx_individual_address)
-    # TODO how is this supposed to be assigned? (core, 7.5.4.2)
-    project_installation_id = 0x0000
-    knx_serial_number = P.read_prop_value(device_props, :serial)
-    routing_multicast_addr = P.read_prop_value(knxnet_ip_props, :routing_multicast_address)
-    mac_address = P.read_prop_value(knxnet_ip_props, :mac_address)
-    friendly_name = P.read_prop_value(knxnet_ip_props, :friendly_name)
-
     <<
       structure_length(:dib_device_info)::8,
       description_type_code(:device_info)::8,
-      knx_medium::8,
-      device_status::8,
-      knx_individual_addr::16,
-      project_installation_id::16,
-      knx_serial_number::48,
-      routing_multicast_addr::32,
-      mac_address::48,
-      friendly_name::unit(8)-size(30)
+      # TODO alternatively knx ip has to be set as knx_medium
+      knx_medium_code(:tp1)::8,
+      Device.get_prog_mode(device_props)::8,
+      KnxnetipProps.get_knx_indv_addr(knxnet_ip_props)::16,
+      # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
+      0x0000::16,
+      Device.get_serial(device_props)::48,
+      KnxnetipProps.get_routing_multicast_addr(knxnet_ip_props)::32,
+      KnxnetipProps.get_mac_addr(knxnet_ip_props)::48,
+      KnxnetipProps.get_friendly_name(knxnet_ip_props)::unit(8)-size(30)
     >>
   end
+
+  '''
+  DIB Supported service families
+  Description/Structure: 7.5.4.3
+  '''
 
   defp dib_supp_svc_families() do
     <<
@@ -326,6 +430,11 @@ defmodule Knx.Knxnetip.Core do
     >>
   end
 
+  '''
+  CONNECTION HEADER
+  Description/Structure: 5.3.1
+  '''
+
   defp connection_header(channel_id, status) do
     <<
       channel_id::8,
@@ -333,30 +442,21 @@ defmodule Knx.Knxnetip.Core do
     >>
   end
 
+  '''
+  CRD (Connection Response Data Block)
+  Core - Description/Structure: 7.5.3,
+  Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
+  '''
+
   defp crd(%IPFrame{con_type: con_type}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
-    knx_individual_addr = P.read_prop_value(props, :knx_individual_address)
 
     case con_type do
       :device_mgmt_con ->
         <<2::8, connection_type_code(con_type)::8>>
 
       :tunnel_con ->
-        <<4::8, connection_type_code(con_type), knx_individual_addr::16>>
-    end
-  end
-
-  # ----------------------------------------------------------------------------
-
-  # [XXIX]
-  defp check_route_back_hpai(
-         %Ep{ip_addr: ip_addr, port: port} = endpoint,
-         ip_src
-       ) do
-    if ip_addr == 0 && port == 0 do
-      ip_src
-    else
-      endpoint
+        <<4::8, connection_type_code(con_type), KnxnetipProps.get_knx_indv_addr(props)::16>>
     end
   end
 end

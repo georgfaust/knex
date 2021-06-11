@@ -23,9 +23,9 @@ defmodule Knx.Knxnetip.IpInterface do
 
   # ----------------------------------------------------------------------------
 
-  # info: keep service_type_id as only field in IPFrame struct, since
+  # !info: keep service_type_id as only field in IPFrame struct, since
   # no name for lower octet of service type id is defined in knx standard
-  # and everywhere else, only full service type id is needed
+  # and apart from code in this module, only full service type id is needed
   # Instead, use function to retrieve service family from service type id
   defp handle_header(
          ip_frame,

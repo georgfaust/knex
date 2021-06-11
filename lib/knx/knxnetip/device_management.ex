@@ -9,12 +9,21 @@ defmodule Knx.Knxnetip.DeviceManagement do
   import Knx.Defs
   import PureLogger
 
+  # ----------------------------------------------------------------------------
+  # body handlers
+
+  '''
+  DEVICE CONFIGURATION REQUEST
+  Description: 2.3.2
+  Structure: 4.2.6
+  '''
+
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
-          ext_seq_counter::8,
+          client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
           cemi_message_code::8,
           object_type::16,
@@ -27,10 +36,9 @@ defmodule Knx.Knxnetip.DeviceManagement do
       ) do
     con_tab = Cache.get(:con_tab)
 
-    # TODO how does the server react if no connection is open? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
-         ConTab.ext_seq_counter_equal?(con_tab, channel_id, ext_seq_counter) do
-      con_tab = ConTab.increment_ext_seq_counter(con_tab, channel_id)
+         ConTab.client_seq_counter_equal?(con_tab, channel_id, client_seq_counter) do
+      con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
       Cache.put(:con_tab, con_tab)
 
       mgmt_cemi_frame = %MgmtCemiFrame{
@@ -46,8 +54,8 @@ defmodule Knx.Knxnetip.DeviceManagement do
       ip_frame = %{
         ip_frame
         | channel_id: channel_id,
-          status: :no_error,
-          ext_seq_counter: ext_seq_counter,
+          status: common_error_code(:no_error),
+          client_seq_counter: client_seq_counter,
           data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id),
           cemi: mgmt_cemi_frame
       }
@@ -55,16 +63,41 @@ defmodule Knx.Knxnetip.DeviceManagement do
       [{:timer, :restart, {:ip_connection, channel_id}}, device_configuration_ack(ip_frame)] ++
         device_configuration_req(ip_frame)
     else
+      # [XXXI]
       []
     end
   end
+
+  '''
+  M_RESET_REQ
+  Description & Structure: 03_06_03:4.1.7.5.1
+  '''
+
+  def handle_body(
+        %IPFrame{service_type_id: service_type_id(:device_configuration_req)},
+        <<
+          structure_length(:connection_header)::8,
+          _channel_id::8,
+          _client_seq_counter::8,
+          knxnetip_constant(:reserved)::8,
+          cemi_message_code(:m_reset_req)::8
+        >>
+      ) do
+    # TODO trigger device restart
+  end
+
+  '''
+  DEVICE CONFIGURATION ACK
+  Description: 2.3.2
+  Structure: 4.2.7
+  '''
 
   def handle_body(
         %IPFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
           structure_length(:connection_header)::8,
           channel_id::8,
-          int_seq_counter::8,
+          server_seq_counter::8,
           _status::8
         >>
       ) do
@@ -72,19 +105,25 @@ defmodule Knx.Knxnetip.DeviceManagement do
 
     # TODO how should ACKs be handled by the server? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
-         ConTab.int_seq_counter_equal?(con_tab, channel_id, int_seq_counter) do
-      con_tab = ConTab.increment_int_seq_counter(con_tab, channel_id)
-      Cache.put(:con_tab, con_tab)
+         ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
+      Cache.put(:con_tab, ConTab.increment_server_seq_counter(con_tab, channel_id))
     end
 
     [{:timer, :restart, {:ip_connection, channel_id}}]
   end
 
   def handle_body(_ip_frame, _frame) do
-    error(:unknown_service_type_id)
+    warning(:no_matching_handler)
   end
 
   # ----------------------------------------------------------------------------
+  # impulse creators
+
+  '''
+  DEVICE CONFIGURATION REQUEST
+  Description: 2.3.2
+  Structure: 4.2.6
+  '''
 
   defp device_configuration_req(%IPFrame{
          channel_id: channel_id,
@@ -95,26 +134,33 @@ defmodule Knx.Knxnetip.DeviceManagement do
       :no_reply ->
         []
 
-      {cemi_frame_size, conf_cemi_frame} ->
-        con_tab = Cache.get(:con_tab)
-        int_seq_counter = ConTab.get_int_seq_counter(con_tab, channel_id)
-
+      conf_cemi_frame ->
         conf_frame =
           Ip.header(
             service_type_id(:device_configuration_req),
-            structure_length(:header) + cemi_frame_size +
+            structure_length(:header) + byte_size(conf_cemi_frame) +
               connection_header_structure_length(:device_management)
           ) <>
-            connection_header(channel_id, int_seq_counter, knxnetip_constant(:reserved)) <>
+            connection_header(
+              channel_id,
+              ConTab.get_server_seq_counter(Cache.get(:con_tab), channel_id),
+              knxnetip_constant(:reserved)
+            ) <>
             conf_cemi_frame
 
         [{:ethernet, :transmit, {data_endpoint, conf_frame}}]
     end
   end
 
+  '''
+  DEVICE CONFIGURATION ACK
+  Description: 2.3.2
+  Structure: 4.2.7
+  '''
+
   defp device_configuration_ack(%IPFrame{
          channel_id: channel_id,
-         ext_seq_counter: ext_seq_counter,
+         client_seq_counter: client_seq_counter,
          status: status,
          data_endpoint: data_endpoint
        }) do
@@ -125,16 +171,22 @@ defmodule Knx.Knxnetip.DeviceManagement do
       ) <>
         connection_header(
           channel_id,
-          ext_seq_counter,
-          device_configuration_ack_status_code(status)
+          client_seq_counter,
+          status
         )
 
     {:ethernet, :transmit, {data_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------
+  # management cemi frame creators
 
-  # TODO propinfo, funcpropcommand, funcpropstateread, reset
+  '''
+  M_PROPREAD_X
+  Description & Structure: 03_06_03:4.1.7.3.2 ff.
+  '''
+
+  # TODO implement funcpropcommand, funcpropstateread
   defp mgmt_cemi_frame(%MgmtCemiFrame{
          message_code: cemi_message_code(:m_propread_req),
          object_type: object_type,
@@ -143,40 +195,42 @@ defmodule Knx.Knxnetip.DeviceManagement do
          elems: elems,
          start: start
        }) do
-    props =
-      case object_type do
-        object_type(:device) -> Cache.get_obj(:device)
-        object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
-      end
-
-    case P.read_prop(props, 0, pid: pid, elems: elems, start: start) do
+    # !info: alternatively, use a wrapper function for P.read_prop in Device and Knxnetip_parameter?
+    case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
       {:ok, _, new_data} ->
-        {7 + byte_size(new_data),
-         <<
-           cemi_message_code(:m_propread_con)::8,
-           object_type::16,
-           object_instance::8,
-           pid::8,
-           elems::4,
-           start::12
-         >> <>
-           new_data}
+        <<
+          cemi_message_code(:m_propread_con)::8,
+          object_type::16,
+          object_instance::8,
+          pid::8,
+          elems::4,
+          start::12
+        >> <>
+          new_data
 
       # TODO more specific error codes for prop read failure given in 03_06_03, 4.1.7.3.7.2
       {:error, _} ->
-        {8,
-         <<
-           cemi_message_code(:m_propread_con)::8,
-           object_type::16,
-           object_instance::8,
-           pid::8,
-           # 0 elems signals error
-           0::4,
-           start::12,
-           0::8
-         >>}
+        <<
+          cemi_message_code(:m_propread_con)::8,
+          object_type::16,
+          object_instance::8,
+          pid::8,
+          # 0 elems signals error
+          0::4,
+          start::12,
+          cemi_error_code(:unspecific)
+        >>
     end
   end
+
+  defp mgmt_cemi_frame(%MgmtCemiFrame{message_code: cemi_message_code(:m_propread_con)}) do
+    :no_reply
+  end
+
+  '''
+  M_PROPWRITE_X
+  Description & Structure: 03_06_03:4.1.7.3.4 ff.
+  '''
 
   defp mgmt_cemi_frame(%MgmtCemiFrame{
          message_code: cemi_message_code(:m_propwrite_req),
@@ -187,14 +241,7 @@ defmodule Knx.Knxnetip.DeviceManagement do
          start: start,
          data: data
        }) do
-    props =
-      case object_type do
-        object_type(:device) -> Cache.get_obj(:device)
-        object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
-      end
-
-    # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
-    case P.write_prop(nil, props, 0,
+    case P.write_prop(nil, get_object(object_type), 0,
            pid: pid,
            elems: elems,
            start: start,
@@ -203,38 +250,71 @@ defmodule Knx.Knxnetip.DeviceManagement do
       {:ok, props, _} ->
         Cache.put_obj(decode_object_type(object_type), props)
 
-        {7,
-         <<
-           cemi_message_code(:m_propwrite_con)::8,
-           object_type::16,
-           object_instance::8,
-           pid::8,
-           elems::4,
-           start::12
-         >>}
+        <<
+          cemi_message_code(:m_propwrite_con)::8,
+          object_type::16,
+          object_instance::8,
+          pid::8,
+          elems::4,
+          start::12
+        >>
 
+      # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
       {:error, _} ->
-        {8,
-         <<
-           cemi_message_code(:m_propwrite_con)::8,
-           object_type::16,
-           object_instance::8,
-           pid::8,
-           # 0 elems signals error
-           0::4,
-           start::12,
-           cemi_error_code(:unspecific)
-         >>}
+        <<
+          cemi_message_code(:m_propwrite_con)::8,
+          object_type::16,
+          object_instance::8,
+          pid::8,
+          # 0 elems signals error
+          0::4,
+          start::12,
+          cemi_error_code(:unspecific)
+        >>
     end
-  end
-
-  defp mgmt_cemi_frame(%MgmtCemiFrame{message_code: cemi_message_code(:m_propread_con)}) do
-    :no_reply
   end
 
   defp mgmt_cemi_frame(%MgmtCemiFrame{message_code: cemi_message_code(:m_propwrite_con)}) do
     :no_reply
   end
+
+  '''
+  M_PROPINFO_IND
+  Description & Structure: 03_06_03:4.1.7.3.6
+  '''
+
+  # TODO M_PropInfo.ind shall be sent to inform client about changed property value
+  #  (change not triggered by client via PropWrite) 03_06_03: 4.1.7.3.6
+
+  # defp mgmt_cemi_frame(
+  #        object_type,
+  #        object_instance,
+  #        pid,
+  #        elems,
+  #        start
+  #      ) do
+  #   # !info: instead of atom, use object_type(atom) as key in Cache?
+
+  #   # !info: alternatively, use a wrapper function for P.read_prop in Device and Knxnetip_parameter?
+  #   case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
+  #     {:ok, _, new_data} ->
+  #       <<
+  #         cemi_message_code(:m_propinfo_ind)::8,
+  #         object_type::16,
+  #         object_instance::8,
+  #         pid::8,
+  #         elems::4,
+  #         start::12
+  #       >> <>
+  #         new_data
+
+  #     {:error, _} ->
+  #       :no_reply
+  #   end
+  # end
+
+  # ----------------------------------------------------------------------------
+  # placeholder creators
 
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
@@ -246,19 +326,20 @@ defmodule Knx.Knxnetip.DeviceManagement do
   end
 
   # ----------------------------------------------------------------------------
+  # helper functions
 
   defp decode_object_type(object_type) do
     case object_type do
       0 -> :device
-      1 -> :addr_tab
-      2 -> :assoc_tab
-      3 -> :app_prog
-      4 -> :interface_prog
-      6 -> :router
-      7 -> :cemi_server
-      9 -> :go_tab
       11 -> :knxnet_ip_parameter
-      13 -> :file_server
+    end
+  end
+
+  defp get_object(object_type) do
+    # !info: instead of atom, use object_type(atom) as key in Cache?
+    case object_type do
+      object_type(:device) -> Cache.get_obj(:device)
+      object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)
     end
   end
 end
