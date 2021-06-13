@@ -164,7 +164,7 @@ defmodule Knx.KnxnetIp.Core do
         #  therefore: do nothing
         []
 
-      {:ok, con_tab, _id} ->
+      {:ok, con_tab} ->
         Cache.put(:con_tab, con_tab)
         ip_frame = %{ip_frame | status: common_error_code(:no_error)}
         [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]

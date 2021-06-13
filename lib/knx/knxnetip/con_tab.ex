@@ -20,7 +20,7 @@ defmodule Knx.KnxnetIp.ConTab do
       # TODO allow multiple tunnelling connections ?
       :tunnel_con ->
         if is_open?(con_tab, 255) do
-          {con_tab, {:error, :no_more_connections}}
+          {:error, :no_more_connections}
         else
           con_tab = Map.put_new(con_tab, 255, %C{new_connection | id: 255})
           {:ok, con_tab, 255}
@@ -29,7 +29,7 @@ defmodule Knx.KnxnetIp.ConTab do
       :device_mgmt_con ->
         case List.pop_at(free_mgmt_ids, 0) do
           {nil, _free_mgmt_ids} ->
-            {con_tab, {:error, :no_more_connections}}
+            {:error, :no_more_connections}
 
           {new_id, free_mgmt_ids} ->
             con_tab = Map.put_new(con_tab, new_id, %C{new_connection | id: new_id})
@@ -46,17 +46,17 @@ defmodule Knx.KnxnetIp.ConTab do
   # !info: is this necessary? without checking the source data ep, knowing the
   #  channel id (only applies for device management)
   #  and sequence counter is enough to hijack the connection
-  def check_access(con_tab, id, src_data_endpoint) do
-    if Map.has_key?(con_tab, id) do
-      if con_tab[id].dest_data_endpoint == src_data_endpoint do
-        :ok
-      else
-        {:error, :access_forbidden}
-      end
-    else
-      {:error, :connection_id}
-    end
-  end
+  # def check_access(con_tab, id, src_data_endpoint) do
+  #   if Map.has_key?(con_tab, id) do
+  #     if con_tab[id].dest_data_endpoint == src_data_endpoint do
+  #       :ok
+  #     else
+  #       {:error, :access_forbidden}
+  #     end
+  #   else
+  #     {:error, :connection_id}
+  #   end
+  # end
 
   def increment_client_seq_counter(con_tab, id) do
     cur_count = con_tab[id].client_seq_counter
@@ -99,11 +99,11 @@ defmodule Knx.KnxnetIp.ConTab do
       {nil, _con_tab} ->
         {:error, :connection_id}
 
-      {id, con_tab} ->
+      {_con, con_tab} ->
         if id == 255 do
-          {:ok, con_tab, 255}
+          {:ok, con_tab}
         else
-          {:ok, put_in(con_tab[:free_mgmt_ids], [id | con_tab[:free_mgmt_ids]]), id}
+          {:ok, Map.put(con_tab, :free_mgmt_ids, [id | con_tab[:free_mgmt_ids]])}
         end
     end
   end
