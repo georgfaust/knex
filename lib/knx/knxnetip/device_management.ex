@@ -103,13 +103,17 @@ defmodule Knx.KnxnetIp.DeviceManagement do
       ) do
     con_tab = Cache.get(:con_tab)
 
-    # TODO how should ACKs be handled by the server? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       Cache.put(:con_tab, ConTab.increment_server_seq_counter(con_tab, channel_id))
-    end
 
-    [{:timer, :restart, {:ip_connection, channel_id}}]
+      [
+        {:timer, :restart, {:ip_connection, channel_id}},
+        {:timer, :stop, {:device_management_req, server_seq_counter}}
+      ]
+    else
+      []
+    end
   end
 
   def handle_body(_ip_frame, _frame) do
@@ -148,7 +152,13 @@ defmodule Knx.KnxnetIp.DeviceManagement do
             ) <>
             conf_cemi_frame
 
-        [{:ethernet, :transmit, {data_endpoint, conf_frame}}]
+        [
+          {:ethernet, :transmit, {data_endpoint, conf_frame}},
+          # TODO set device_configuration_request_timeout = 10s
+          {:timer, :start,
+           {:device_management_req,
+            ConTab.get_server_seq_counter(Cache.get(:con_tab), channel_id)}}
+        ]
     end
   end
 

@@ -144,13 +144,17 @@ defmodule Knx.KnxnetIp.Tunnelling do
       ) do
     con_tab = Cache.get(:con_tab)
 
-    # TODO how should ACKs be handled by the server? (not specified)
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       Cache.put(:con_tab, ConTab.increment_server_seq_counter(con_tab, channel_id))
-    end
 
-    [{:timer, :restart, {:ip_connection, channel_id}}]
+      [
+        {:timer, :restart, {:ip_connection, channel_id}},
+        {:timer, :stop, {:device_management_req, server_seq_counter}}
+      ]
+    else
+      []
+    end
   end
 
   def handle_body(_ip_frame, _frame) do
@@ -195,7 +199,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
       data_endpoint: ConTab.get_data_endpoint(Cache.get(:con_tab), 0xFF)
     }
 
-    [tunnelling_req(ip_frame)]
+    [
+      tunnelling_req(ip_frame),
+      # TODO set tunneling_request_timeout = 1s
+      {:timer, :start, {:tunneling_req, ConTab.get_server_seq_counter(Cache.get(:con_tab), 0xFF)}}
+    ]
   end
 
   # ----------------------------------------------------------------------------

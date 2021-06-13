@@ -353,7 +353,8 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  1::4,
                  1::12,
                  0x07B0::16
-               >>}}
+               >>}},
+             {:timer, :start, {:device_management_req, 0}}
            ] =
              Ip.handle(
                {
@@ -443,7 +444,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       %S{}
     )
 
-    assert [{:timer, :restart, {:ip_connection, 255}}] =
+    assert [
+             {:timer, :restart, {:ip_connection, 255}},
+             {:timer, :stop, {:device_management_req, 0}}
+           ] =
              Ip.handle(
                {:ip, :from_ip, @ip_interface_universal_endpoint, @_2_tunnelling_ack},
                %S{}
@@ -480,7 +484,8 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
     assert [
              {:ethernet, :transmit,
-              {@ets_tunnelling_data_endpoint, @_3_tunnelling_req_l_data_ind}}
+              {@ets_tunnelling_data_endpoint, @_3_tunnelling_req_l_data_ind}},
+             {:timer, :start, {:tunneling_req, 0}}
            ] =
              Ip.handle(
                {:ip, :from_knx, @_3_knx_frame},
