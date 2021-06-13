@@ -113,10 +113,13 @@ defmodule Helper do
 
   # TODO do all of these properties have to be implemented?
   # TODO read and write levels correct?
-  def get_KnxnetIp_parameter_props() do
+  def get_knxnetip_parameter_props() do
+    current_ip_addr = 0xC0A8B23E
+    current_subnet_mask = 0xFFFFFF00
+    current_default_gateway = 0xC0A80001
     mac_addr = 0x0
     knx_addr = 0x11FF
-    # "KNXnet/IP Device"
+    # friendly_name: "KNXnet/IP Device"
     friendly_name = 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
 
     [
@@ -129,9 +132,14 @@ defmodule Helper do
       P.new(:ip_assignment_method, [0x4], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:ip_capabilities, [0x1], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # TODO shall be set according to Core, 8.5
-      P.new(:current_ip_address, [0xC0A8B23E], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:current_subnet_mask, [0xFFFFFF00], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:current_default_gateway, [0xC0A80001], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:current_ip_address, [current_ip_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:current_subnet_mask, [current_subnet_mask], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:current_default_gateway, [current_default_gateway],
+        max: 1,
+        write: false,
+        r_lvl: 3,
+        w_lvl: 0
+      ),
       P.new(:ip_address, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:subnet_mask, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:default_gateway, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),

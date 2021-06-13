@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.TunnelCemiFrame
   alias Knx.KnxnetIp.ConTab
-  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpProps
+  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
   alias Knx.Frame, as: F
 
   require Knx.Defs
@@ -308,7 +308,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   defp check_src_addr(src) do
     # TODO if multiple individual addresses will be supported, src might not be replaced
     if src == 0 do
-      KnxnetIpProps.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+      KnxnetIpParam.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
     else
       src
     end

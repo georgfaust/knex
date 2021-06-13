@@ -59,7 +59,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object Helper.get_KnxnetIp_parameter_props()
+  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
 
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: {0xC0A8_B23E, 0x0E75}}
   @con_254 %C{id: 254, con_type: :device_mgmt_con, dest_data_endpoint: @ets_config_data_endpoint}
