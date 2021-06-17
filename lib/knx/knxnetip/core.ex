@@ -81,7 +81,7 @@ defmodule Knx.KnxnetIp.Core do
 
       ip_frame = %{
         ip_frame
-        | status: connect_response_status_code(:no_error),
+        | status_code: connect_response_status_code(:no_error),
           channel_id: channel_id,
           con_type: con_type
       }
@@ -90,7 +90,7 @@ defmodule Knx.KnxnetIp.Core do
       [connect_resp(ip_frame), {:timer, :start, {:ip_connection, channel_id}}]
     else
       {:error, error_type} ->
-        ip_frame = %{ip_frame | status: connect_response_status_code(error_type)}
+        ip_frame = %{ip_frame | status_code: connect_response_status_code(error_type)}
 
         [connect_resp(ip_frame)]
     end
@@ -121,11 +121,11 @@ defmodule Knx.KnxnetIp.Core do
     # TODO if errors occur concerning the connection or knx subnetwork this could also
     #  be indicated here
     if ConTab.is_open?(Cache.get(:con_tab), channel_id) do
-      ip_frame = %{ip_frame | status: connectionstate_response_status_code(:no_error)}
+      ip_frame = %{ip_frame | status_code: connectionstate_response_status_code(:no_error)}
 
       [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]
     else
-      ip_frame = %{ip_frame | status: connectionstate_response_status_code(:connection_id)}
+      ip_frame = %{ip_frame | status_code: connectionstate_response_status_code(:connection_id)}
 
       [connectionstate_resp(ip_frame)]
     end
@@ -156,7 +156,7 @@ defmodule Knx.KnxnetIp.Core do
     case ConTab.close(Cache.get(:con_tab), channel_id) do
       {:ok, con_tab} ->
         Cache.put(:con_tab, con_tab)
-        ip_frame = %{ip_frame | status: common_error_code(:no_error)}
+        ip_frame = %{ip_frame | status_code: common_error_code(:no_error)}
         [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
 
       {:error, _error_reason} ->
@@ -279,18 +279,18 @@ defmodule Knx.KnxnetIp.Core do
            data_endpoint: data_endpoint,
            con_type: con_type,
            channel_id: channel_id,
-           status: status
+           status_code: status_code
          } = ip_frame
        ) do
     frame =
-      if status == common_error_code(:no_error) do
+      if status_code == common_error_code(:no_error) do
         Ip.header(
           service_type_id(:connect_resp),
           structure_length(:header) + connection_header_structure_length(:core) +
             structure_length(:hpai) +
             crd_structure_length(con_type)
         ) <>
-          connection_header(channel_id, status) <>
+          connection_header(channel_id, status_code) <>
           hpai(data_endpoint.protocol_code) <>
           crd(ip_frame)
       else
@@ -298,7 +298,7 @@ defmodule Knx.KnxnetIp.Core do
           service_type_id(:connect_resp),
           structure_length(:header) + 1
         ) <>
-          <<status::8>>
+          <<status_code::8>>
       end
 
     {:ethernet, :transmit, {control_endpoint, frame}}
@@ -313,14 +313,14 @@ defmodule Knx.KnxnetIp.Core do
   defp connectionstate_resp(%IpFrame{
          control_endpoint: control_endpoint,
          channel_id: channel_id,
-         status: status
+         status_code: status_code
        }) do
     frame =
       Ip.header(
         service_type_id(:connectionstate_resp),
         structure_length(:header) + connection_header_structure_length(:core)
       ) <>
-        connection_header(channel_id, status)
+        connection_header(channel_id, status_code)
 
     {:ethernet, :transmit, {control_endpoint, frame}}
   end
@@ -334,14 +334,14 @@ defmodule Knx.KnxnetIp.Core do
   defp disconnect_resp(%IpFrame{
          control_endpoint: control_endpoint,
          channel_id: channel_id,
-         status: status
+         status_code: status_code
        }) do
     frame =
       Ip.header(
         service_type_id(:disconnect_resp),
         structure_length(:header) + connection_header_structure_length(:core)
       ) <>
-        connection_header(channel_id, status)
+        connection_header(channel_id, status_code)
 
     {:ethernet, :transmit, {control_endpoint, frame}}
   end
@@ -436,10 +436,10 @@ defmodule Knx.KnxnetIp.Core do
   Description/Structure: 5.3.1
   '''
 
-  defp connection_header(channel_id, status) do
+  defp connection_header(channel_id, status_code) do
     <<
       channel_id::8,
-      status::8
+      status_code::8
     >>
   end
 

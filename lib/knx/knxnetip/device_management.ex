@@ -54,7 +54,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
       ip_frame = %{
         ip_frame
         | channel_id: channel_id,
-          status: common_error_code(:no_error),
+          status_code: common_error_code(:no_error),
           client_seq_counter: client_seq_counter,
           data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id),
           cemi: mgmt_cemi_frame
@@ -99,7 +99,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           structure_length(:connection_header)::8,
           channel_id::8,
           server_seq_counter::8,
-          _status::8
+          _status_code::8
         >>
       ) do
     con_tab = Cache.get(:con_tab)
@@ -172,7 +172,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   defp device_configuration_ack(%IpFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
-         status: status,
+         status_code: status_code,
          data_endpoint: data_endpoint
        }) do
     frame =
@@ -183,7 +183,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         connection_header(
           channel_id,
           client_seq_counter,
-          status
+          status_code
         )
 
     {:ethernet, :transmit, {data_endpoint, frame}}

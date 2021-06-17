@@ -140,7 +140,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
           structure_length(:connection_header)::8,
           channel_id::8,
           server_seq_counter::8,
-          _status::8
+          _status_code::8
         >>
       ) do
     con_tab = Cache.get(:con_tab)
