@@ -83,7 +83,7 @@ defmodule Knx.KnxnetIp.Core do
         ip_frame
         | status: connect_response_status_code(:no_error),
           channel_id: channel_id,
-          con_type_code: con_type_code(con_type)
+          con_type: con_type
       }
 
       # TODO set timer timeout (120s)
@@ -277,7 +277,7 @@ defmodule Knx.KnxnetIp.Core do
          %IpFrame{
            control_endpoint: control_endpoint,
            data_endpoint: data_endpoint,
-           con_type_code: con_type_code,
+           con_type: con_type,
            channel_id: channel_id,
            status: status
          } = ip_frame
@@ -288,7 +288,7 @@ defmodule Knx.KnxnetIp.Core do
           service_type_id(:connect_resp),
           structure_length(:header) + connection_header_structure_length(:core) +
             structure_length(:hpai) +
-            crd_structure_length(decode_con_type(con_type_code))
+            crd_structure_length(con_type)
         ) <>
           connection_header(channel_id, status) <>
           hpai(data_endpoint.protocol_code) <>
@@ -449,29 +449,17 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
   '''
 
-  defp crd(%IpFrame{con_type_code: con_type_code}) do
+  defp crd(%IpFrame{con_type: con_type}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 
-    case con_type_code do
+    case con_type_code(con_type) do
       con_type_code(:device_mgmt_con) ->
-        <<crd_structure_length(:device_mgmt_con)::8, con_type_code::8>>
+        <<crd_structure_length(:device_mgmt_con)::8, con_type_code(con_type)::8>>
 
       con_type_code(:tunnel_con) ->
-        <<crd_structure_length(:tunnel_con)::8, con_type_code,
+        <<crd_structure_length(:tunnel_con)::8, con_type_code(con_type),
           KnxnetIpParam.get_knx_indv_addr(props)::16>>
     end
   end
 
-  # ----------------------------------------------------------------------------
-  # helper functions
-
-  defp decode_con_type(con_type_code) do
-    case con_type_code do
-      3 -> :device_mgmt_con
-      4 -> :tunnel_con
-      6 -> :remlog_con
-      7 -> :remconf_con
-      8 -> :objsvr_con
-    end
-  end
 end

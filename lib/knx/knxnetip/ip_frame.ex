@@ -12,7 +12,7 @@ defmodule Knx.KnxnetIp.IpFrame do
             data_endpoint: nil,
             service_type_id: nil,
             total_length: nil,
-            con_type_code: nil,
+            con_type: nil,
             channel_id: nil,
             status: common_error_code(:no_error),
             client_seq_counter: nil,

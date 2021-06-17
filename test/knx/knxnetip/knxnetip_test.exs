@@ -211,13 +211,6 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "connect request" do
-    # @connect_req_management <<0x0610_0205_0018_0801_C0A8_B215_CC1A_0801_C0A8_B215_CC1C_0203::unit(
-    #                             8
-    #                           )-size(24)>>
-    # @connect_req_tunnelling <<0x0610_0205_001A_0801_C0A8_B215_CC1A_0801_C0A8_B215_CC1C_0404_0200::unit(
-    #                             8
-    #                           )-size(24)>>
-
     @total_length_connect_resp_management structure_length(:header) + 2 + structure_length(:hpai) +
                                             2
     @total_length_connect_resp_tunnelling structure_length(:header) + 2 + structure_length(:hpai) +
