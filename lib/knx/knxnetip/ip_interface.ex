@@ -31,7 +31,7 @@ defmodule Knx.KnxnetIp.IpInterface do
          ip_frame,
          <<
            structure_length(:header)::8,
-           protocol_version(:KnxnetIp)::8,
+           protocol_version(:knxnetip)::8,
            service_type_id::16,
            total_length::16
          >>
@@ -67,7 +67,7 @@ defmodule Knx.KnxnetIp.IpInterface do
   def header(service_type_id, total_length) do
     <<
       structure_length(:header)::8,
-      protocol_version(:KnxnetIp)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id::16,
       total_length::16
     >>

@@ -357,6 +357,13 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(cri_structure_length,
+    do: [
+      device_mgmt_con: 0x02,
+      tunnel_con: 0x04
+    ]
+  )
+
   enum(crd_structure_length,
     do: [
       device_mgmt_con: 0x02,
@@ -368,7 +375,7 @@ defmodule Knx.Defs do
     do: [
       core: 0x02,
       device_management: 0x04,
-      tunneling: 0x04
+      tunnelling: 0x04
     ]
   )
 
@@ -401,7 +408,7 @@ defmodule Knx.Defs do
 
   enum(protocol_version,
     do: [
-      KnxnetIp: 0x10,
+      knxnetip: 0x10,
       core: 0x01,
       device_management: 0x01,
       tunnelling: 0x01
@@ -425,7 +432,7 @@ defmodule Knx.Defs do
     ]
   )
 
-  enum(connection_type_code,
+  enum(con_type_code,
     do: [
       device_mgmt_con: 3,
       tunnel_con: 4,

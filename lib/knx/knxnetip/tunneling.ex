@@ -90,11 +90,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
         ConTab.client_seq_counter_equal?(
           con_tab,
           channel_id,
-          decrement_seq_counter(client_seq_counter)
+          increment_seq_counter(client_seq_counter)
         ) ->
           ip_frame = %{
             ip_frame
-            | client_seq_counter: client_seq_counter - 1
+            | client_seq_counter: client_seq_counter
           }
 
           [tunnelling_ack(ip_frame)]
@@ -125,6 +125,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
         >>
       ) do
     # TODO trigger device restart
+    []
   end
 
   '''
@@ -279,7 +280,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
     frame =
       Ip.header(
         service_type_id(:tunnelling_ack),
-        structure_length(:header) + connection_header_structure_length(:tunneling)
+        structure_length(:header) + connection_header_structure_length(:tunnelling)
       ) <>
         connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
 
@@ -302,7 +303,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
-      connection_header_structure_length(:device_management),
+      connection_header_structure_length(:tunnelling),
       channel_id::8,
       seq_counter::8,
       last_octet::8
@@ -322,9 +323,9 @@ defmodule Knx.KnxnetIp.Tunnelling do
     end
   end
 
-  defp decrement_seq_counter(seq_counter) do
+  defp increment_seq_counter(seq_counter) do
     # seq_counter is 8-bit unsigned value
-    <<decremented_seq_counter>> = <<seq_counter - 1>>
-    decremented_seq_counter
+    <<incremented_seq_counter>> = <<seq_counter + 1>>
+    incremented_seq_counter
   end
 end

@@ -84,6 +84,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         >>
       ) do
     # TODO trigger device restart
+    []
   end
 
   '''

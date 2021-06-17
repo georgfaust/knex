@@ -175,7 +175,7 @@ defmodule Helper do
       ) do
     <<
       structure_length(:header)::8,
-      protocol_version(:KnxnetIp)::8,
+      protocol_version(:knxnetip)::8,
       service_type_id(:tunnelling_req)::16,
       structure_length(:header) + structure_length(:connection_header) +
         byte_size(cemi)::16,

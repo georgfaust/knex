@@ -83,17 +83,15 @@ defmodule Knx.KnxnetIp.Core do
         ip_frame
         | status: connect_response_status_code(:no_error),
           channel_id: channel_id,
-          con_type: con_type
+          con_type: con_type_code(con_type)
       }
 
-      [
-        connect_resp(ip_frame),
-        # TODO set timer timeout (120s)
-        {:timer, :start, {:ip_connection, channel_id}}
-      ]
+      # TODO set timer timeout (120s)
+      [connect_resp(ip_frame), {:timer, :start, {:ip_connection, channel_id}}]
     else
       {:error, error_type} ->
-        %{ip_frame | status: connect_response_status_code(error_type)}
+        ip_frame = %{ip_frame | status: connect_response_status_code(error_type)}
+
         [connect_resp(ip_frame)]
     end
   end
@@ -125,12 +123,10 @@ defmodule Knx.KnxnetIp.Core do
     if ConTab.is_open?(Cache.get(:con_tab), channel_id) do
       ip_frame = %{ip_frame | status: connectionstate_response_status_code(:no_error)}
 
-      [
-        connectionstate_resp(ip_frame),
-        {:timer, :restart, {:ip_connection, channel_id}}
-      ]
+      [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]
     else
       ip_frame = %{ip_frame | status: connectionstate_response_status_code(:connection_id)}
+
       [connectionstate_resp(ip_frame)]
     end
   end
@@ -158,16 +154,16 @@ defmodule Knx.KnxnetIp.Core do
     }
 
     case ConTab.close(Cache.get(:con_tab), channel_id) do
+      {:ok, con_tab} ->
+        Cache.put(:con_tab, con_tab)
+        ip_frame = %{ip_frame | status: common_error_code(:no_error)}
+        [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
+
       {:error, _error_reason} ->
         # !info: standard does not specify what to do if connection does not exist
         #  only says that invalid data packets shall be ignored (6.2)
         #  therefore: do nothing
         []
-
-      {:ok, con_tab} ->
-        Cache.put(:con_tab, con_tab)
-        ip_frame = %{ip_frame | status: common_error_code(:no_error)}
-        [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]
     end
   end
 
@@ -207,14 +203,12 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.3, Tunneling - Structure: 4.4.3
   '''
 
-  defp handle_cri(
-         <<_cri_structure_length::8, connection_type_code::8, connection_specific_info::bits>>
-       ) do
+  defp handle_cri(<<_cri_structure_length::8, con_type_code::8, con_specific_info::bits>>) do
     # !info: Kept nested case statements here since "with" and other options don't make it simpler.
     #   Instead made it more readable
-    case connection_type_code do
-      connection_type_code(:tunnel_con) ->
-        case connection_specific_info do
+    case con_type_code do
+      con_type_code(:tunnel_con) ->
+        case con_specific_info do
           # TODO optionally also support layers RAW and BUSMONITOR
           <<tunnelling_knx_layer(:tunnel_linklayer)::8, knxnetip_constant(:reserved)::8>> ->
             {:ok, :tunnel_con}
@@ -223,7 +217,7 @@ defmodule Knx.KnxnetIp.Core do
             {:error, :connection_option}
         end
 
-      connection_type_code(:device_mgmt_con) ->
+      con_type_code(:device_mgmt_con) ->
         {:ok, :device_mgmt_con}
 
       _ ->
@@ -283,21 +277,29 @@ defmodule Knx.KnxnetIp.Core do
          %IpFrame{
            control_endpoint: control_endpoint,
            data_endpoint: data_endpoint,
-           con_type: con_type,
+           con_type: con_type_code,
            channel_id: channel_id,
            status: status
          } = ip_frame
        ) do
     frame =
-      Ip.header(
-        service_type_id(:connect_resp),
-        structure_length(:header) + connection_header_structure_length(:core) +
-          structure_length(:hpai) +
-          crd_structure_length(con_type)
-      ) <>
-        connection_header(channel_id, status) <>
-        hpai(data_endpoint.protocol_code) <>
-        crd(ip_frame)
+      if status == common_error_code(:no_error) do
+        Ip.header(
+          service_type_id(:connect_resp),
+          structure_length(:header) + connection_header_structure_length(:core) +
+            structure_length(:hpai) +
+            crd_structure_length(decode_con_type(con_type_code))
+        ) <>
+          connection_header(channel_id, status) <>
+          hpai(data_endpoint.protocol_code) <>
+          crd(ip_frame)
+      else
+        Ip.header(
+          service_type_id(:connect_resp),
+          structure_length(:header) + 1
+        ) <>
+          <<status::8>>
+      end
 
     {:ethernet, :transmit, {control_endpoint, frame}}
   end
@@ -447,15 +449,29 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
   '''
 
-  defp crd(%IpFrame{con_type: con_type}) do
+  defp crd(%IpFrame{con_type: con_type_code}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 
-    case con_type do
-      :device_mgmt_con ->
-        <<2::8, connection_type_code(con_type)::8>>
+    case con_type_code do
+      con_type_code(:device_mgmt_con) ->
+        <<crd_structure_length(:device_mgmt_con)::8, con_type_code::8>>
 
-      :tunnel_con ->
-        <<4::8, connection_type_code(con_type), KnxnetIpParam.get_knx_indv_addr(props)::16>>
+      con_type_code(:tunnel_con) ->
+        <<crd_structure_length(:tunnel_con)::8, con_type_code,
+          KnxnetIpParam.get_knx_indv_addr(props)::16>>
+    end
+  end
+
+  # ----------------------------------------------------------------------------
+  # helper functions
+
+  defp decode_con_type(con_type_code) do
+    case con_type_code do
+      3 -> :device_mgmt_con
+      4 -> :tunnel_con
+      6 -> :remlog_con
+      7 -> :remconf_con
+      8 -> :objsvr_con
     end
   end
 end
