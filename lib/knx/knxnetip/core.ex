@@ -210,7 +210,7 @@ defmodule Knx.KnxnetIp.Core do
       con_type_code(:tunnel_con) ->
         case con_specific_info do
           # TODO optionally also support layers RAW and BUSMONITOR
-          <<tunnelling_knx_layer(:tunnel_linklayer)::8, knxnetip_constant(:reserved)::8>> ->
+          <<tunnelling_knx_layer_code(:tunnel_linklayer)::8, knxnetip_constant(:reserved)::8>> ->
             {:ok, :tunnel_con}
 
           _ ->
@@ -461,5 +461,4 @@ defmodule Knx.KnxnetIp.Core do
           KnxnetIpParam.get_knx_indv_addr(props)::16>>
     end
   end
-
 end

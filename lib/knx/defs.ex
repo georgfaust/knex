@@ -476,7 +476,7 @@ defmodule Knx.Defs do
     ]
   )
 
-  enum(tunnelling_knx_layer,
+  enum(tunnelling_knx_layer_code,
     do: [
       tunnel_linklayer: 0x02,
       tunnel_raw: 0x04,

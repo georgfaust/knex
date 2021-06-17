@@ -65,11 +65,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   @friendly_name 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
 
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: @ets_device_mgmt_data_endpoint}
-  @con_255 %C{
-    id: 255,
-    con_type: :tunnel_con,
-    dest_data_endpoint: @ets_tunnelling_data_endpoint
-  }
+  @con_255 %C{id: 255, con_type: :tunnel_con, dest_data_endpoint: @ets_tunnelling_data_endpoint}
 
   setup do
     Cache.start_link(%{
@@ -211,11 +207,6 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "connect request" do
-    @total_length_connect_resp_management structure_length(:header) + 2 + structure_length(:hpai) +
-                                            2
-    @total_length_connect_resp_tunnelling structure_length(:header) + 2 + structure_length(:hpai) +
-                                            4
-
     @total_length_connect_resp_management structure_length(:header) +
                                             connection_header_structure_length(:core) +
                                             structure_length(:hpai) +
@@ -225,6 +216,75 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                                             structure_length(:hpai) +
                                             crd_structure_length(:tunnel_con)
     @total_length_connect_resp_error structure_length(:header) + 1
+
+    def connect_req_device_management() do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_control_endpoint,
+          <<
+            # Header -----------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:connect_req)::16,
+            structure_length(:header) + 2 * structure_length(:hpai) +
+              crd_structure_length(:device_mgmt_con)::16,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_control::16,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_device_mgmt_data::16,
+            # CRI --------------------------------------------------------------
+            cri_structure_length(:device_mgmt_con)::8,
+            con_type_code(:device_mgmt_con)::8
+          >>
+        },
+        %S{}
+      )
+    end
+
+    def connect_req_tunnelling(
+          con_type: con_type,
+          tunnelling_knx_layer: tunnelling_knx_layer
+        ) do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_control_endpoint,
+          <<
+            # Header -----------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:connect_req)::16,
+            structure_length(:header) + 2 * structure_length(:hpai) +
+              crd_structure_length(:tunnel_con)::16,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_control::16,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_tunnelling_data::16,
+            # CRI --------------------------------------------------------------
+            cri_structure_length(:tunnel_con)::8,
+            con_type_code(con_type)::8,
+            tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
+            knxnetip_constant(:reserved)::8
+          >>
+        },
+        %S{}
+      )
+    end
 
     test "device management, successful" do
       assert [
@@ -249,36 +309,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    con_type_code(:device_mgmt_con)::8
                  >>}},
                {:timer, :start, {:ip_connection, 1}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:device_mgmt_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_device_mgmt_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:device_mgmt_con)::8,
-                     con_type_code(:device_mgmt_con)::8
-                   >>
-                 },
-                 %S{}
-               )
+             ] = connect_req_device_management()
     end
 
     test "device management, error: no_more_connections" do
@@ -297,36 +328,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    @total_length_connect_resp_error::16,
                    connect_response_status_code(:no_more_connections)::8
                  >>}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:device_mgmt_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_device_mgmt_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:device_mgmt_con)::8,
-                     con_type_code(:device_mgmt_con)::8
-                   >>
-                 },
-                 %S{}
-               )
+             ] = connect_req_device_management()
     end
 
     test "tunnelling, successful" do
@@ -354,47 +356,14 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  >>}},
                {:timer, :start, {:ip_connection, 255}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:tunnel_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_tunnelling_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:tunnel_con)::8,
-                     con_type_code(:tunnel_con)::8,
-                     tunnelling_knx_layer(:tunnel_linklayer)::8,
-                     knxnetip_constant(:reserved)::8
-                   >>
-                 },
-                 %S{}
+               connect_req_tunnelling(
+                 con_type: :tunnel_con,
+                 tunnelling_knx_layer: :tunnel_linklayer
                )
     end
 
     test "tunnelling, error: no_more_connections" do
-      Cache.put(:con_tab, %{
-        255 => %C{
-          id: 255,
-          con_type: :tunnel_con,
-          dest_data_endpoint: @ets_tunnelling_data_endpoint
-        }
-      })
+      Cache.put(:con_tab, %{255 => @con_255})
 
       assert [
                {:ethernet, :transmit,
@@ -408,36 +377,9 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    connect_response_status_code(:no_more_connections)::8
                  >>}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:tunnel_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_tunnelling_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:tunnel_con)::8,
-                     con_type_code(:tunnel_con)::8,
-                     tunnelling_knx_layer(:tunnel_linklayer)::8,
-                     knxnetip_constant(:reserved)::8
-                   >>
-                 },
-                 %S{}
+               connect_req_tunnelling(
+                 con_type: :tunnel_con,
+                 tunnelling_knx_layer: :tunnel_linklayer
                )
     end
 
@@ -454,36 +396,9 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    connect_response_status_code(:connection_option)::8
                  >>}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:tunnel_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_tunnelling_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:tunnel_con)::8,
-                     con_type_code(:tunnel_con)::8,
-                     tunnelling_knx_layer(:tunnel_raw)::8,
-                     knxnetip_constant(:reserved)::8
-                   >>
-                 },
-                 %S{}
+               connect_req_tunnelling(
+                 con_type: :tunnel_con,
+                 tunnelling_knx_layer: :tunnel_raw
                )
     end
 
@@ -500,36 +415,9 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    connect_response_status_code(:connection_type)::8
                  >>}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connect_req)::16,
-                     structure_length(:header) + 2 * structure_length(:hpai) +
-                       crd_structure_length(:tunnel_con)::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_tunnelling_data::16,
-                     # CRI -----------------------------------------------------
-                     cri_structure_length(:tunnel_con)::8,
-                     con_type_code(:remlog_con)::8,
-                     tunnelling_knx_layer(:tunnel_linklayer)::8,
-                     knxnetip_constant(:reserved)::8
-                   >>
-                 },
-                 %S{}
+               connect_req_tunnelling(
+                 con_type: :remlog_con,
+                 tunnelling_knx_layer: :tunnel_linklayer
                )
     end
   end
@@ -538,6 +426,33 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "connectionstate request" do
     @total_length_connectionstate_resp structure_length(:header) +
                                          connection_header_structure_length(:core)
+
+    def connectionstate_req(connection_id: connection_id) do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_control_endpoint,
+          <<
+            # Header -----------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:connectionstate_req)::16,
+            structure_length(:header) + connection_header_structure_length(:core) +
+              structure_length(:hpai)::16,
+            # Connection Header ------------------------------------------------
+            connection_id::8,
+            knxnetip_constant(:reserved)::8,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_control::16
+          >>
+        },
+        %S{}
+      )
+    end
 
     test "successful" do
       assert [
@@ -554,31 +469,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    connectionstate_response_status_code(:no_error)::8
                  >>}},
                {:timer, :restart, {:ip_connection, 0}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connectionstate_req)::16,
-                     structure_length(:header) + connection_header_structure_length(:core) +
-                       structure_length(:hpai)::16,
-                     # Connection Header ---------------------------------------
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16
-                   >>
-                 },
-                 %S{}
-               )
+             ] = connectionstate_req(connection_id: 0)
     end
 
     test "error: connection_id" do
@@ -592,34 +483,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:connectionstate_resp)::16,
                    @total_length_connectionstate_resp::16,
                    # Connection Header -----------------------------------------
-                   1::8,
+                   27::8,
                    connectionstate_response_status_code(:connection_id)::8
                  >>}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:connectionstate_req)::16,
-                     structure_length(:header) + connection_header_structure_length(:core) +
-                       structure_length(:hpai)::16,
-                     # Connection Header ---------------------------------------
-                     1::8,
-                     knxnetip_constant(:reserved)::8,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16
-                   >>
-                 },
-                 %S{}
-               )
+             ] = connectionstate_req(connection_id: 27)
     end
   end
 
@@ -627,6 +494,34 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "disconnect request" do
     @total_length_disconnect_resp structure_length(:header) +
                                     connection_header_structure_length(:core)
+
+    def disconnect_req(connection_id: connection_id) do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_control_endpoint,
+          <<
+            # Header -----------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:disconnect_req)::16,
+            structure_length(:header) + connection_header_structure_length(:core) +
+              structure_length(:hpai)::16,
+            # Connection Header ------------------------------------------------
+            connection_id::8,
+            knxnetip_constant(:reserved)::8,
+            # HPAI -------------------------------------------------------------
+            structure_length(:hpai)::8,
+            protocol_code(:udp)::8,
+            @ets_ip::32,
+            @ets_port_control::16
+          >>
+        },
+        %S{}
+      )
+    end
+
     test "successful" do
       assert [
                {:ethernet, :transmit,
@@ -642,59 +537,11 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    common_error_code(:no_error)::8
                  >>}},
                {:timer, :stop, {:ip_connection, 0}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:disconnect_req)::16,
-                     structure_length(:header) + connection_header_structure_length(:core) +
-                       structure_length(:hpai)::16,
-                     # Connection Header ---------------------------------------
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16
-                   >>
-                 },
-                 %S{}
-               )
+             ] = disconnect_req(connection_id: 0)
     end
 
     test "error: connection does not exist" do
-      assert [] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:disconnect_req)::16,
-                     structure_length(:header) + connection_header_structure_length(:core) +
-                       structure_length(:hpai)::16,
-                     # Connection Header ---------------------------------------
-                     1::8,
-                     knxnetip_constant(:reserved)::8,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16
-                   >>
-                 },
-                 %S{}
-               )
+      assert [] = disconnect_req(connection_id: 1)
     end
   end
 
@@ -708,6 +555,44 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                                                       connection_header_structure_length(
                                                         :device_management
                                                       ) + 8
+
+    def device_configuration_req_m_propread(
+          connection_id: connection_id,
+          cemi_message_type: cemi_message_type,
+          pid: pid,
+          start: start,
+          data: data
+        ) do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_device_mgmt_data_endpoint,
+          <<
+            # Header --------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:device_configuration_req)::16,
+            structure_length(:header) +
+              connection_header_structure_length(:device_management) + 7::16,
+            # Connection header ---------------------------------------
+            connection_header_structure_length(:device_management)::8,
+            connection_id::8,
+            0::8,
+            knxnetip_constant(:reserved)::8,
+            # cEMI ----------------------------------------------------
+            cemi_message_code(cemi_message_type)::8,
+            0::16,
+            1::8,
+            pid::8,
+            1::4,
+            start::12
+          >> <>
+            <<data::bits>>
+        },
+        %S{}
+      )
+    end
 
     test "m_propread.req, successful" do
       assert [
@@ -750,40 +635,19 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  >>}},
                {:timer, :start, {:device_management_req, 0}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_req)::16,
-                     structure_length(:header) +
-                       connection_header_structure_length(:device_management) + 7::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ----------------------------------------------------
-                     cemi_message_code(:m_propread_req)::8,
-                     0::16,
-                     1::8,
-                     0x53::8,
-                     1::4,
-                     1::12
-                   >>
-                 },
-                 %S{}
+               device_configuration_req_m_propread(
+                 connection_id: 0,
+                 cemi_message_type: :m_propread_req,
+                 pid: 0x53,
+                 start: 1,
+                 data: <<>>
                )
 
       con_tab = Cache.get(:con_tab)
       assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
     end
 
-    test "m_propread.req, error: property read" do
+    test "m_propread.req, error: property read, invalid pid" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
                {:ethernet, :transmit,
@@ -816,7 +680,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    # cEMI ------------------------------------------------------
                    cemi_message_code(:m_propread_con)::8,
                    0::16,
-                   2::8,
+                   1::8,
                    0x99::8,
                    0::4,
                    1::12,
@@ -824,40 +688,72 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  >>}},
                {:timer, :start, {:device_management_req, 0}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_req)::16,
-                     structure_length(:header) +
-                       connection_header_structure_length(:device_management) + 7::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ----------------------------------------------------
-                     cemi_message_code(:m_propread_req)::8,
-                     0::16,
-                     2::8,
-                     0x99::8,
-                     1::4,
-                     1::12
-                   >>
-                 },
-                 %S{}
+               device_configuration_req_m_propread(
+                 connection_id: 0,
+                 cemi_message_type: :m_propread_req,
+                 pid: 0x99,
+                 start: 1,
+                 data: <<>>
                )
 
       con_tab = Cache.get(:con_tab)
       assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
     end
 
-    test "m_propread.con" do
+    test "m_propread.req, error: property read, invalid start" do
+      assert [
+               {:timer, :restart, {:ip_connection, 0}},
+               {:ethernet, :transmit,
+                {@ets_device_mgmt_data_endpoint,
+                 <<
+                   # Header ----------------------------------------------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   service_type_id(:device_configuration_ack)::16,
+                   @total_length_device_config_ack::16,
+                   # Connection header -----------------------------------------
+                   connection_header_structure_length(:device_management)::8,
+                   0::8,
+                   0::8,
+                   common_error_code(:no_error)::8
+                 >>}},
+               {:ethernet, :transmit,
+                {@ets_device_mgmt_data_endpoint,
+                 <<
+                   # Header ----------------------------------------------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   service_type_id(:device_configuration_req)::16,
+                   @total_length_device_config_req_error_prop_read::16,
+                   # Connection header -----------------------------------------
+                   connection_header_structure_length(:device_management)::8,
+                   0::8,
+                   0::8,
+                   knxnetip_constant(:reserved)::8,
+                   # cEMI ------------------------------------------------------
+                   cemi_message_code(:m_propread_con)::8,
+                   0::16,
+                   1::8,
+                   0x53::8,
+                   0::4,
+                   100::12,
+                   cemi_error_code(:unspecific)
+                 >>}},
+               {:timer, :start, {:device_management_req, 0}}
+             ] =
+               device_configuration_req_m_propread(
+                 connection_id: 0,
+                 cemi_message_type: :m_propread_req,
+                 pid: 0x53,
+                 start: 100,
+                 data: <<>>
+               )
+
+      con_tab = Cache.get(:con_tab)
+      assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
+    end
+
+    test "m_propread.con, successful" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
                {:ethernet, :transmit,
@@ -875,34 +771,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    common_error_code(:no_error)::8
                  >>}}
              ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_req)::16,
-                     structure_length(:header) +
-                       connection_header_structure_length(:device_management) + 7::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ----------------------------------------------------
-                     cemi_message_code(:m_propread_con)::8,
-                     0::16,
-                     1::8,
-                     0x53::8,
-                     1::4,
-                     1::12,
-                     0::8
-                   >>
-                 },
-                 %S{}
+               device_configuration_req_m_propread(
+                 connection_id: 0,
+                 cemi_message_type: :m_propread_con,
+                 pid: 0x53,
+                 start: 1,
+                 data: <<0>>
                )
 
       con_tab = Cache.get(:con_tab)
@@ -911,33 +785,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
     test "error: connection does not exist" do
       assert [] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_req)::16,
-                     structure_length(:header) +
-                       connection_header_structure_length(:device_management) + 7::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     1::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ----------------------------------------------------
-                     cemi_message_code(:m_propread_req)::8,
-                     0::16,
-                     1::8,
-                     0x53::8,
-                     1::4,
-                     1::12
-                   >>
-                 },
-                 %S{}
+               device_configuration_req_m_propread(
+                 connection_id: 87,
+                 cemi_message_type: :m_propread_req,
+                 pid: 0x53,
+                 start: 1,
+                 data: <<>>
                )
 
       con_tab = Cache.get(:con_tab)
@@ -949,85 +802,49 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "device configuration ack" do
     @total_length_device_config_ack structure_length(:header) +
                                       connection_header_structure_length(:device_management)
+
+    def device_configuration_ack(connection_id: connection_id, seq_counter: seq_counter) do
+      Ip.handle(
+        {
+          :ip,
+          :from_ip,
+          @ets_device_mgmt_data_endpoint,
+          <<
+            # Header -----------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_type_id(:device_configuration_ack)::16,
+            @total_length_device_config_ack::16,
+            # Connection header ------------------------------------------------
+            connection_header_structure_length(:device_management)::8,
+            connection_id::8,
+            seq_counter::8,
+            common_error_code(:no_error)::8
+          >>
+        },
+        %S{}
+      )
+    end
+
     test "successful" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
                {:timer, :stop, {:device_management_req, 0}}
-             ] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_ack)::16,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     0::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>
-                 },
-                 %S{}
-               )
+             ] = device_configuration_ack(connection_id: 0, seq_counter: 0)
 
       con_tab = Cache.get(:con_tab)
       assert 1 == ConTab.get_server_seq_counter(con_tab, 0x00)
     end
 
     test "error: connection id does not exist" do
-      assert [] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_ack)::16,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     99::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>
-                 },
-                 %S{}
-               )
+      assert [] = device_configuration_ack(connection_id: 45, seq_counter: 0)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_server_seq_counter(con_tab, 0x00)
     end
 
     test "error: sequence counter wrong" do
-      assert [] =
-               Ip.handle(
-                 {
-                   :ip,
-                   :from_ip,
-                   @ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_type_id(:device_configuration_ack)::16,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------------------------------
-                     connection_header_structure_length(:device_management)::8,
-                     0::8,
-                     23::8,
-                     common_error_code(:no_error)::8
-                   >>
-                 },
-                 %S{}
-               )
+      assert [] = device_configuration_ack(connection_id: 0, seq_counter: 21)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_server_seq_counter(con_tab, 0x00)
@@ -1048,6 +865,43 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                                   connection_header_structure_length(:tunnelling)
     @total_length_tunneling_req_l_data_con structure_length(:header) +
                                              connection_header_structure_length(:tunnelling) + 15
+
+    def tunneling_req(connection_id: connection_id, seq_counter: seq_counter) do
+      Ip.handle(
+        {:ip, :from_ip, @ets_tunnelling_data_endpoint,
+         <<
+           # Header ------------------------------------------------------------
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_type_id(:tunnelling_req)::16,
+           structure_length(:header) + connection_header_structure_length(:tunnelling) +
+             15::16,
+           # Connection header -------------------------------------------------
+           connection_header_structure_length(:tunnelling),
+           connection_id::8,
+           seq_counter::8,
+           knxnetip_constant(:reserved)::8,
+           # cEMI --------------------------------------------------------------
+           cemi_message_code(:l_data_req)::8,
+           0::8,
+           1::1,
+           0::1,
+           1::1,
+           1::1,
+           0::2,
+           0::1,
+           0::1,
+           0::1,
+           7::3,
+           0::4,
+           0x0000::16,
+           0x2102::16,
+           0x05::8,
+           0x47D5_000B_1001::48
+         >>},
+        %S{}
+      )
+    end
 
     test("l_data.req, expected seq counter") do
       Cache.put(:con_tab, %{255 => @con_255})
@@ -1100,41 +954,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    0x47D5_000B_1001::48
                  >>}},
                {:timer, :restart, {:ip_connection, 255}}
-             ] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_req)::16,
-                    structure_length(:header) + connection_header_structure_length(:tunnelling) +
-                      15::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling),
-                    255::8,
-                    0::8,
-                    knxnetip_constant(:reserved)::8,
-                    # cEMI -----------------------------------------------------
-                    cemi_message_code(:l_data_req)::8,
-                    0::8,
-                    1::1,
-                    0::1,
-                    1::1,
-                    1::1,
-                    0::2,
-                    0::1,
-                    0::1,
-                    0::1,
-                    7::3,
-                    0::4,
-                    0x0000::16,
-                    0x2102::16,
-                    0x05::8,
-                    0x47D5_000B_1001::48
-                  >>},
-                 %S{}
-               )
+             ] = tunneling_req(connection_id: 255, seq_counter: 0)
 
       con_tab = Cache.get(:con_tab)
       assert 1 == ConTab.get_client_seq_counter(con_tab, 0xFF)
@@ -1158,41 +978,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    255::8,
                    common_error_code(:no_error)::8
                  >>}}
-             ] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_req)::16,
-                    structure_length(:header) + connection_header_structure_length(:tunnelling) +
-                      15::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling),
-                    255::8,
-                    255::8,
-                    knxnetip_constant(:reserved)::8,
-                    # cEMI -----------------------------------------------------
-                    cemi_message_code(:l_data_req)::8,
-                    0::8,
-                    1::1,
-                    0::1,
-                    1::1,
-                    1::1,
-                    0::2,
-                    0::1,
-                    0::1,
-                    0::1,
-                    7::3,
-                    0::4,
-                    0x0000::16,
-                    0x2102::16,
-                    0x05::8,
-                    0x47D5_000B_1001::48
-                  >>},
-                 %S{}
-               )
+             ] = tunneling_req(connection_id: 255, seq_counter: 255)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
@@ -1201,73 +987,52 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     test("l_data.req, error: wrong seq counter") do
       Cache.put(:con_tab, %{255 => @con_255})
 
-      assert [] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_req)::16,
-                    structure_length(:header) + connection_header_structure_length(:tunnelling) +
-                      15::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling),
-                    255::8,
-                    66::8,
-                    knxnetip_constant(:reserved)::8,
-                    # cEMI -----------------------------------------------------
-                    cemi_message_code(:l_data_req)::8,
-                    0::8,
-                    1::1,
-                    0::1,
-                    1::1,
-                    1::1,
-                    0::2,
-                    0::1,
-                    0::1,
-                    0::1,
-                    7::3,
-                    0::4,
-                    0x0000::16,
-                    0x2102::16,
-                    0x05::8,
-                    0x47D5_000B_1001::48
-                  >>},
-                 %S{}
-               )
+      assert [] =  tunneling_req(connection_id: 254, seq_counter: 1)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
     end
+
+    test("l_data.req, error: connection id does not exist") do
+      Cache.put(:con_tab, %{255 => @con_255})
+
+      assert [] =  tunneling_req(connection_id: 254, seq_counter: 1)
+
+      con_tab = Cache.get(:con_tab)
+      assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
+    end
+
   end
 
   # ----------------------------------------------------------------------------
   describe "tunnelling ack" do
+    def tunneling_ack(connection_id: connection_id, seq_counter: seq_counter) do
+      Ip.handle(
+        {:ip, :from_ip, @ets_tunnelling_data_endpoint,
+         <<
+           # Header ------------------------------------------------------------
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_type_id(:tunnelling_ack)::16,
+           structure_length(:header) +
+             connection_header_structure_length(:tunnelling)::16,
+           # Connection header -------------------------------------------------
+           connection_header_structure_length(:tunnelling)::8,
+           connection_id::8,
+           seq_counter::8,
+           common_error_code(:no_error)::8
+         >>},
+        %S{}
+      )
+    end
+
     test("successful") do
       Cache.put(:con_tab, %{255 => @con_255})
 
       assert [
                {:timer, :restart, {:ip_connection, 255}},
                {:timer, :stop, {:device_management_req, 0}}
-             ] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_ack)::16,
-                    structure_length(:header) +
-                      connection_header_structure_length(:tunnelling)::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling)::8,
-                    255::8,
-                    0::8,
-                    common_error_code(:no_error)::8
-                  >>},
-                 %S{}
-               )
+             ] = tunneling_ack(connection_id: 255, seq_counter: 0)
 
       con_tab = Cache.get(:con_tab)
       assert 1 == ConTab.get_server_seq_counter(con_tab, 0xFF)
@@ -1276,24 +1041,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     test("error: wrong seq counter") do
       Cache.put(:con_tab, %{255 => @con_255})
 
-      assert [] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_ack)::16,
-                    structure_length(:header) +
-                      connection_header_structure_length(:tunnelling)::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling)::8,
-                    255::8,
-                    23::8,
-                    common_error_code(:no_error)::8
-                  >>},
-                 %S{}
-               )
+      assert [] = tunneling_ack(connection_id: 255, seq_counter: 23)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_server_seq_counter(con_tab, 0xFF)
@@ -1302,24 +1050,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     test("error: connection id does not exist") do
       Cache.put(:con_tab, %{255 => @con_255})
 
-      assert [] =
-               Ip.handle(
-                 {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-                  <<
-                    # Header ---------------------------------------------------
-                    structure_length(:header)::8,
-                    protocol_version(:knxnetip)::8,
-                    service_type_id(:tunnelling_ack)::16,
-                    structure_length(:header) +
-                      connection_header_structure_length(:tunnelling)::16,
-                    # Connection header ----------------------------------------
-                    connection_header_structure_length(:tunnelling)::8,
-                    56::8,
-                    0::8,
-                    common_error_code(:no_error)::8
-                  >>},
-                 %S{}
-               )
+      assert [] = tunneling_ack(connection_id: 25, seq_counter: 0)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_server_seq_counter(con_tab, 0xFF)
