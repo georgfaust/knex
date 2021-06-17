@@ -20,7 +20,7 @@ defmodule Knx.Mem do
         %S{max_apdu_length: max_apdu_length}
       ) do
     with :ok <- validate(max_apdu_length >= number + 3, :max_apdu_exceeded),
-         {:ok, data} <- read(number, addr) do
+         {:ok, data} <- read(addr, number) do
       [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XV]
@@ -38,7 +38,7 @@ defmodule Knx.Mem do
          _ <- write(addr, data),
          :ok <- validate(verify, :no_verify),
          # [XVII]
-         {:ok, ^data} <- read(number, addr) do
+         {:ok, ^data} <- read(addr, number) do
       [al_req_impulse(:mem_resp, f, [number, addr, data])]
     else
       # [XVIII]
@@ -50,24 +50,15 @@ defmodule Knx.Mem do
     end
   end
 
-  def read_table(addr, entry_size) do
-    with {:ok, <<length::size(2)-unit(8)>>} <- read(2, addr),
-         {:ok, <<table::bytes>>} <- read(length * entry_size, addr + 2) do
-      {:ok, length, table}
-    end
-  end
-
-  # NOTE: the application never writes the tables (only done by ETS) -> no write_table helper
-
-  # ------------------------------------------------------------------------------
-
-  defp read(number, addr) do
+  def read(addr, number) do
     mem = Cache.get(:mem)
 
     with :ok <- validate(area_valid?(mem, number, addr), :area_invalid) do
       {:ok, :binary.part(mem, addr, number)}
     end
   end
+
+  # ------------------------------------------------------------------------------
 
   defp write(addr, data) do
     mem = Cache.get(:mem)
@@ -83,8 +74,9 @@ defmodule Knx.Mem do
 
   defp area_valid?(mem, number, addr), do: byte_size(mem) >= addr + number
 
-  # duplication
+  # TODO duplication with io-server -> al.ex
   defp al_req_impulse(apci, %F{service: service, src: dest}, apdu) do
     {:al, :req, %F{apci: apci, service: service, dest: dest, data: apdu}}
   end
+
 end

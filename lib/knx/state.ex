@@ -28,6 +28,7 @@ defmodule Knx.State do
             # shell
             driver_pid: nil,
             timer_pid: nil,
+            app_pid: nil,
             connected: false,
             api_expect: %Knx.Api{},
             api_callback: nil,

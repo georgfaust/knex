@@ -4,45 +4,8 @@ defmodule Knx.Ail.Table do
   require Knx.Defs
   import Knx.Defs
 
-  def new_load_state_action(new_load_state, table_mod) do
-    case new_load_state do
-      load_state(:unloaded) -> table_mod.unload()
-      load_state(:loaded) -> table_mod.load(get_table_ref(table_mod))
-      _ -> {:ok, nil}
-    end
-  end
-
-  def load_ctrl(%{values: [load_state]}, [{event, data}], table_mod) do
-    {new_ls, action} = Knx.Ail.Lsm.dispatch(load_state, {event, data})
-
-
-    case action do
-      nil ->
-        nil
-
-      {:alc_data_rel_alloc, [_req_mem_size, _mode, _fill]} ->
-        # IO.inspect({"TODO action", :alc_data_rel_alloc, [req_mem_size, mode, fill]})
-        nil
-
-      action ->
-        IO.inspect({"unknown action", action})
-    end
-
-    case new_load_state_action(new_ls, table_mod) do
-      {:ok, _} -> {:ok, [new_ls]}
-      {:error, _} -> {:error, [load_state(:error)]}
-      unexpected -> raise(inspect({:unexpected, unexpected}))
-    end
-  end
-
-  def load(table_mod) do
-    ref = get_table_ref(table_mod)
-    table_mod.load(ref)
-  end
-
-  def get_table_ref(table_mod) do
-    props = Cache.get_obj(table_mod.get_object_type())
-    P.read_prop_value(props, :table_reference)
+  def get_table_bytes(<<length::16, mem::bytes>>, entry_size) do
+    binary_part(mem, 0, length * entry_size)
   end
 
   def get_table_props(type, mem_ref) do

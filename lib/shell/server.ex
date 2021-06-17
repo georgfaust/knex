@@ -8,8 +8,8 @@ defmodule Shell.Server do
   @me __MODULE__
   # @timer_config %{{:tlsm, :ack} => 3000, {:tlsm, :connection} => 6000}
 
-  def start_link(name: name, objects: objects, mem: mem, driver_mod: driver_mod) do
-    GenServer.start_link(@me, {objects, mem, driver_mod}, name: name)
+  def start_link(name: name, objects: objects, mem: mem, driver_mod: driver_mod, app_mod: app_mod) do
+    GenServer.start_link(@me, {objects, mem, driver_mod, app_mod}, name: name)
   end
 
   # def stop(name) do
@@ -40,7 +40,7 @@ defmodule Shell.Server do
   # --------------------------------------------------------------------
 
   @impl GenServer
-  def init({objects, mem, driver_mod}) do
+  def init({objects, mem, driver_mod, app_mod}) do
     serial = Knx.Ail.Property.read_prop_value(objects[:device], :serial)
 
     Process.put(:cache_id, serial)
@@ -53,19 +53,22 @@ defmodule Shell.Server do
 
     state = S.update_from_device_props(%S{}, objects[:device])
 
-    Knx.Ail.Table.load(Knx.Ail.AddrTab)
-    Knx.Ail.Table.load(Knx.Ail.AssocTab)
-    Knx.Ail.Table.load(Knx.Ail.GoTab)
+    {:ok, _} = Knx.Ail.AddrTab.load()
+    {:ok, _} = Knx.Ail.AssocTab.load()
+    {:ok, _} = Knx.Ail.GoTab.load()
+    {:ok, _} = Knx.Ail.AppProg.load()
 
     :logger.info("[D: #{Process.get(:cache_id)}] NEW. addr: #{state.addr}")
     :logger.debug("[D: #{Process.get(:cache_id)}] addr_tab: #{inspect(Cache.get(:addr_tab))}")
     :logger.debug("[D: #{Process.get(:cache_id)}] assoc_tab: #{inspect(Cache.get(:assoc_tab))}")
 
     {:ok, driver_pid} = driver_mod.start_link(addr: state.addr)
+    {:ok, app_pid} = app_mod.start_link(device_serial: serial, params: Cache.get(:app_prog))
+
     # {:ok, timer_pid} = Shell.Timer.start_link({self(), @timer_config})
     timer_pid = nil
 
-    {:ok, %S{state | driver_pid: driver_pid, timer_pid: timer_pid}}
+    {:ok, %S{state | driver_pid: driver_pid, timer_pid: timer_pid, app_pid: app_pid}}
   end
 
   @impl GenServer
@@ -85,6 +88,7 @@ defmodule Shell.Server do
     {:noreply, %S{state | api_expect: expect, api_callback: from, api_timer: pid}}
   end
 
+  @impl GenServer
   def handle_cast({:bus_info, :connected}, %S{} = state) do
     :logger.info("[D: #{Process.get(:cache_id)}] connected")
     {:noreply, %S{state | connected: true}}
@@ -186,7 +190,7 @@ defmodule Shell.Server do
 
   defp handle_effect(
          {target, _, _} = effect,
-         %S{driver_pid: driver_pid, timer_pid: _timer_pid}
+         %S{driver_pid: driver_pid, timer_pid: _timer_pid, app_pid: app_pid}
        ) do
     handle =
       Map.fetch!(
@@ -196,7 +200,7 @@ defmodule Shell.Server do
           timer: fn effect -> log_effect(effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
           mgmt: fn effect -> send(self(), effect) end,
-          app: fn effect -> log_effect(effect) end,
+          app: fn effect -> send(app_pid, effect) end,
           logger: fn effect -> log_effect(effect) end
         },
         target

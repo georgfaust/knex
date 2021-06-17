@@ -45,13 +45,26 @@ defmodule Knx.Stack.Tl do
 
   defp decode(addr_t(:ind), _dest, data) do
     case data do
-      <<0::6, data::bits>> -> {:t_data_ind, nil, data}
-      <<0b01::2, seq::4, data::bits>> -> {:t_data_con, seq, data}
-      <<0b1000_0000::8>> -> {:t_connect, nil, <<>>}
-      <<0b1000_0001::8>> -> {:t_discon, nil, <<>>}
-      <<0b11::2, seq::4, 0b10::2>> -> {:t_ack, seq, <<>>}
-      <<0b11::2, seq::4, 0b11::2>> -> {:t_nak, seq, <<>>}
-      _ -> {:error, {:invalid_tpci, inspect(data, base: :hex)}}
+      <<0::6, data::bits>> ->
+        {:t_data_ind, nil, data}
+
+      <<0b01::2, seq::4, data::bits>> ->
+        {:t_data_con, seq, data}
+
+      <<0b1000_0000::8>> ->
+        {:t_connect, nil, <<>>}
+
+      <<0b1000_0001::8>> ->
+        {:t_discon, nil, <<>>}
+
+      <<0b11::2, seq::4, 0b10::2>> ->
+        {:t_ack, seq, <<>>}
+
+      <<0b11::2, seq::4, 0b11::2>> ->
+        {:t_nak, seq, <<>>}
+
+      _ ->
+        {:error, {:invalid_tpci, inspect(data, base: :hex)}}
     end
   end
 

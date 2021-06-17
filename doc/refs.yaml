@@ -151,3 +151,11 @@ XXVIII: |
   number, i.e. property_index = 0 shall mean the first Property of the associated Interface Object,
   property_index = 1 shall mean the second Property.
   [AL:3.4.33]
+
+XXIX: |
+  PID_TABLE_REFERENCE
+  If the Load State of the related Resource changes to ‘unloaded’ then the Management Server shall set the
+  value to zero. When the Management Client has successfully allocated memory then the value shall be set
+  to the absolute memory location from where the Resource will be downloaded. When memory allocation
+  is not successful then the value shall be set to zero.
+  [Resources:4.2.7]

@@ -468,8 +468,9 @@ defmodule Knx.ManagementProcedures do
   end
 
   # TODO --> toolbox
+  # TODO get rid of ++ https://elixirforum.com/t/how-to-split-string-into-multiple-chunks-by-size/39662/7?u=sebb
   defp chunk_binary(data, chunk_size, chunks) when byte_size(data) >= chunk_size do
-    <<chunk::unit(8)-size(chunk_size)-binary, data::bits>> = data
+    <<chunk::size(chunk_size)-binary, data::bits>> = data
     chunk_binary(data, chunk_size, chunks ++ [chunk])
   end
 

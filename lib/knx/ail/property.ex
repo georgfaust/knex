@@ -86,9 +86,9 @@ defmodule Knx.Ail.Property do
          :ok <- validate(start - 1 + elems <= prop.max, :array_index_out_of_bounds),
          :ok <- authorize(access_lvl, prop.w_lvl),
          values <- decode_into_list(pid, pdt_atom, data),
-         {:ok, %@me{} = prop} <- write_prop_({o_idx, pdt_atom, pid}, prop, elems, start, values) do
+         {:ok, %@me{} = prop, impulses} <- write_prop_({o_idx, pdt_atom, pid}, prop, elems, start, values) do
       props = List.replace_at(props, prop_index, prop)
-      {:ok, props, prop}
+      {:ok, props, prop, impulses}
     end
   end
 
@@ -124,7 +124,7 @@ defmodule Knx.Ail.Property do
   end
 
   def write_prop_value(props, pid, data) do
-    {:ok, props, _} = write_prop(nil, props, 0, pid: prop_id(pid), elems: 1, start: 1, data: data)
+    {:ok, props, _, _} = write_prop(nil, props, 0, pid: prop_id(pid), elems: 1, start: 1, data: data)
     props
   end
 
@@ -132,7 +132,7 @@ defmodule Knx.Ail.Property do
 
   # [II]
   defp write_prop_(_, prop, 1 = _elems, 0 = _start, [0] = _data),
-    do: {:ok, %{prop | values: []}}
+    do: {:ok, %{prop | values: []}, []}
 
   defp write_prop_(_, _prop, _elems, 0 = _start, _data),
     do: {:error, :argument_error}
@@ -142,14 +142,17 @@ defmodule Knx.Ail.Property do
 
   defp write_prop_({o_idx, pdt, pid}, prop, 1, 1, data)
        when pdt in [:ctrl, :function] do
+
     case Knx.Ail.PropertyFunction.handle(o_idx, pid, prop, data) do
-      {:ok, result} -> {:ok, %{prop | values: result}}
-      {:error, result} -> {:ok, %{prop | values: result}}
+      {:ok, result, impulses} ->
+        {:ok, %{prop | values: result}, impulses}
+      {:error, result} ->
+        {:ok, %{prop | values: result}, []}
     end
   end
 
   defp write_prop_(_, %{values: values} = prop, _elems, start, data),
-    do: {:ok, %{prop | values: insert_list(values, data, start - 1)}}
+    do: {:ok, %{prop | values: insert_list(values, data, start - 1)}, []}
 
   defp read_prop_(_, 0 = _elems, 0 = _start), do: {:error, :argument_error}
 

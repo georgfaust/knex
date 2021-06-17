@@ -32,16 +32,15 @@ defmodule Knx.Ail.PropertyTest do
     P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
 
-  @tag :xxxx
   describe "load controls" do
     @addr_tab_mem_ref 4
     test "load address table" do
       Cache.start_link(%{
         objects: [addr_tab: Helper.get_table_props(1, @addr_tab_mem_ref)],
-        mem: <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16>>
+        mem: <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16, 0::800>>
       })
 
-      assert {:ok, props, %{values: [load_state(:loading)]}} =
+      assert {:ok, props, %{values: [load_state(:loading)]}, _} =
                P.write_prop(1, @props_addr_tab, 0,
                  pid: prop_id(:load_state_ctrl),
                  elems: 1,
@@ -49,17 +48,18 @@ defmodule Knx.Ail.PropertyTest do
                  data: <<@start_loading::8, 0::unit(8)-9>>
                )
 
-      rel_alloc = Knx.Ail.Lsm.encode_le(:alc_data_rel_alloc, [10, 1, 0xFF])
+      # TODO not implemented
+      # rel_alloc = Knx.Ail.Lsm.encode_le(:alc_data_rel_alloc, [10, 1, 0xFF])
 
-      assert {:ok, _, %{values: [load_state(:loading)]}} =
-               P.write_prop(1, props, 0,
-                 pid: prop_id(:load_state_ctrl),
-                 elems: 1,
-                 start: 1,
-                 data: rel_alloc
-               )
+      # assert {:ok, _, %{values: [load_state(:loading)]}} =
+      #          P.write_prop(1, props, 0,
+      #            pid: prop_id(:load_state_ctrl),
+      #            elems: 1,
+      #            start: 1,
+      #            data: rel_alloc
+      #          )
 
-      assert {:ok, _, %{values: [load_state(:loaded)]}} =
+      assert {:ok, _, %{values: [load_state(:loaded)]}, _} =
                P.write_prop(1, props, 0,
                  pid: prop_id(:load_state_ctrl),
                  elems: 1,
@@ -80,7 +80,6 @@ defmodule Knx.Ail.PropertyTest do
     assert {:error, :prop_invalid} = P.get_prop(@props_0, 0, 99)
   end
 
-  @tag :current
   test "read_prop" do
     assert {:ok, 0, <<3>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 0)
     assert {:ok, 0, <<1>>} = P.read_prop(@props_0, 0, pid: @pid1, elems: 1, start: 1)
@@ -95,16 +94,16 @@ defmodule Knx.Ail.PropertyTest do
   end
 
   test "write_prop" do
-    assert {:ok, [%{values: []}, _], _} =
+    assert {:ok, [%{values: []}, _], _, _} =
              P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 1, start: 0, data: <<0>>)
 
-    assert {:ok, [%{values: [1, 22, 3]}, _], _} =
+    assert {:ok, [%{values: [1, 22, 3]}, _], _, _} =
              P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 1, start: 2, data: <<22>>)
 
-    assert {:ok, [%{values: [11, 22, 33]}, _], _} =
+    assert {:ok, [%{values: [11, 22, 33]}, _], _, _} =
              P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 3, start: 1, data: <<11, 22, 33>>)
 
-    assert {:ok, [%{values: [1, 2, 3, 44, 55]}, _], _} =
+    assert {:ok, [%{values: [1, 2, 3, 44, 55]}, _], _, _} =
              P.write_prop(nil, @props_0, 0, pid: @pid1, elems: 2, start: 4, data: <<44, 55>>)
 
     assert {:error, :argument_error} =
