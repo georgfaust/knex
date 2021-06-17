@@ -83,7 +83,7 @@ defmodule Knx.KnxnetIp.Core do
         ip_frame
         | status: connect_response_status_code(:no_error),
           channel_id: channel_id,
-          con_type: con_type_code(con_type)
+          con_type_code: con_type_code(con_type)
       }
 
       # TODO set timer timeout (120s)
@@ -277,7 +277,7 @@ defmodule Knx.KnxnetIp.Core do
          %IpFrame{
            control_endpoint: control_endpoint,
            data_endpoint: data_endpoint,
-           con_type: con_type_code,
+           con_type_code: con_type_code,
            channel_id: channel_id,
            status: status
          } = ip_frame
@@ -449,7 +449,7 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
   '''
 
-  defp crd(%IpFrame{con_type: con_type_code}) do
+  defp crd(%IpFrame{con_type_code: con_type_code}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 
     case con_type_code do
