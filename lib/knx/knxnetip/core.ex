@@ -22,14 +22,14 @@ defmodule Knx.KnxnetIp.Core do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
         <<
-          discovery_hpai::structure_length(:hpai)*8
+          discovery_hpai::bytes-structure_length(:hpai)
         >>
       ) do
     # TODO How does this work if client frames pass routers with NAT?
     #  search_request is sent via multicast, i.e., src ip address from
     #  ip package cannot be used to replace HPAI (see 8.6.3.2). how can client know
     #  ip address to be written into hpai?
-    discovery_endpoint = handle_hpai(<<discovery_hpai::structure_length(:hpai)*8>>)
+    discovery_endpoint = handle_hpai(discovery_hpai)
 
     ip_frame = %{ip_frame | discovery_endpoint: discovery_endpoint}
 
@@ -45,10 +45,10 @@ defmodule Knx.KnxnetIp.Core do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
         <<
-          control_hpai::structure_length(:hpai)*8
+          control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
@@ -64,14 +64,14 @@ defmodule Knx.KnxnetIp.Core do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
         <<
-          control_hpai::structure_length(:hpai)*8,
-          data_hpai::structure_length(:hpai)*8,
+          control_hpai::bytes-structure_length(:hpai),
+          data_hpai::bytes-structure_length(:hpai),
           cri::bits
         >>
       ) do
-    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
 
-    data_endpoint = handle_hpai(<<data_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
+    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
@@ -107,10 +107,10 @@ defmodule Knx.KnxnetIp.Core do
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
-          control_hpai::structure_length(:hpai)*8
+          control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
 
     ip_frame = %{
       ip_frame
@@ -142,10 +142,10 @@ defmodule Knx.KnxnetIp.Core do
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
-          control_hpai::structure_length(:hpai)*8
+          control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(<<control_hpai::structure_length(:hpai)*8>>, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
 
     ip_frame = %{
       ip_frame
@@ -409,7 +409,7 @@ defmodule Knx.KnxnetIp.Core do
       Device.get_serial(device_props)::48,
       KnxnetIpParam.get_routing_multicast_addr(knxnet_ip_props)::32,
       KnxnetIpParam.get_mac_addr(knxnet_ip_props)::48,
-      KnxnetIpParam.get_friendly_name(knxnet_ip_props)::unit(8)-size(30)
+      KnxnetIpParam.get_friendly_name(knxnet_ip_props)::8*30
     >>
   end
 

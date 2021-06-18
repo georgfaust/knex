@@ -15,9 +15,9 @@ defmodule Knx.KnxnetIp.IpInterface do
     Tunnelling.handle_knx_frame(frame)
   end
 
-  def handle({:ip, :from_ip, src, <<header::8*structure_length(:header), body::bits>>}, %S{}) do
+  def handle({:ip, :from_ip, src, <<header::bytes-structure_length(:header), body::bits>>}, %S{}) do
     %IpFrame{ip_src: src}
-    |> handle_header(<<header::8*structure_length(:header)>>)
+    |> handle_header(header)
     |> handle_body(body)
   end
 
