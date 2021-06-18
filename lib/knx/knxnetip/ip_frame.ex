@@ -10,6 +10,7 @@ defmodule Knx.KnxnetIp.IpFrame do
             discovery_endpoint: nil,
             control_endpoint: nil,
             data_endpoint: nil,
+            service_family_id: nil,
             service_type_id: nil,
             total_length: nil,
             con_type: nil,

@@ -379,30 +379,31 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(service_family_id,
+  do: [
+    core: 0x02,
+    device_management: 0x03,
+    tunnelling: 0x04
+  ]
+)
+
+  # this is only the low byte of what the knx specification calls "service type id"
   enum(service_type_id,
     do: [
-      search_req: 0x0201,
-      search_resp: 0x0202,
-      description_req: 0x0203,
-      description_resp: 0x0204,
-      connect_req: 0x0205,
-      connect_resp: 0x0206,
-      connectionstate_req: 0x0207,
-      connectionstate_resp: 0x0208,
-      disconnect_req: 0x0209,
-      disconnect_resp: 0x020A,
-      device_configuration_req: 0x0310,
-      device_configuration_ack: 0x0311,
-      tunnelling_req: 0x0420,
-      tunnelling_ack: 0x0421
-    ]
-  )
-
-  enum(service_family_id,
-    do: [
-      core: 0x02,
-      device_management: 0x03,
-      tunnelling: 0x04
+      search_req: 0x01,
+      search_resp: 0x02,
+      description_req: 0x03,
+      description_resp: 0x04,
+      connect_req: 0x05,
+      connect_resp: 0x06,
+      connectionstate_req: 0x07,
+      connectionstate_resp: 0x08,
+      disconnect_req: 0x09,
+      disconnect_resp: 0x0A,
+      device_configuration_req: 0x10,
+      device_configuration_ack: 0x11,
+      tunnelling_req: 0x20,
+      tunnelling_ack: 0x21
     ]
   )
 

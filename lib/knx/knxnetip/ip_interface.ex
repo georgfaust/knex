@@ -23,31 +23,29 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
-  # !info: keep service_type_id as only field in IpFrame struct, since
-  # no name for lower octet of service type id is defined in knx standard
-  # and apart from code in this module, only full service type id is needed
-  # Instead, use function to retrieve service family from service type id
   defp handle_header(
          ip_frame,
          <<
            structure_length(:header)::8,
            protocol_version(:knxnetip)::8,
-           service_type_id::16,
+           service_family_id::8,
+           service_type_id::8,
            total_length::16
          >>
        ) do
     %IpFrame{
       ip_frame
-      | service_type_id: service_type_id,
+      | service_family_id: service_family_id,
+        service_type_id: service_type_id,
         total_length: total_length
     }
   end
 
   defp handle_body(
-         %IpFrame{service_type_id: service_type_id} = ip_frame,
+         %IpFrame{service_family_id: service_family_id} = ip_frame,
          body
        ) do
-    case get_service_familiy(service_type_id) do
+    case service_family_id do
       service_family_id(:core) ->
         Core.handle_body(ip_frame, body)
 
@@ -68,15 +66,20 @@ defmodule Knx.KnxnetIp.IpInterface do
     <<
       structure_length(:header)::8,
       protocol_version(:knxnetip)::8,
-      service_type_id::16,
+      get_service_family_id(service_type_id)::8,
+      service_type_id::8,
       total_length::16
     >>
   end
 
   # ----------------------------------------------------------------------------
 
-  def get_service_familiy(service_type_id) do
-    # service family = high octet of service type id
-    service_type_id >>> 8
+  defp get_service_family_id(service_type_id) do
+    # service families have non-overlapping service type number ranges
+    cond do
+      service_type_id <= 0x0F -> service_family_id(:core)
+      service_type_id <= 0x1F -> service_family_id(:device_management)
+      service_type_id <= 0x2F -> service_family_id(:tunnelling)
+    end
   end
 end
