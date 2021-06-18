@@ -41,23 +41,23 @@ defmodule Knx.KnxnetIp.IpInterface do
     }
   end
 
+  defp handle_body(%IpFrame{service_family_id: service_family_id(:core)} = ip_frame, body) do
+    Core.handle_body(ip_frame, body)
+  end
+
   defp handle_body(
-         %IpFrame{service_family_id: service_family_id} = ip_frame,
+         %IpFrame{service_family_id: service_family_id(:device_management)} = ip_frame,
          body
        ) do
-    case service_family_id do
-      service_family_id(:core) ->
-        Core.handle_body(ip_frame, body)
+    DeviceManagement.handle_body(ip_frame, body)
+  end
 
-      service_family_id(:device_management) ->
-        DeviceManagement.handle_body(ip_frame, body)
+  defp handle_body(%IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame, body) do
+    Tunnelling.handle_body(ip_frame, body)
+  end
 
-      service_family_id(:tunnelling) ->
-        Tunnelling.handle_body(ip_frame, body)
-
-      _ ->
-        error(:unknown_service_familiy)
-    end
+  defp handle_body(%IpFrame{}, _body) do
+    warning(:unknown_service_familiy)
   end
 
   # ----------------------------------------------------------------------------
