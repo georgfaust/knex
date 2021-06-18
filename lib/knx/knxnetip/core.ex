@@ -203,27 +203,22 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.3, Tunneling - Structure: 4.4.3
   '''
 
-  defp handle_cri(<<_cri_structure_length::8, con_type_code::8, con_specific_info::bits>>) do
-    # !info: Kept nested case statements here since "with" and other options don't make it simpler.
-    #   Instead made it more readable
-    case con_type_code do
-      con_type_code(:tunnel_con) ->
-        case con_specific_info do
-          # TODO optionally also support layers RAW and BUSMONITOR
-          <<tunnelling_knx_layer_code(:tunnel_linklayer)::8, knxnetip_constant(:reserved)::8>> ->
-            {:ok, :tunnel_con}
+  defp handle_cri(<<
+         _cri_structure_length::8,
+         con_type_code(:tunnel_con),
+         tunnelling_knx_layer_code(:tunnel_linklayer)::8,
+         knxnetip_constant(:reserved)::8
+       >>),
+       do: {:ok, :tunnel_con}
 
-          _ ->
-            {:error, :connection_option}
-        end
+  defp handle_cri(<<_cri_structure_length::8, con_type_code(:tunnel_con), _::bits>>),
+    do: {:error, :connection_option}
 
-      con_type_code(:device_mgmt_con) ->
-        {:ok, :device_mgmt_con}
+  defp handle_cri(<<_cri_structure_length::8, con_type_code(:device_mgmt_con)>>),
+    do: {:ok, :device_mgmt_con}
 
-      _ ->
-        {:error, :connection_type}
-    end
-  end
+  defp handle_cri(_),
+    do: {:error, :connection_type}
 
   # ----------------------------------------------------------------------------
   # impulse creators
