@@ -31,6 +31,12 @@ defmodule Knx.Ail.Device do
   def set_prog_mode(props, prog_mode),
     do: P.write_prop_value(props, :prog_mode, <<0::7, prog_mode::1>>)
 
+  def get_prog_mode(props),
+    do: P.read_prop_value(props, :prog_mode)
+
+  def get_serial(props),
+    do: P.read_prop_value(props, :serial)
+
   def serial_matches?(props, other_serial) do
     other_serial == P.read_prop_value(props, :serial)
   end
@@ -56,7 +62,6 @@ defmodule Knx.Ail.Device do
     user_stopped: false
   }
   def get_device_props(serial, order_info, hardware_type, addr \\ 0xFFFF) do
-
     device_addr = addr &&& 0x00FF
     subnet_addr = (addr &&& 0xFF00) >>> 8
 

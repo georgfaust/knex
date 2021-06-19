@@ -65,7 +65,7 @@ XIII: |
   Value Field Types Table 
   [3/5/1:4.12.5.2.4.1.4]
 
-XIV: | 
+XIV: |
   The transport layer services T_Connect.ind and T_Disconnect.ind are mapped transparently 
   to A_Connect.ind and A_Disconnect.ind service and passed to the user of Application Layer.
   [3/3/7:3.5.1]
@@ -79,7 +79,7 @@ XVI: |
   If the remote application process has a problem, e.g. address space unreachable 
   or protected or an illegal number of octets are requested, then the parameter number 
   of the A_Memory_Response-PDU shall be zero and shall contain no data.
-  [3/3/7:3.5.3]  
+  [3/3/7:3.5.3]
 
 XVII: |
   The value of the associated memory area shall be explicitly read back after writing to it.
@@ -139,7 +139,7 @@ XXVI: |
   not_ok), the local Application Layer shall pass an A_IndividualAddress_Write.Lcon (a_status = not_ok)
   to the local user indicating that the transmission of the associated T_Data_Broadcast.req did not succeed.
   [3/3/7:3.2.2]
- 
+
 XXVII: |
   Safe State denotes a state of the device in which no user-supplied part shall be executed.
   The implementation of the Safe State is optional.
@@ -151,3 +151,35 @@ XXVIII: |
   number, i.e. property_index = 0 shall mean the first Property of the associated Interface Object,
   property_index = 1 shall mean the second Property.
   [AL:3.4.33]
+
+XXIX: |
+  Route Back HPAI
+  For UDP “Route Back” HPAIs this means that the KNXnet/IP Server shall use the IP address and the
+  port number in the IP package received as the target IP address or port number for the response
+  to the KNXnet/IP Client.
+  For TCP “Route Back” HPAIs this means that the KNXnet/IP Server shall send his KNXnet/IP Frames
+  over the TCP connection that the KNXnet/IP Client already has created for this purpose.
+  [AN 184:2.2.3.2.4.3]
+
+XXX: |
+  If a cEMI Server receives the L_Data.req message with Source Address set to 0000h, then the 
+  cEMI Server shall fill in the Source Address field before sending the message onto the KNX 
+  network. Typically, this is the cEMI Server device’s own Individual Address.
+  [03_06_03:4.1.5.3.3]
+
+XXXI: |
+  The KNXnet/IP Server shall send no DEVICE_CONFIGURATION_ACK and shall discard 
+  the frame if it receives a frame with an unexpected sequence number.
+  [03_08_03:2.3.2]
+
+XXXII: |
+  If a KNXnet/IP Tunnelling Server receives a frame with a sequence number that is one less than the expected
+  sequence number then it shall reply with a TUNNELLING_ACK (Status = E_NO_ERROR) frame and discard the 
+  received frame.
+  [03_08_04:2.6]
+
+XXXIII: |
+  If a KNXnet/IP Tunnelling Server receives a data packet with a sequence number that is not equal to the
+  expected sequence number and not equal to one less than the expected sequence number, then the KNXnet/IP 
+  Tunnelling Server shall not reply and shall discard the received frame.
+  [03_08_04:2.6]

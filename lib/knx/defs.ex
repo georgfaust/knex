@@ -135,7 +135,35 @@ defmodule Knx.Defs do
       channel_29_param: :generic_01,
       channel_30_param: :generic_01,
       channel_31_param: :generic_01,
-      channel_32_param: :generic_01
+      channel_32_param: :generic_01,
+      # KNXnet/IP Parameter Object
+      project_installation_id: :unsigned_int,
+      knx_individual_address: :unsigned_int,
+      additional_individual_addresses: :unsigned_int,
+      current_ip_assignment_method: :unsigned_char,
+      ip_assignment_method: :unsigned_char,
+      ip_capabilities: :bitset8,
+      current_ip_address: :unsigned_long,
+      current_subnet_mask: :unsigned_long,
+      current_default_gateway: :unsigned_long,
+      ip_address: :unsigned_long,
+      subnet_mask: :unsigned_long,
+      default_gateway: :unsigned_long,
+      dhcp_bootp_server: :unsigned_long,
+      mac_address: :generic_06,
+      system_setup_multicast_address: :unsigned_long,
+      routing_multicast_address: :unsigned_long,
+      ttl: :unsigned_char,
+      KnxnetIp_device_capabilities: :bitset16,
+      KnxnetIp_device_state: :unsigned_char,
+      KnxnetIp_routing_capabilities: :unsigned_char,
+      priority_fifo_enabled: :binary_information,
+      queue_overflow_to_ip: :unsigned_int,
+      queue_overflow_to_knx: :unsigned_int,
+      msg_transmit_to_ip: :unsigned_long,
+      msg_transmit_to_knx: :unsigned_long,
+      friendly_name: :unsigned_char,
+      routing_busy_wait_time: :unsigned_int
     ]
   )
 
@@ -200,7 +228,35 @@ defmodule Knx.Defs do
       channel_29_param: 129,
       channel_30_param: 130,
       channel_31_param: 131,
-      channel_32_param: 132
+      channel_32_param: 132,
+      # KNXnet/IP Parameter Object
+      project_installation_id: 51,
+      knx_individual_address: 52,
+      additional_individual_addresses: 53,
+      current_ip_assignment_method: 54,
+      ip_assignment_method: 55,
+      ip_capabilities: 56,
+      current_ip_address: 57,
+      current_subnet_mask: 58,
+      current_default_gateway: 59,
+      ip_address: 60,
+      subnet_mask: 61,
+      default_gateway: 62,
+      dhcp_bootp_server: 63,
+      mac_address: 64,
+      system_setup_multicast_address: 65,
+      routing_multicast_address: 66,
+      ttl: 67,
+      KnxnetIp_device_capabilities: 68,
+      KnxnetIp_device_state: 69,
+      KnxnetIp_routing_capabilities: 70,
+      priority_fifo_enabled: 71,
+      queue_overflow_to_ip: 72,
+      queue_overflow_to_knx: 73,
+      msg_transmit_to_ip: 74,
+      msg_transmit_to_knx: 75,
+      friendly_name: 76,
+      routing_busy_wait_time: 78
     ]
   )
 
@@ -272,6 +328,196 @@ defmodule Knx.Defs do
       ind_addr_serial_read: <<0b1111_011100::10>>,
       ind_addr_serial_resp: <<0b1111_011101::10>>,
       ind_addr_serial_write: <<0b1111_011110::10>>
+    ]
+  )
+
+  enum(knxnetip_constant,
+    do: [
+      port: 3671,
+      system_setup_multicast_addr: 0xE000_170C,
+      reserved: 0x00
+    ]
+  )
+
+  enum(knx_medium_code,
+    do: [
+      tp1: 0x02,
+      knx_ip: 0x20
+    ]
+  )
+
+  enum(structure_length,
+    do: [
+      header: 0x06,
+      hpai: 0x08,
+      dib_device_info: 0x36,
+      dib_supp_svc_families: 0x08,
+      connection_header: 0x04,
+      cemi_l_data_without_data: 0x09
+    ]
+  )
+
+  enum(cri_structure_length,
+    do: [
+      device_mgmt_con: 0x02,
+      tunnel_con: 0x04
+    ]
+  )
+
+  enum(crd_structure_length,
+    do: [
+      device_mgmt_con: 0x02,
+      tunnel_con: 0x04
+    ]
+  )
+
+  enum(connection_header_structure_length,
+    do: [
+      core: 0x02,
+      device_management: 0x04,
+      tunnelling: 0x04
+    ]
+  )
+
+  enum(service_family_id,
+  do: [
+    core: 0x02,
+    device_management: 0x03,
+    tunnelling: 0x04
+  ]
+)
+
+  # this is only the low byte of what the knx specification calls "service type id"
+  enum(service_type_id,
+    do: [
+      search_req: 0x01,
+      search_resp: 0x02,
+      description_req: 0x03,
+      description_resp: 0x04,
+      connect_req: 0x05,
+      connect_resp: 0x06,
+      connectionstate_req: 0x07,
+      connectionstate_resp: 0x08,
+      disconnect_req: 0x09,
+      disconnect_resp: 0x0A,
+      device_configuration_req: 0x10,
+      device_configuration_ack: 0x11,
+      tunnelling_req: 0x20,
+      tunnelling_ack: 0x21
+    ]
+  )
+
+  enum(protocol_version,
+    do: [
+      knxnetip: 0x10,
+      core: 0x01,
+      device_management: 0x01,
+      tunnelling: 0x01
+    ]
+  )
+
+  enum(protocol_code,
+    do: [
+      udp: 1,
+      tcp: 2
+    ]
+  )
+
+  enum(description_type_code,
+    do: [
+      device_info: 1,
+      supp_svc_families: 2,
+      ip_config: 3,
+      ip_cur_config: 4,
+      knx_addresses: 5
+    ]
+  )
+
+  enum(con_type_code,
+    do: [
+      device_mgmt_con: 3,
+      tunnel_con: 4,
+      remlog_con: 6,
+      remconf_con: 7,
+      objsvr_con: 8
+    ]
+  )
+
+  enum(common_error_code,
+    do: [
+      no_error: 0x00,
+      host_protocol_type: 0x01,
+      version_not_supported: 0x02,
+      sequence_number: 0x04
+    ]
+  )
+
+  enum(connect_response_status_code,
+    do: [
+      no_error: 0x00,
+      connection_type: 0x22,
+      connection_option: 0x23,
+      no_more_connections: 0x24
+    ]
+  )
+
+  enum(connectionstate_response_status_code,
+    do: [
+      no_error: 0x00,
+      connection_id: 0x21,
+      data_connection: 0x26,
+      knx_connection: 0x27
+    ]
+  )
+
+  enum(tunnelling_connect_ack_error_code,
+    do: [
+      no_error: 0x00,
+      tunnelling_layer: 0x29
+    ]
+  )
+
+  enum(tunnelling_knx_layer_code,
+    do: [
+      tunnel_linklayer: 0x02,
+      tunnel_raw: 0x04,
+      tunnel_busmonitor: 0x80
+    ]
+  )
+
+  # TODO why are there 2 identical codes?
+  enum(cemi_message_code,
+    do: [
+      l_data_req: 0x11,
+      l_data_con: 0x2E,
+      l_data_ind: 0x29,
+      m_propread_req: 0xFC,
+      m_propread_con: 0xFB,
+      m_propwrite_req: 0xF6,
+      m_propwrite_con: 0xF5,
+      m_propinfo_ind: 0xF7,
+      m_funcpropcommand_req: 0xF8,
+      m_funcpropcommand_con: 0xFA,
+      m_funcpropstateread_req: 0xF9,
+      m_funcpropstateread_con: 0xFA,
+      m_reset_req: 0xF1,
+      m_reset_ind: 0xF0
+    ]
+  )
+
+  enum(cemi_error_code,
+    do: [
+      unspecific: 0x00,
+      out_of_range: 0x01,
+      out_of_max_range: 0x02,
+      out_of_min_range: 0x03,
+      memory_error: 0x04,
+      read_only: 0x05,
+      illegal_command: 0x06,
+      void_dp: 0x07,
+      type_conflict: 0x08,
+      prop_index_range: 0x09,
+      value_temporarily_not_writeable: 0x0A
     ]
   )
 end
