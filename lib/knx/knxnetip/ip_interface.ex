@@ -23,6 +23,7 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
+  # nicht unterstuetzte version -> crash?
   defp handle_header(
          ip_frame,
          <<
@@ -76,6 +77,7 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   defp get_service_family_id(service_type_id) do
     # service families have non-overlapping service type number ranges
+    # -- ja, das hatte ich gar nicht gesehen. gute loesung!
     cond do
       service_type_id <= 0x0F -> service_family_id(:core)
       service_type_id <= 0x1F -> service_family_id(:device_management)

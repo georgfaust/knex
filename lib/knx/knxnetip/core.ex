@@ -233,6 +233,10 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       Ip.header(
         service_type_id(:search_resp),
+        # suggestion:
+        # get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
+        # --> wenn du irgendwo im code duplication/redundance siehst musst du aufmerksam werden.
+        #     wie koennte man get_structure_length() implementieren??
         structure_length(:header) + structure_length(:hpai) + structure_length(:dib_device_info) +
           structure_length(:dib_supp_svc_families)
       ) <>
@@ -372,6 +376,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp hpai(host_protocol_code) do
+    # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
     props = Cache.get_obj(:knxnet_ip_parameter)
     ip_addr = KnxnetIpParam.get_current_ip_addr(props)
 

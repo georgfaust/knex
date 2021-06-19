@@ -82,6 +82,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "search request" do
+    # get_structure_length(...) siehe suggestion in core.ex/search_resp()
     @total_length_search_resp structure_length(:header) + structure_length(:hpai) +
                                 structure_length(:dib_device_info) +
                                 structure_length(:dib_supp_svc_families)
@@ -168,6 +169,16 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    description_type_code(:device_info)::8,
                    @knx_medium::8,
                    @device_status::8,
+                   # wir muessen uns auf einheitliche abkuerzungen einigen (--> Gloassar)
+                   # einige deiner consts koennte man evtl auch noch so abkuerzen
+                   # dass es weiter gut lesbar bleibt und mehr function header in eine zeile passen
+                   # zb
+                   #  structure -> struct
+                   #  protocol -> prot
+                   #  service -> srv
+                   #  ...
+                   # ist zu diskutieren!
+                   # es gibt auch gute gruende das nicht zu tun
                    @knx_indv_addr::16,
                    @project_installation_id::16,
                    @serial::48,
@@ -254,10 +265,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       )
     end
 
-    def connect_req_tunnelling(
-          con_type: con_type,
-          tunnelling_knx_layer: tunnelling_knx_layer
-        ) do
+    def connect_req_tunnelling(con_type: con_type, tunnelling_knx_layer: tunnelling_knx_layer) do
       Ip.handle(
         {
           :ip,
@@ -1017,7 +1025,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     test("l_data.req, error: wrong seq counter") do
       Cache.put(:con_tab, %{255 => @con_255})
 
-      assert [] =  tunneling_req(connection_id: 254, seq_counter: 1)
+      assert [] = tunneling_req(connection_id: 254, seq_counter: 1)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
@@ -1026,12 +1034,11 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     test("l_data.req, error: connection id does not exist") do
       Cache.put(:con_tab, %{255 => @con_255})
 
-      assert [] =  tunneling_req(connection_id: 254, seq_counter: 1)
+      assert [] = tunneling_req(connection_id: 254, seq_counter: 1)
 
       con_tab = Cache.get(:con_tab)
       assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
     end
-
   end
 
   # ----------------------------------------------------------------------------
