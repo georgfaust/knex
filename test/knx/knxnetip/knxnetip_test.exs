@@ -82,10 +82,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "search request" do
-    # get_structure_length(...) siehe suggestion in core.ex/search_resp()
-    @total_length_search_resp structure_length(:header) + structure_length(:hpai) +
-                                structure_length(:dib_device_info) +
-                                structure_length(:dib_supp_svc_families)
+    @total_length_search_resp Ip.get_structure_length([
+                                :header,
+                                :hpai,
+                                :dib_device_info,
+                                :dib_supp_svc_families
+                              ])
     test "successful" do
       assert [
                {:ethernet, :transmit,
@@ -135,7 +137,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                      protocol_version(:knxnetip)::8,
                      service_family_id(:core)::8,
                      service_type_id(:search_req)::8,
-                     structure_length(:header) + structure_length(:hpai)::16,
+                     Ip.get_structure_length([:header, :hpai])::16,
                      # HPAI ----------------------------------------------------
                      structure_length(:hpai)::8,
                      protocol_code(:udp)::8,
@@ -150,8 +152,11 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "description request" do
-    @total_length_description_resp structure_length(:header) + structure_length(:dib_device_info) +
-                                     structure_length(:dib_supp_svc_families)
+    @total_length_description_resp Ip.get_structure_length([
+                                     :header,
+                                     :dib_device_info,
+                                     :dib_supp_svc_families
+                                   ])
 
     test "successful" do
       assert [
@@ -207,7 +212,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                      protocol_version(:knxnetip)::8,
                      service_family_id(:core)::8,
                      service_type_id(:description_req)::8,
-                     structure_length(:header) + structure_length(:hpai)::16,
+                     Ip.get_structure_length([:header, :hpai])::16,
                      # HPAI ----------------------------------------------------
                      structure_length(:hpai)::8,
                      protocol_code(:udp)::8,
@@ -222,14 +227,19 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "connect request" do
-    @total_length_connect_resp_management structure_length(:header) +
-                                            connection_header_structure_length(:core) +
-                                            structure_length(:hpai) +
-                                            crd_structure_length(:device_mgmt_con)
-    @total_length_connect_resp_tunnelling structure_length(:header) +
-                                            connection_header_structure_length(:core) +
-                                            structure_length(:hpai) +
-                                            crd_structure_length(:tunnel_con)
+    @total_length_connect_resp_management Ip.get_structure_length([
+                                            :header,
+                                            :connection_header_core,
+                                            :hpai,
+                                            :crd_device_mgmt_con
+                                          ])
+
+    @total_length_connect_resp_tunnelling Ip.get_structure_length([
+                                            :header,
+                                            :connection_header_core,
+                                            :hpai,
+                                            :crd_tunnel_con
+                                          ])
     @total_length_connect_resp_error structure_length(:header) + 1
 
     def connect_req_device_management() do
@@ -244,8 +254,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:core)::8,
             service_type_id(:connect_req)::8,
-            structure_length(:header) + 2 * structure_length(:hpai) +
-              crd_structure_length(:device_mgmt_con)::16,
+            Ip.get_structure_length([
+              :header,
+              :hpai,
+              :hpai,
+              :crd_device_mgmt_con
+            ])::16,
             # HPAI -------------------------------------------------------------
             structure_length(:hpai)::8,
             protocol_code(:udp)::8,
@@ -257,7 +271,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             @ets_ip::32,
             @ets_port_device_mgmt_data::16,
             # CRI --------------------------------------------------------------
-            cri_structure_length(:device_mgmt_con)::8,
+            structure_length(:crd_device_mgmt_con)::8,
             con_type_code(:device_mgmt_con)::8
           >>
         },
@@ -277,8 +291,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:core)::8,
             service_type_id(:connect_req)::8,
-            structure_length(:header) + 2 * structure_length(:hpai) +
-              crd_structure_length(:tunnel_con)::16,
+            Ip.get_structure_length([
+              :header,
+              :hpai,
+              :hpai,
+              :crd_tunnel_con
+            ])::16,
             # HPAI -------------------------------------------------------------
             structure_length(:hpai)::8,
             protocol_code(:udp)::8,
@@ -290,7 +308,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             @ets_ip::32,
             @ets_port_tunnelling_data::16,
             # CRI --------------------------------------------------------------
-            cri_structure_length(:tunnel_con)::8,
+            structure_length(:cri_tunnel_con)::8,
             con_type_code(con_type)::8,
             tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
             knxnetip_constant(:reserved)::8
@@ -320,7 +338,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    @ip_interface_ip::32,
                    @ip_interface_port::16,
                    # CRD -------------------------------------------------------
-                   crd_structure_length(:device_mgmt_con)::8,
+                   structure_length(:crd_device_mgmt_con)::8,
                    con_type_code(:device_mgmt_con)::8
                  >>}},
                {:timer, :start, {:ip_connection, 1}}
@@ -367,7 +385,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    @ip_interface_ip::32,
                    @ip_interface_port::16,
                    # CRD -------------------------------------------------------
-                   crd_structure_length(:tunnel_con)::8,
+                   structure_length(:crd_tunnel_con)::8,
                    con_type_code(:tunnel_con)::8,
                    @knx_indv_addr::16
                  >>}},
@@ -444,8 +462,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "connectionstate request" do
-    @total_length_connectionstate_resp structure_length(:header) +
-                                         connection_header_structure_length(:core)
+    @total_length_connectionstate_resp Ip.get_structure_length([
+                                         :header,
+                                         :connection_header_core
+                                       ])
 
     def connectionstate_req(connection_id: connection_id) do
       Ip.handle(
@@ -459,8 +479,11 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:core)::8,
             service_type_id(:connectionstate_req)::8,
-            structure_length(:header) + connection_header_structure_length(:core) +
-              structure_length(:hpai)::16,
+            Ip.get_structure_length([
+              :header,
+              :connection_header_core,
+              :hpai
+            ])::16,
             # Connection Header ------------------------------------------------
             connection_id::8,
             knxnetip_constant(:reserved)::8,
@@ -515,8 +538,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "disconnect request" do
-    @total_length_disconnect_resp structure_length(:header) +
-                                    connection_header_structure_length(:core)
+    @total_length_disconnect_resp Ip.get_structure_length([
+                                    :header,
+                                    :connection_header_core
+                                  ])
 
     def disconnect_req(connection_id: connection_id) do
       Ip.handle(
@@ -530,8 +555,11 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:core)::8,
             service_type_id(:disconnect_req)::8,
-            structure_length(:header) + connection_header_structure_length(:core) +
-              structure_length(:hpai)::16,
+            Ip.get_structure_length([
+              :header,
+              :connection_header_core,
+              :hpai
+            ])::16,
             # Connection Header ------------------------------------------------
             connection_id::8,
             knxnetip_constant(:reserved)::8,
@@ -572,14 +600,19 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "device configuration request" do
-    @total_length_device_config_ack structure_length(:header) +
-                                      connection_header_structure_length(:device_management)
-    @total_length_device_config_req structure_length(:header) +
-                                      connection_header_structure_length(:device_management) + 9
-    @total_length_device_config_req_error_prop_read structure_length(:header) +
-                                                      connection_header_structure_length(
-                                                        :device_management
-                                                      ) + 8
+    @total_length_device_config_ack Ip.get_structure_length([
+                                      :header,
+                                      :connection_header_device_management
+                                    ])
+
+    @total_length_device_config_req Ip.get_structure_length([
+                                      :header,
+                                      :connection_header_device_management
+                                    ]) + 9
+    @total_length_device_config_req_error_prop_read Ip.get_structure_length([
+                                                      :header,
+                                                      :connection_header_device_management
+                                                    ]) + 8
 
     def device_configuration_req_m_propread(
           connection_id: connection_id,
@@ -599,10 +632,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:device_management)::8,
             service_type_id(:device_configuration_req)::8,
-            structure_length(:header) +
-              connection_header_structure_length(:device_management) + 7::16,
+            Ip.get_structure_length([
+              :header,
+              :connection_header_device_management
+            ]) + 7::16,
             # Connection header ---------------------------------------
-            connection_header_structure_length(:device_management)::8,
+            structure_length(:connection_header_device_management)::8,
             connection_id::8,
             0::8,
             knxnetip_constant(:reserved)::8,
@@ -633,7 +668,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    common_error_code(:no_error)::8
@@ -648,7 +683,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
@@ -688,7 +723,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    common_error_code(:no_error)::8
@@ -703,7 +738,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req_error_prop_read::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
@@ -743,7 +778,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    common_error_code(:no_error)::8
@@ -758,7 +793,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req_error_prop_read::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
@@ -798,7 +833,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:device_management)::8,
+                   structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    common_error_code(:no_error)::8
@@ -833,8 +868,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "device configuration ack" do
-    @total_length_device_config_ack structure_length(:header) +
-                                      connection_header_structure_length(:device_management)
+    @total_length_device_config_ack Ip.get_structure_length([
+                                      :header,
+                                      :connection_header_device_management
+                                    ])
 
     def device_configuration_ack(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
@@ -850,7 +887,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
             service_type_id(:device_configuration_ack)::8,
             @total_length_device_config_ack::16,
             # Connection header ------------------------------------------------
-            connection_header_structure_length(:device_management)::8,
+            structure_length(:connection_header_device_management)::8,
             connection_id::8,
             seq_counter::8,
             common_error_code(:no_error)::8
@@ -895,10 +932,14 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       addr_t: 0,
       hops: 7
     }
-    @total_length_tunneling_ack structure_length(:header) +
-                                  connection_header_structure_length(:tunnelling)
-    @total_length_tunneling_req_l_data_con structure_length(:header) +
-                                             connection_header_structure_length(:tunnelling) + 15
+    @total_length_tunneling_ack Ip.get_structure_length([
+                                  :header,
+                                  :connection_header_tunnelling
+                                ])
+    @total_length_tunneling_req_l_data_con Ip.get_structure_length([
+                                             :header,
+                                             :connection_header_tunnelling
+                                           ]) + 15
 
     def tunneling_req(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
@@ -909,10 +950,9 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
            protocol_version(:knxnetip)::8,
            service_family_id(:tunnelling)::8,
            service_type_id(:tunnelling_req)::8,
-           structure_length(:header) + connection_header_structure_length(:tunnelling) +
-             15::16,
+           Ip.get_structure_length([:header, :connection_header_tunnelling]) + 15::16,
            # Connection header -------------------------------------------------
-           connection_header_structure_length(:tunnelling),
+           structure_length(:connection_header_tunnelling),
            connection_id::8,
            seq_counter::8,
            knxnetip_constant(:reserved)::8,
@@ -952,7 +992,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:tunnelling_ack)::8,
                    @total_length_tunneling_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:tunnelling)::8,
+                   structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    0::8,
                    common_error_code(:no_error)::8
@@ -968,7 +1008,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:tunnelling_req)::8,
                    @total_length_tunneling_req_l_data_con::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:tunnelling),
+                   structure_length(:connection_header_tunnelling),
                    255::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
@@ -1011,7 +1051,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:tunnelling_ack)::8,
                    @total_length_tunneling_ack::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:tunnelling)::8,
+                   structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    255::8,
                    common_error_code(:no_error)::8
@@ -1052,10 +1092,9 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
            protocol_version(:knxnetip)::8,
            service_family_id(:tunnelling)::8,
            service_type_id(:tunnelling_ack)::8,
-           structure_length(:header) +
-             connection_header_structure_length(:tunnelling)::16,
+           Ip.get_structure_length([:header, :connection_header_tunnelling])::16,
            # Connection header -------------------------------------------------
-           connection_header_structure_length(:tunnelling)::8,
+           structure_length(:connection_header_tunnelling)::8,
            connection_id::8,
            seq_counter::8,
            common_error_code(:no_error)::8
@@ -1107,8 +1146,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       data: <<0xC6>>
     }
 
-    @total_length_tunnelling_req_l_data_ind structure_length(:header) +
-                                              connection_header_structure_length(:tunnelling) + 10
+    @total_length_tunnelling_req_l_data_ind Ip.get_structure_length([
+                                              :header,
+                                              :connection_header_tunnelling
+                                            ]) + 10
     test("successful") do
       Cache.put(:con_tab, %{255 => @con_255})
 
@@ -1123,7 +1164,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                    service_type_id(:tunnelling_req)::8,
                    @total_length_tunnelling_req_l_data_ind::16,
                    # Connection header -----------------------------------------
-                   connection_header_structure_length(:tunnelling)::8,
+                   structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,

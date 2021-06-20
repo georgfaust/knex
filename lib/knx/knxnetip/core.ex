@@ -233,12 +233,7 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       Ip.header(
         service_type_id(:search_resp),
-        # suggestion:
-        # get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
-        # --> wenn du irgendwo im code duplication/redundance siehst musst du aufmerksam werden.
-        #     wie koennte man get_structure_length() implementieren??
-        structure_length(:header) + structure_length(:hpai) + structure_length(:dib_device_info) +
-          structure_length(:dib_supp_svc_families)
+        Ip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
       ) <>
         hpai(discovery_endpoint.protocol_code) <>
         dib_device_information() <>
@@ -257,8 +252,7 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       Ip.header(
         service_type_id(:description_resp),
-        structure_length(:header) + structure_length(:dib_device_info) +
-          structure_length(:dib_supp_svc_families)
+        Ip.get_structure_length([:header, :dib_device_info, :dib_supp_svc_families])
       ) <>
         dib_device_information() <>
         dib_supp_svc_families()
@@ -285,8 +279,7 @@ defmodule Knx.KnxnetIp.Core do
       if status_code == common_error_code(:no_error) do
         Ip.header(
           service_type_id(:connect_resp),
-          structure_length(:header) + connection_header_structure_length(:core) +
-            structure_length(:hpai) +
+          Ip.get_structure_length([:header, :connection_header_core, :hpai]) +
             crd_structure_length(con_type)
         ) <>
           connection_header(channel_id, status_code) <>
@@ -317,7 +310,7 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       Ip.header(
         service_type_id(:connectionstate_resp),
-        structure_length(:header) + connection_header_structure_length(:core)
+        Ip.get_structure_length([:header, :connection_header_core])
       ) <>
         connection_header(channel_id, status_code)
 
@@ -338,7 +331,7 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       Ip.header(
         service_type_id(:disconnect_resp),
-        structure_length(:header) + connection_header_structure_length(:core)
+        Ip.get_structure_length([:header, :connection_header_core])
       ) <>
         connection_header(channel_id, status_code)
 
@@ -454,10 +447,10 @@ defmodule Knx.KnxnetIp.Core do
 
     case con_type_code(con_type) do
       con_type_code(:device_mgmt_con) ->
-        <<crd_structure_length(:device_mgmt_con)::8, con_type_code(con_type)::8>>
+        <<structure_length(:crd_device_mgmt_con)::8, con_type_code(con_type)::8>>
 
       con_type_code(:tunnel_con) ->
-        <<crd_structure_length(:tunnel_con)::8, con_type_code(con_type),
+        <<structure_length(:crd_tunnel_con)::8, con_type_code(con_type),
           KnxnetIpParam.get_knx_indv_addr(props)::16>>
     end
   end

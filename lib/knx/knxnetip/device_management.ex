@@ -21,7 +21,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_device_management)::8,
           channel_id::8,
           client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
@@ -76,7 +76,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_req)},
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_device_management)::8,
           _channel_id::8,
           _client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
@@ -96,7 +96,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_device_management)::8,
           channel_id::8,
           server_seq_counter::8,
           _status_code::8
@@ -143,8 +143,8 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         conf_frame =
           Ip.header(
             service_type_id(:device_configuration_req),
-            structure_length(:header) + byte_size(conf_cemi_frame) +
-              connection_header_structure_length(:device_management)
+            Ip.get_structure_length([:header, :connection_header_device_management]) +
+              byte_size(conf_cemi_frame)
           ) <>
             connection_header(
               channel_id,
@@ -178,7 +178,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
     frame =
       Ip.header(
         service_type_id(:device_configuration_ack),
-        structure_length(:header) + connection_header_structure_length(:device_management)
+        Ip.get_structure_length([:header, :connection_header_device_management])
       ) <>
         connection_header(
           channel_id,
@@ -329,7 +329,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
-      connection_header_structure_length(:device_management),
+      structure_length(:connection_header_device_management),
       channel_id::8,
       seq_counter::8,
       last_octet::8

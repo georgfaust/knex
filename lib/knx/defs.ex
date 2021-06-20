@@ -353,14 +353,14 @@ defmodule Knx.Defs do
       dib_device_info: 0x36,
       dib_supp_svc_families: 0x08,
       connection_header: 0x04,
+      connection_header_core: 0x02,
+      connection_header_device_management: 0x04,
+      connection_header_tunnelling: 0x04,
+      cri_device_mgmt_con: 0x02,
+      cri_tunnel_con: 0x04,
+      crd_device_mgmt_con: 0x02,
+      crd_tunnel_con: 0x04,
       cemi_l_data_without_data: 0x09
-    ]
-  )
-
-  enum(cri_structure_length,
-    do: [
-      device_mgmt_con: 0x02,
-      tunnel_con: 0x04
     ]
   )
 
@@ -368,14 +368,6 @@ defmodule Knx.Defs do
     do: [
       device_mgmt_con: 0x02,
       tunnel_con: 0x04
-    ]
-  )
-
-  enum(connection_header_structure_length,
-    do: [
-      core: 0x02,
-      device_management: 0x04,
-      tunnelling: 0x04
     ]
   )
 

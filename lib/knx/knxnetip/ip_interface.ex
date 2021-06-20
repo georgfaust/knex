@@ -23,7 +23,6 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
-  # nicht unterstuetzte version -> crash?
   defp handle_header(
          ip_frame,
          <<
@@ -40,6 +39,19 @@ defmodule Knx.KnxnetIp.IpInterface do
         service_type_id: service_type_id,
         total_length: total_length
     }
+  end
+
+  # nicht unterstuetzte version -> crash?
+  # -- es gibt einen error_code für nicht unterstützte versionen (overview 5.5.1),
+  #  aber keine Informationen darüber, wie dieser verwendet werden soll (Req abarbeiten,
+  #  als wäre Version korrekt (sofern möglich) mit error_code im Status?)
+  #  Aber nicht alle Responses haben ein Statusfeld...
+  #  Aktuell gibt es nur die Version 1.0 für alle Frames (auch in ANs in KNX 2.1.4)
+  #  Hier erstmal: Frames mit falscher Version ignorieren (Der Regel folgend,
+  #  dass invalide Frames ignoriert werden sollen.)
+  #  Alternativ: Wenn möglich, abarbeiten und falls Status-Feld vorhanden, Error im Status
+  defp handle_header(_ip_frame, _frame) do
+    warning(:invalid_header)
   end
 
   defp handle_body(%IpFrame{service_family_id: service_family_id(:core)} = ip_frame, body) do
@@ -71,6 +83,12 @@ defmodule Knx.KnxnetIp.IpInterface do
       service_type_id::8,
       total_length::16
     >>
+  end
+
+  # ----------------------------------------------------------------------------
+
+  def get_structure_length(structure_list) do
+    Enum.reduce(structure_list, 0, fn structure, acc -> acc + structure_length(structure) end)
   end
 
   # ----------------------------------------------------------------------------

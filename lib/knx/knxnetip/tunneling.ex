@@ -22,7 +22,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
           client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
@@ -117,7 +117,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:tunnelling_req)},
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_tunnelling)::8,
           _channel_id::8,
           _client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
@@ -137,7 +137,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:tunnelling_ack)},
         <<
-          structure_length(:connection_header)::8,
+          structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
           server_seq_counter::8,
           _status_code::8
@@ -236,8 +236,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
     frame =
       Ip.header(
         service_type_id(:tunnelling_req),
-        structure_length(:header) + structure_length(:connection_header) +
-          structure_length(:cemi_l_data_without_data) + byte_size(req_cemi.data)
+        Ip.get_structure_length([
+          :header,
+          :connection_header_tunnelling,
+          :cemi_l_data_without_data
+        ]) + byte_size(req_cemi.data)
       ) <>
         connection_header(
           channel_id,
@@ -280,7 +283,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
     frame =
       Ip.header(
         service_type_id(:tunnelling_ack),
-        structure_length(:header) + connection_header_structure_length(:tunnelling)
+        Ip.get_structure_length([:header, :connection_header_tunnelling])
       ) <>
         connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
 
@@ -303,7 +306,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
-      connection_header_structure_length(:tunnelling),
+      structure_length(:connection_header_tunnelling),
       channel_id::8,
       seq_counter::8,
       last_octet::8
