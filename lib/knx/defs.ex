@@ -372,12 +372,12 @@ defmodule Knx.Defs do
   )
 
   enum(service_family_id,
-  do: [
-    core: 0x02,
-    device_management: 0x03,
-    tunnelling: 0x04
-  ]
-)
+    do: [
+      core: 0x02,
+      device_management: 0x03,
+      tunnelling: 0x04
+    ]
+  )
 
   # this is only the low byte of what the knx specification calls "service type id"
   enum(service_type_id,
@@ -428,10 +428,7 @@ defmodule Knx.Defs do
   enum(con_type_code,
     do: [
       device_mgmt_con: 3,
-      tunnel_con: 4,
-      remlog_con: 6,
-      remconf_con: 7,
-      objsvr_con: 8
+      tunnel_con: 4
     ]
   )
 
