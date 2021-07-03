@@ -22,7 +22,7 @@
 ### Tunnelling
   * TUNNELING_REQUEST -> TUNNELING_ACK, tp_frame
 
---> [{:ethernet, :transmit, ip_frame}, {:dl, :req, %TunnelCemiFrame{}}]
+--> [{:ethernet, :transmit, ip_frame}, {:dl, :req, %DataCemiFrame{}}]
 
   * TUNNELING_ACK
   

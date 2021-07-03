@@ -29,7 +29,7 @@ defmodule Knx.State do
             driver_pid: nil,
             timer_pid: nil,
             connected: false,
-            api_expect: %Knx.Api{},
+            api_expect: %Knx.Api{},   
             api_callback: nil,
             api_timer: nil,
             api_result: [],

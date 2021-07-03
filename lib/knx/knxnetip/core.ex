@@ -169,6 +169,7 @@ defmodule Knx.KnxnetIp.Core do
 
   def handle_body(_ip_frame, _src, _frame) do
     warning(:no_matching_handler)
+    []
   end
 
   # ----------------------------------------------------------------------------
@@ -345,6 +346,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   # TODO to be sent when timer of associated channel runs out
+  # TODO handle possible error due to property read
   def disconnect_req(channel_id) do
     con_tab = Cache.get_obj(:con_tab)
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
@@ -370,8 +372,7 @@ defmodule Knx.KnxnetIp.Core do
 
   defp hpai(host_protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
-    props = Cache.get_obj(:knxnet_ip_parameter)
-    ip_addr = KnxnetIpParam.get_current_ip_addr(props)
+    ip_addr = KnxnetIpParam.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     <<
       structure_length(:hpai)::8,

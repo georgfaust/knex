@@ -52,6 +52,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     port: @ets_port_tunnelling_data
   }
 
+  @router_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @ets_ip,
+    port: @ets_port_tunnelling_data
+  }
+
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
 
@@ -706,8 +712,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  data: <<>>
                )
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
+      assert 1 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "m_propread.req, error: property read, invalid pid" do
@@ -761,8 +766,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  data: <<>>
                )
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
+      assert 1 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "m_propread.req, error: property read, invalid start" do
@@ -816,8 +820,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  data: <<>>
                )
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
+      assert 1 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "m_propread.con, successful" do
@@ -847,8 +850,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  data: <<0>>
                )
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_client_seq_counter(con_tab, 0x00)
+      assert 1 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "error: connection does not exist" do
@@ -861,8 +863,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  data: <<>>
                )
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_client_seq_counter(con_tab, 0x00)
+      assert 0 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0x00)
     end
   end
 
@@ -903,22 +904,19 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                {:timer, :stop, {:device_management_req, 0}}
              ] = device_configuration_ack(connection_id: 0, seq_counter: 0)
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_server_seq_counter(con_tab, 0x00)
+      assert 1 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "error: connection id does not exist" do
       assert [] = device_configuration_ack(connection_id: 45, seq_counter: 0)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_server_seq_counter(con_tab, 0x00)
+      assert 0 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0x00)
     end
 
     test "error: sequence counter wrong" do
       assert [] = device_configuration_ack(connection_id: 0, seq_counter: 21)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_server_seq_counter(con_tab, 0x00)
+      assert 0 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0x00)
     end
   end
 
@@ -1033,8 +1031,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                {:timer, :restart, {:ip_connection, 255}}
              ] = tunneling_req(connection_id: 255, seq_counter: 0)
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_client_seq_counter(con_tab, 0xFF)
+      assert 1 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0xFF)
     end
 
     test("l_data.req, error: expected seq counter - 1") do
@@ -1058,8 +1055,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  >>}}
              ] = tunneling_req(connection_id: 255, seq_counter: 255)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
+      assert 0 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0xFF)
     end
 
     test("l_data.req, error: wrong seq counter") do
@@ -1067,8 +1063,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
       assert [] = tunneling_req(connection_id: 254, seq_counter: 1)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
+      assert 0 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0xFF)
     end
 
     test("l_data.req, error: connection id does not exist") do
@@ -1076,8 +1071,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
       assert [] = tunneling_req(connection_id: 254, seq_counter: 1)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_client_seq_counter(con_tab, 0xFF)
+      assert 0 == ConTab.get_client_seq_counter(Cache.get(:con_tab), 0xFF)
     end
   end
 
@@ -1111,8 +1105,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                {:timer, :stop, {:device_management_req, 0}}
              ] = tunneling_ack(connection_id: 255, seq_counter: 0)
 
-      con_tab = Cache.get(:con_tab)
-      assert 1 == ConTab.get_server_seq_counter(con_tab, 0xFF)
+      assert 1 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0xFF)
     end
 
     test("error: wrong seq counter") do
@@ -1120,8 +1113,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
       assert [] = tunneling_ack(connection_id: 255, seq_counter: 23)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_server_seq_counter(con_tab, 0xFF)
+      assert 0 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0xFF)
     end
 
     test("error: connection id does not exist") do
@@ -1129,8 +1121,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
       assert [] = tunneling_ack(connection_id: 25, seq_counter: 0)
 
-      con_tab = Cache.get(:con_tab)
-      assert 0 == ConTab.get_server_seq_counter(con_tab, 0xFF)
+      assert 0 == ConTab.get_server_seq_counter(Cache.get(:con_tab), 0xFF)
     end
   end
 
@@ -1192,6 +1183,108 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  {:ip, :from_knx, @knx_frame},
                  %S{}
                )
+    end
+  end
+
+  # ----------------------------------------------------------------------------
+  describe "routing ind" do
+    # @knx_frame_routing_req_l_data_req %F{
+    #   data: <<0x47D5_000B_1001::8*6>>,
+    #   prio: 0,
+    #   src: @knx_indv_addr,
+    #   dest: 0x2102,
+    #   addr_t: 0,
+    #   hops: 7
+    # }
+
+    def routing_ind() do
+      Ip.handle(
+        {:ip, :from_ip, @router_endpoint,
+         <<
+           # Header ------------------------------------------------------------
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_family_id(:routing)::8,
+           service_type_id(:routing_ind)::8,
+           structure_length(:header) + 14::16,
+           # TODO is this a use case?
+           # cEMI --------------------------------------------------------------
+           cemi_message_code(:l_data_req)::8,
+           0::8,
+           1::1,
+           0::1,
+           1::1,
+           1::1,
+           0::2,
+           0::1,
+           0::1,
+           0::1,
+           7::3,
+           0::4,
+           0x0000::16,
+           0x2102::16,
+           0x05::8,
+           0x47D5_000B_1001::48
+         >>},
+        %S{}
+      )
+    end
+
+    test("successful") do
+      assert [{:timer, :start, {:routing_ind}}] = routing_ind()
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  describe "routing busy" do
+    def routing_busy(device_state, routing_busy_control_field) do
+      Ip.handle(
+        {:ip, :from_ip, @router_endpoint,
+         <<
+           # Header ------------------------------------------------------------
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_family_id(:routing)::8,
+           service_type_id(:routing_busy)::8,
+           Ip.get_structure_length([:header, :busy_info])::16,
+           # Busy Info ---------------------------------------------------------
+           structure_length(:busy_info)::8,
+           device_state::8,
+           100::16,
+           routing_busy_control_field::16
+         >>},
+        %S{}
+      )
+    end
+
+    test("successful") do
+      assert [{:timer, :start, {:suspend_routing_indications}}] = routing_busy(0, 0)
+    end
+  end
+
+  # ---------------------------------------------------------------------------
+  describe "routing lost message" do
+    def routing_lost_message() do
+      Ip.handle(
+        {:ip, :from_ip, @router_endpoint,
+         <<
+           # Header ------------------------------------------------------------
+           structure_length(:header)::8,
+           protocol_version(:knxnetip)::8,
+           service_family_id(:routing)::8,
+           service_type_id(:routing_lost_message)::8,
+           Ip.get_structure_length([:header, :lost_message_info])::16,
+           # Lost Message Info -------------------------------------------------
+           structure_length(:lost_message_info)::8,
+           0::8,
+           0::16
+         >>},
+        %S{}
+      )
+    end
+
+    test("successful") do
+      assert [] = routing_lost_message()
     end
   end
 end

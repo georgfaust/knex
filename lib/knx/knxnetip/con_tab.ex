@@ -70,6 +70,20 @@ defmodule Knx.KnxnetIp.ConTab do
     put_in(con_tab[id].server_seq_counter, new_count)
   end
 
+  def compare_client_seq_counter(con_tab, id, counter) do
+    # seq_counter is 8-bit unsigned value
+    <<incremented_counter>> = <<counter + 1>>
+
+    cond do
+      counter == con_tab[id].client_seq_counter ->
+        :counter_equal
+      incremented_counter == con_tab[id].client_seq_counter ->
+        :counter_off_by_minus_one
+      true ->
+        :any_other_case
+    end
+  end
+
   def client_seq_counter_equal?(con_tab, id, counter) do
     counter == con_tab[id].client_seq_counter
   end
