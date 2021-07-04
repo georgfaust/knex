@@ -1231,7 +1231,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     end
 
     test("successful") do
-      assert [{:timer, :start, {:routing_ind}}] = routing_ind()
+      assert [] = routing_ind()
     end
   end
 
@@ -1258,7 +1258,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     end
 
     test("successful") do
-      assert [{:timer, :start, {:suspend_routing_indications}}] = routing_busy(0, 0)
+      assert [] = routing_busy(0, 0)
     end
   end
 

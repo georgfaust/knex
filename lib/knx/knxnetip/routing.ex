@@ -5,6 +5,7 @@ defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
   alias Knx.Frame, as: F
+  alias Knx.KnxnetIp.LeakyBucket
 
   require Knx.Defs
   import Knx.Defs
@@ -19,17 +20,28 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.2
   '''
 
+  # TODO ? 4.3.1: test if number of characters received without error is consistent
+  # with the content of the "Frame length" subfield
   def handle_body(%IpFrame{service_type_id: service_type_id(:routing_ind)}, body) do
-    # TODO ? 4.3.1: test if number of characters received without error is consistent
-    # with the content of the "Frame length" subfield
     cemi_frame = DataCemiFrame.handle(body)
 
-    # TODO 
-    # enqueue(DataCemiFrame.knx_frame_struct(cemi_frame))
+    # TODO move to right place
+    {:ok, knx_queue_pid} = LeakyBucket.start_link(%{queue_type: :knx_queue, queue_poll_rate: 100})
 
-    [{:timer, :start, {:routing_ind}}]
-    # TODO this must be the result when the timer runs out
-    # [{:dl, :req, knx_frame_struct}]
+    queue_size = LeakyBucket.enqueue(knx_queue_pid, DataCemiFrame.knx_frame_struct(cemi_frame))
+
+    # TODO get latest indv src addr (this is only mock)
+    src = %Ep{
+      protocol_code: protocol_code(:udp),
+      ip_addr: 0x12345678,
+      port: 1000
+    }
+
+    case queue_size do
+      5 -> [routing_busy(src)]
+      10 -> [routing_busy(get_multicast_endpoint())]
+      _ -> []
+    end
   end
 
   '''
@@ -52,8 +64,14 @@ defmodule Knx.KnxnetIp.Routing do
 
     # TODO I don't understand the use of values different from 0
     if routing_busy_control_field == 0 do
-      # wait time: depends on routing_busy_wait_time, see 2.3.5
-      [{:timer, :start, {:suspend_routing_indications}}]
+      # TODO calculate delay; depends on routing_busy_wait_time, see 2.3.5
+      delay_time = 100
+
+      # TODO move to right place
+      {:ok, ip_queue_pid} = LeakyBucket.start_link(%{queue_type: :ip_queue, queue_poll_rate: 20})
+
+      LeakyBucket.delay(ip_queue_pid, delay_time)
+      []
     else
       []
     end
@@ -79,6 +97,17 @@ defmodule Knx.KnxnetIp.Routing do
   end
 
   # ----------------------------------------------------------------------------
+  # queue handlers
+
+  def handle_ip_queue(%F{} = knx_frame) do
+    [routing_ind(knx_frame, get_multicast_endpoint())]
+  end
+
+  def handle_knx_queue(%F{} = knx_frame) do
+    [{:dl, :req, knx_frame}]
+  end
+
+  # ----------------------------------------------------------------------------
   # impulse creators
 
   '''
@@ -88,7 +117,7 @@ defmodule Knx.KnxnetIp.Routing do
   '''
 
   # TODO what are the use cases of KNX IP devices sending routing indications?
-  # TODO call this function when respective timer runs out
+  # when do we send routing indications?
   def routing_ind(%F{} = knx_frame, dest_endpoint) do
     cemi_struct = DataCemiFrame.handle_knx_frame_struct(knx_frame)
 
@@ -111,8 +140,6 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.4
   '''
 
-  # TODO five messages in incoming queue: send routing busy to indv addr of most recent src
-  # TODO ten messages in incoming queue: send routing busy via multicast
   defp routing_busy(dest_endpoint) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 

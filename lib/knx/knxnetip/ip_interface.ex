@@ -12,14 +12,22 @@ defmodule Knx.KnxnetIp.IpInterface do
   import Knx.Defs
   use Bitwise
 
-  def handle({:ip, :from_knx, %F{} = frame}, %S{}) do
-    Tunnelling.handle_knx_frame_struct(frame)
-  end
-
   def handle({:ip, :from_ip, src, <<header::bytes-structure_length(:header), body::bits>>}, %S{}) do
     %IpFrame{ip_src: src}
     |> handle_header(header)
     |> handle_body(body)
+  end
+
+  def handle({:ip, :from_knx, %F{} = frame}, %S{}) do
+    Tunnelling.handle_knx_frame_struct(frame)
+  end
+
+  def handle({:ip, :ip_queue, %F{} = frame}, %S{}) do
+    Routing.handle_ip_queue(frame)
+  end
+
+  def handle({:ip, :knx_queue, %F{} = frame}, %S{}) do
+    Routing.handle_knx_queue(frame)
   end
 
   # ----------------------------------------------------------------------------
