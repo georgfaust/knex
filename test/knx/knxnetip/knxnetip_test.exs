@@ -134,22 +134,22 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
              ] =
                Ip.handle(
                  {
-                   :ip,
+                   :knip,
                    :from_ip,
-                   @ets_discovery_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:search_req)::8,
-                     Ip.get_structure_length([:header, :hpai])::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_discovery::16
-                   >>
+                   {@ets_discovery_endpoint,
+                    <<
+                      # Header --------------------------------------------------
+                      structure_length(:header)::8,
+                      protocol_version(:knxnetip)::8,
+                      service_family_id(:core)::8,
+                      service_type_id(:search_req)::8,
+                      Ip.get_structure_length([:header, :hpai])::16,
+                      # HPAI ----------------------------------------------------
+                      structure_length(:hpai)::8,
+                      protocol_code(:udp)::8,
+                      @ets_ip::32,
+                      @ets_port_discovery::16
+                    >>}
                  },
                  %S{}
                )
@@ -209,22 +209,22 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
              ] =
                Ip.handle(
                  {
-                   :ip,
+                   :knip,
                    :from_ip,
-                   @ets_control_endpoint,
-                   <<
-                     # Header --------------------------------------------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:description_req)::8,
-                     Ip.get_structure_length([:header, :hpai])::16,
-                     # HPAI ----------------------------------------------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ets_ip::32,
-                     @ets_port_control::16
-                   >>
+                   {@ets_control_endpoint,
+                    <<
+                      # Header --------------------------------------------------
+                      structure_length(:header)::8,
+                      protocol_version(:knxnetip)::8,
+                      service_family_id(:core)::8,
+                      service_type_id(:description_req)::8,
+                      Ip.get_structure_length([:header, :hpai])::16,
+                      # HPAI ----------------------------------------------------
+                      structure_length(:hpai)::8,
+                      protocol_code(:udp)::8,
+                      @ets_ip::32,
+                      @ets_port_control::16
+                    >>}
                  },
                  %S{}
                )
@@ -251,35 +251,35 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def connect_req_device_management() do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_control_endpoint,
-          <<
-            # Header -----------------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:core)::8,
-            service_type_id(:connect_req)::8,
-            Ip.get_structure_length([
-              :header,
-              :hpai,
-              :hpai,
-              :crd_device_mgmt_con
-            ])::16,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_control::16,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_device_mgmt_data::16,
-            # CRI --------------------------------------------------------------
-            structure_length(:crd_device_mgmt_con)::8,
-            con_type_code(:device_mgmt_con)::8
-          >>
+          {@ets_control_endpoint,
+           <<
+             # Header -----------------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:core)::8,
+             service_type_id(:connect_req)::8,
+             Ip.get_structure_length([
+               :header,
+               :hpai,
+               :hpai,
+               :crd_device_mgmt_con
+             ])::16,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_control::16,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_device_mgmt_data::16,
+             # CRI --------------------------------------------------------------
+             structure_length(:crd_device_mgmt_con)::8,
+             con_type_code(:device_mgmt_con)::8
+           >>}
         },
         %S{}
       )
@@ -288,37 +288,37 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def connect_req_tunnelling(con_type: con_type, tunnelling_knx_layer: tunnelling_knx_layer) do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_control_endpoint,
-          <<
-            # Header -----------------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:core)::8,
-            service_type_id(:connect_req)::8,
-            Ip.get_structure_length([
-              :header,
-              :hpai,
-              :hpai,
-              :crd_tunnel_con
-            ])::16,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_control::16,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_tunnelling_data::16,
-            # CRI --------------------------------------------------------------
-            structure_length(:cri_tunnel_con)::8,
-            con_type_code(con_type)::8,
-            tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
-            knxnetip_constant(:reserved)::8
-          >>
+          {@ets_control_endpoint,
+           <<
+             # Header -----------------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:core)::8,
+             service_type_id(:connect_req)::8,
+             Ip.get_structure_length([
+               :header,
+               :hpai,
+               :hpai,
+               :crd_tunnel_con
+             ])::16,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_control::16,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_tunnelling_data::16,
+             # CRI --------------------------------------------------------------
+             structure_length(:cri_tunnel_con)::8,
+             con_type_code(con_type)::8,
+             tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
+             knxnetip_constant(:reserved)::8
+           >>}
         },
         %S{}
       )
@@ -476,29 +476,29 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def connectionstate_req(connection_id: connection_id) do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_control_endpoint,
-          <<
-            # Header -----------------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:core)::8,
-            service_type_id(:connectionstate_req)::8,
-            Ip.get_structure_length([
-              :header,
-              :connection_header_core,
-              :hpai
-            ])::16,
-            # Connection Header ------------------------------------------------
-            connection_id::8,
-            knxnetip_constant(:reserved)::8,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_control::16
-          >>
+          {@ets_control_endpoint,
+           <<
+             # Header -----------------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:core)::8,
+             service_type_id(:connectionstate_req)::8,
+             Ip.get_structure_length([
+               :header,
+               :connection_header_core,
+               :hpai
+             ])::16,
+             # Connection Header ------------------------------------------------
+             connection_id::8,
+             knxnetip_constant(:reserved)::8,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_control::16
+           >>}
         },
         %S{}
       )
@@ -552,29 +552,29 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def disconnect_req(connection_id: connection_id) do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_control_endpoint,
-          <<
-            # Header -----------------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:core)::8,
-            service_type_id(:disconnect_req)::8,
-            Ip.get_structure_length([
-              :header,
-              :connection_header_core,
-              :hpai
-            ])::16,
-            # Connection Header ------------------------------------------------
-            connection_id::8,
-            knxnetip_constant(:reserved)::8,
-            # HPAI -------------------------------------------------------------
-            structure_length(:hpai)::8,
-            protocol_code(:udp)::8,
-            @ets_ip::32,
-            @ets_port_control::16
-          >>
+          {@ets_control_endpoint,
+           <<
+             # Header -----------------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:core)::8,
+             service_type_id(:disconnect_req)::8,
+             Ip.get_structure_length([
+               :header,
+               :connection_header_core,
+               :hpai
+             ])::16,
+             # Connection Header ------------------------------------------------
+             connection_id::8,
+             knxnetip_constant(:reserved)::8,
+             # HPAI -------------------------------------------------------------
+             structure_length(:hpai)::8,
+             protocol_code(:udp)::8,
+             @ets_ip::32,
+             @ets_port_control::16
+           >>}
         },
         %S{}
       )
@@ -629,33 +629,33 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
         ) do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_device_mgmt_data_endpoint,
-          <<
-            # Header --------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:device_management)::8,
-            service_type_id(:device_configuration_req)::8,
-            Ip.get_structure_length([
-              :header,
-              :connection_header_device_management
-            ]) + 7::16,
-            # Connection header ---------------------------------------
-            structure_length(:connection_header_device_management)::8,
-            connection_id::8,
-            0::8,
-            knxnetip_constant(:reserved)::8,
-            # cEMI ----------------------------------------------------
-            cemi_message_code(cemi_message_type)::8,
-            0::16,
-            1::8,
-            pid::8,
-            1::4,
-            start::12
-          >> <>
-            <<data::bits>>
+          {@ets_device_mgmt_data_endpoint,
+           <<
+             # Header --------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:device_management)::8,
+             service_type_id(:device_configuration_req)::8,
+             Ip.get_structure_length([
+               :header,
+               :connection_header_device_management
+             ]) + 7::16,
+             # Connection header ---------------------------------------
+             structure_length(:connection_header_device_management)::8,
+             connection_id::8,
+             0::8,
+             knxnetip_constant(:reserved)::8,
+             # cEMI ----------------------------------------------------
+             cemi_message_code(cemi_message_type)::8,
+             0::16,
+             1::8,
+             pid::8,
+             1::4,
+             start::12
+           >> <>
+             <<data::bits>>}
         },
         %S{}
       )
@@ -877,22 +877,22 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def device_configuration_ack(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
         {
-          :ip,
+          :knip,
           :from_ip,
-          @ets_device_mgmt_data_endpoint,
-          <<
-            # Header -----------------------------------------------------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:device_management)::8,
-            service_type_id(:device_configuration_ack)::8,
-            @total_length_device_config_ack::16,
-            # Connection header ------------------------------------------------
-            structure_length(:connection_header_device_management)::8,
-            connection_id::8,
-            seq_counter::8,
-            common_error_code(:no_error)::8
-          >>
+          {@ets_device_mgmt_data_endpoint,
+           <<
+             # Header -----------------------------------------------------------
+             structure_length(:header)::8,
+             protocol_version(:knxnetip)::8,
+             service_family_id(:device_management)::8,
+             service_type_id(:device_configuration_ack)::8,
+             @total_length_device_config_ack::16,
+             # Connection header ------------------------------------------------
+             structure_length(:connection_header_device_management)::8,
+             connection_id::8,
+             seq_counter::8,
+             common_error_code(:no_error)::8
+           >>}
         },
         %S{}
       )
@@ -941,37 +941,38 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
     def tunneling_req(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
-        {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-         <<
-           # Header ------------------------------------------------------------
-           structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
-           service_family_id(:tunnelling)::8,
-           service_type_id(:tunnelling_req)::8,
-           Ip.get_structure_length([:header, :connection_header_tunnelling]) + 15::16,
-           # Connection header -------------------------------------------------
-           structure_length(:connection_header_tunnelling),
-           connection_id::8,
-           seq_counter::8,
-           knxnetip_constant(:reserved)::8,
-           # cEMI --------------------------------------------------------------
-           cemi_message_code(:l_data_req)::8,
-           0::8,
-           1::1,
-           0::1,
-           1::1,
-           1::1,
-           0::2,
-           0::1,
-           0::1,
-           0::1,
-           7::3,
-           0::4,
-           0x0000::16,
-           0x2102::16,
-           0x05::8,
-           0x47D5_000B_1001::48
-         >>},
+        {:knip, :from_ip,
+         {@ets_tunnelling_data_endpoint,
+          <<
+            # Header ------------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_family_id(:tunnelling)::8,
+            service_type_id(:tunnelling_req)::8,
+            Ip.get_structure_length([:header, :connection_header_tunnelling]) + 15::16,
+            # Connection header -------------------------------------------------
+            structure_length(:connection_header_tunnelling),
+            connection_id::8,
+            seq_counter::8,
+            knxnetip_constant(:reserved)::8,
+            # cEMI --------------------------------------------------------------
+            cemi_message_code(:l_data_req)::8,
+            0::8,
+            1::1,
+            0::1,
+            1::1,
+            1::1,
+            0::2,
+            0::1,
+            0::1,
+            0::1,
+            7::3,
+            0::4,
+            0x0000::16,
+            0x2102::16,
+            0x05::8,
+            0x47D5_000B_1001::48
+          >>}},
         %S{}
       )
     end
@@ -1079,20 +1080,21 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "tunnelling ack" do
     def tunneling_ack(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
-        {:ip, :from_ip, @ets_tunnelling_data_endpoint,
-         <<
-           # Header ------------------------------------------------------------
-           structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
-           service_family_id(:tunnelling)::8,
-           service_type_id(:tunnelling_ack)::8,
-           Ip.get_structure_length([:header, :connection_header_tunnelling])::16,
-           # Connection header -------------------------------------------------
-           structure_length(:connection_header_tunnelling)::8,
-           connection_id::8,
-           seq_counter::8,
-           common_error_code(:no_error)::8
-         >>},
+        {:knip, :from_ip,
+         {@ets_tunnelling_data_endpoint,
+          <<
+            # Header ------------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_family_id(:tunnelling)::8,
+            service_type_id(:tunnelling_ack)::8,
+            Ip.get_structure_length([:header, :connection_header_tunnelling])::16,
+            # Connection header -------------------------------------------------
+            structure_length(:connection_header_tunnelling)::8,
+            connection_id::8,
+            seq_counter::8,
+            common_error_code(:no_error)::8
+          >>}},
         %S{}
       )
     end
@@ -1180,7 +1182,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                {:timer, :start, {:tunneling_req, 0}}
              ] =
                Ip.handle(
-                 {:ip, :from_knx, @knx_frame},
+                 {:knip, :from_knx, @knx_frame},
                  %S{}
                )
     end
@@ -1199,33 +1201,34 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
     def routing_ind() do
       Ip.handle(
-        {:ip, :from_ip, @router_endpoint,
-         <<
-           # Header ------------------------------------------------------------
-           structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
-           service_family_id(:routing)::8,
-           service_type_id(:routing_ind)::8,
-           structure_length(:header) + 14::16,
-           # TODO is this a use case?
-           # cEMI --------------------------------------------------------------
-           cemi_message_code(:l_data_req)::8,
-           0::8,
-           1::1,
-           0::1,
-           1::1,
-           1::1,
-           0::2,
-           0::1,
-           0::1,
-           0::1,
-           7::3,
-           0::4,
-           0x0000::16,
-           0x2102::16,
-           0x05::8,
-           0x47D5_000B_1001::48
-         >>},
+        {:knip, :from_ip,
+         {@router_endpoint,
+          <<
+            # Header ------------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_family_id(:routing)::8,
+            service_type_id(:routing_ind)::8,
+            structure_length(:header) + 14::16,
+            # TODO is this a use case?
+            # cEMI --------------------------------------------------------------
+            cemi_message_code(:l_data_req)::8,
+            0::8,
+            1::1,
+            0::1,
+            1::1,
+            1::1,
+            0::2,
+            0::1,
+            0::1,
+            0::1,
+            7::3,
+            0::4,
+            0x0000::16,
+            0x2102::16,
+            0x05::8,
+            0x47D5_000B_1001::48
+          >>}},
         %S{}
       )
     end
@@ -1239,20 +1242,21 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "routing busy" do
     def routing_busy(device_state, routing_busy_control_field) do
       Ip.handle(
-        {:ip, :from_ip, @router_endpoint,
-         <<
-           # Header ------------------------------------------------------------
-           structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
-           service_family_id(:routing)::8,
-           service_type_id(:routing_busy)::8,
-           Ip.get_structure_length([:header, :busy_info])::16,
-           # Busy Info ---------------------------------------------------------
-           structure_length(:busy_info)::8,
-           device_state::8,
-           100::16,
-           routing_busy_control_field::16
-         >>},
+        {:knip, :from_ip,
+         {@router_endpoint,
+          <<
+            # Header ------------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_family_id(:routing)::8,
+            service_type_id(:routing_busy)::8,
+            Ip.get_structure_length([:header, :busy_info])::16,
+            # Busy Info ---------------------------------------------------------
+            structure_length(:busy_info)::8,
+            device_state::8,
+            100::16,
+            routing_busy_control_field::16
+          >>}},
         %S{}
       )
     end
@@ -1266,19 +1270,20 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   describe "routing lost message" do
     def routing_lost_message() do
       Ip.handle(
-        {:ip, :from_ip, @router_endpoint,
-         <<
-           # Header ------------------------------------------------------------
-           structure_length(:header)::8,
-           protocol_version(:knxnetip)::8,
-           service_family_id(:routing)::8,
-           service_type_id(:routing_lost_message)::8,
-           Ip.get_structure_length([:header, :lost_message_info])::16,
-           # Lost Message Info -------------------------------------------------
-           structure_length(:lost_message_info)::8,
-           0::8,
-           0::16
-         >>},
+        {:knip, :from_ip,
+         {@router_endpoint,
+          <<
+            # Header ------------------------------------------------------------
+            structure_length(:header)::8,
+            protocol_version(:knxnetip)::8,
+            service_family_id(:routing)::8,
+            service_type_id(:routing_lost_message)::8,
+            Ip.get_structure_length([:header, :lost_message_info])::16,
+            # Lost Message Info -------------------------------------------------
+            structure_length(:lost_message_info)::8,
+            0::8,
+            0::16
+          >>}},
         %S{}
       )
     end

@@ -65,10 +65,10 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
     case state.queue_type do
       :knx_queue ->
-        Shell.Server.dispatch(:server, {:ip, :from_knx, knx_frame})
+        Shell.Server.dispatch(:server, {:knip, :from_knx, knx_frame})
 
       :ip_queue ->
-        Shell.Server.dispatch(:server, {:ip, :from_ip, knx_frame})
+        Shell.Server.dispatch(:server, {:knip, :from_ip, knx_frame})
     end
 
     {:no_reply,

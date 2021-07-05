@@ -12,21 +12,25 @@ defmodule Knx.KnxnetIp.IpInterface do
   import Knx.Defs
   use Bitwise
 
-  def handle({:ip, :from_ip, src, <<header::bytes-structure_length(:header), body::bits>>}, %S{}) do
-    %IpFrame{ip_src: src}
+  def handle(
+        {:knip, :from_ip,
+         {src_endpoint, <<header::bytes-structure_length(:header), body::bits>>}},
+        %S{}
+      ) do
+    %IpFrame{ip_src_endpoint: src_endpoint}
     |> handle_header(header)
     |> handle_body(body)
   end
 
-  def handle({:ip, :from_knx, %F{} = frame}, %S{}) do
+  def handle({:knip, :from_knx, %F{} = frame}, %S{}) do
     Tunnelling.handle_knx_frame_struct(frame)
   end
 
-  def handle({:ip, :ip_queue, %F{} = frame}, %S{}) do
+  def handle({:knip, :ip_queue, %F{} = frame}, %S{}) do
     Routing.handle_ip_queue(frame)
   end
 
-  def handle({:ip, :knx_queue, %F{} = frame}, %S{}) do
+  def handle({:knip, :knx_queue, %F{} = frame}, %S{}) do
     Routing.handle_knx_queue(frame)
   end
 
@@ -50,7 +54,6 @@ defmodule Knx.KnxnetIp.IpInterface do
     }
   end
 
-  # nicht unterstuetzte version -> crash?
   # -- Core, 6.2: "If a server receives a data packet with an unsupported version field,
   # it shall reply with a negative confirmation frame indicating in the status
   # field E_VERSION_NOT_SUPPORTED."

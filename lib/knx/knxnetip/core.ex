@@ -48,7 +48,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
@@ -69,9 +69,9 @@ defmodule Knx.KnxnetIp.Core do
           cri::bits
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
-    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src)
+    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
@@ -110,7 +110,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{
       ip_frame
@@ -145,7 +145,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{
       ip_frame
@@ -188,11 +188,11 @@ defmodule Knx.KnxnetIp.Core do
            ip_addr::32,
            port::16
          >>,
-         ip_src \\ nil
+         ip_src_endpoint \\ nil
        ) do
     # [XXIX]
-    if (ip_addr == 0 || port == 0) && ip_src do
-      ip_src
+    if (ip_addr == 0 || port == 0) && ip_src_endpoint do
+      ip_src_endpoint
     else
       %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
     end

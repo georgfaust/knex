@@ -4,7 +4,7 @@ defmodule Knx.KnxnetIp.IpFrame do
   require Knx.Defs
   import Knx.Defs
 
-  defstruct ip_src: nil,
+  defstruct ip_src_endpoint: nil,
             header_size: 6,
             protocol_version: 0x10,
             discovery_endpoint: nil,
