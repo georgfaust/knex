@@ -97,13 +97,13 @@ defmodule Knx.KnxnetIp.Routing do
   end
 
   # ----------------------------------------------------------------------------
-  # queue handlers
+  # queue handler
 
-  def handle_ip_queue(%F{} = knx_frame) do
+  def handle_queue(:ip_queue, %F{} = knx_frame) do
     [routing_ind(knx_frame, get_multicast_endpoint())]
   end
 
-  def handle_knx_queue(%F{} = knx_frame) do
+  def handle_queue(:knx_queue, %F{} = knx_frame) do
     [{:dl, :req, knx_frame}]
   end
 
