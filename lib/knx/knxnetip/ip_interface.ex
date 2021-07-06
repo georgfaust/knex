@@ -14,11 +14,12 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   def handle(
         {:knip, :from_ip,
-         {src_endpoint, <<header::bytes-structure_length(:header), body::bits>>}},
+         {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>>}},
         %S{}
       ) do
-    %IpFrame{ip_src_endpoint: src_endpoint}
+    %IpFrame{ip_src_endpoint: ip_src_endpoint}
     |> handle_header(header)
+    |> check_length(body)
     |> handle_body(body)
   end
 
@@ -57,9 +58,22 @@ defmodule Knx.KnxnetIp.IpInterface do
   # Aktuell gibt es nur die Version 1.0 für alle Frames (auch in ANs in KNX 2.1.4)
   # Hier erstmal: Frames mit falscher Version ignorieren (Der Regel folgend,
   # dass invalide Frames ignoriert werden sollen.)
-  defp handle_header(_ip_frame, _frame) do
+  defp handle_header(ip_frame, _frame) do
     warning(:invalid_header)
+    ip_frame
   end
+
+  # ----------------------------------------------------------------------------
+
+  defp check_length(%IpFrame{total_length: total_length} = ip_frame, body) do
+    if total_length != structure_length(:header) + byte_size(body) do
+      warning(:invalid_total_length)
+    end
+
+    ip_frame
+  end
+
+  # ----------------------------------------------------------------------------
 
   defp handle_body(%IpFrame{service_family_id: service_family_id(:core)} = ip_frame, body) do
     Core.handle_body(ip_frame, body)
@@ -81,7 +95,8 @@ defmodule Knx.KnxnetIp.IpInterface do
   end
 
   defp handle_body(%IpFrame{}, _body) do
-    warning(:unknown_service_familiy)
+    warning(:invalid_service_familiy)
+    []
   end
 
   # ----------------------------------------------------------------------------
