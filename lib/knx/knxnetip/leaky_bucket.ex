@@ -5,16 +5,22 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   require Logger
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts)
+  def start_link(%{name: name} = opts) do
+    GenServer.start_link(__MODULE__, opts, name: name)
   end
 
   @impl true
-  def init(%{queue_type: queue_type, queue_poll_rate: queue_poll_rate}) do
+  def init(%{
+        queue_type: queue_type,
+        queue_size: queue_size,
+        max_queue_size: max_queue_size,
+        queue_poll_rate: queue_poll_rate
+      }) do
     state = %{
       queue: :queue.new(),
       queue_type: queue_type,
-      queue_size: 0,
+      queue_size: queue_size,
+      max_queue_size: max_queue_size,
       queue_poll_rate: queue_poll_rate,
       send_after_ref: nil
     }
@@ -24,8 +30,8 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   # Interface Functions --------------------------------------------------------
 
-  def enqueue(pid, knx_frame) do
-    GenServer.call(pid, {:enqueue, knx_frame})
+  def enqueue(pid, object) do
+    GenServer.call(pid, {:enqueue, object})
   end
 
   def delay(pid, delay_time) do
@@ -35,48 +41,70 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   # Server Callback Functions --------------------------------------------------
 
   @impl true
-  def handle_continue(:initial_timer, state) do
-    {:noreply, %{state | send_after_ref: schedule_timer(state.queue_poll_rate)}}
+  def handle_continue(:initial_timer, %{queue_poll_rate: queue_poll_rate} = state) do
+    {:noreply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
   end
 
   @impl true
-  def handle_call({:enqueue, knx_frame}, _, state) do
-    new_queue = :queue.in(knx_frame, state.queue)
-    new_queue_size = state.queue_size + 1
+  def handle_call(
+        {:enqueue, _object},
+        _,
+        %{queue_size: max_queue_size, max_queue_size: max_queue_size} = state
+      ) do
+    # queue is full: stack shall send routing lost message
+    {:reply, :queue_overflow, state}
+  end
 
-    # report back new queue size, allowing stack to react via flow control
+  def handle_call({:enqueue, object}, _, %{queue: queue, queue_size: queue_size} = state) do
+    new_queue = :queue.in(object, queue)
+    new_queue_size = queue_size + 1
+
+    # report back new queue size, allowing stack to react via flow control (routing busy frame)
     {:reply, new_queue_size, %{state | queue: new_queue, queue_size: new_queue_size}}
   end
 
   @impl true
-  def handle_cast({:delay, delay_time}, state) do
-    Process.cancel_timer(state.send_after_ref)
-
-    {:noreply, %{state | send_after_ref: schedule_timer(delay_time)}}
+  def handle_cast({:delay, delay_time}, %{send_after_ref: send_after_ref} = state) do
+    if Process.read_timer(send_after_ref) > delay_time do
+      {:noreply, state}
+    else
+      Process.cancel_timer(send_after_ref)
+      {:noreply, %{state | send_after_ref: schedule_timer(delay_time)}}
+    end
   end
 
   @impl true
-  def handle_info({:pop}, %{queue_size: 0} = state) do
-    {:no_reply, %{state | send_after_ref: schedule_timer(state.request_queue_poll_rate)}}
+  def handle_info({:pop}, %{queue_size: 0, queue_poll_rate: queue_poll_rate} = state) do
+    {:no_reply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
   end
 
-  def handle_info({:pop}, state) do
-    {{:value, knx_frame}, new_queue} = :queue.out(state.queue)
+  def handle_info(
+        {:pop},
+        %{
+          queue_size: queue_size,
+          queue_poll_rate: queue_poll_rate,
+          queue: queue,
+          queue_type: queue_type
+        } = state
+      ) do
+    {{:value, object}, new_queue} = :queue.out(queue)
 
-    case state.queue_type do
+    case queue_type do
       :knx_queue ->
-        Shell.Server.dispatch(:server, {:knip, :from_knx, knx_frame})
+        # object: %F-Struct
+        Shell.Server.dispatch(:server, {:knip, :from_knx, object})
 
       :ip_queue ->
-        Shell.Server.dispatch(:server, {:knip, :from_ip, knx_frame})
+        # object: {%Ep-Struct (of ip src), %F-Struct}
+        Shell.Server.dispatch(:server, {:knip, :from_ip, object})
     end
 
     {:no_reply,
      %{
        state
        | queue: new_queue,
-         queue_size: state.queue_size - 1,
-         send_after_ref: schedule_timer(state.queue_poll_rate)
+         queue_size: queue_size - 1,
+         send_after_ref: schedule_timer(queue_poll_rate)
      }}
   end
 

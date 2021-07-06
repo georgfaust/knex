@@ -370,13 +370,13 @@ defmodule Knx.KnxnetIp.Core do
   Structure: 7.5.1
   '''
 
-  defp hpai(host_protocol_code) do
+  defp hpai(protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
     ip_addr = KnxnetIpParam.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     <<
       structure_length(:hpai)::8,
-      host_protocol_code::8,
+      protocol_code::8,
       ip_addr::32,
       knxnetip_constant(:port)::16
     >>

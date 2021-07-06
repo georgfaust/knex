@@ -48,7 +48,7 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
       prio: prio,
       addr_t: addr_t,
       hops: hops,
-      src: src_addr,
+      src: check_src_addr(src_addr),
       dest: dest_addr,
       len: len,
       data: data
@@ -128,7 +128,7 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
         dest: dest,
         data: data
       }) do
-    %F{data: data, prio: prio, src: check_src_addr(src), dest: dest, addr_t: addr_t, hops: hops}
+    %F{data: data, prio: prio, src: src, dest: dest, addr_t: addr_t, hops: hops}
   end
 
   # ----------------------------------------------------------------------------

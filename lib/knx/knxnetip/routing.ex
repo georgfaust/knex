@@ -20,27 +20,34 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.2
   '''
 
-  # TODO ? 4.3.1: test if number of characters received without error is consistent
-  # with the content of the "Frame length" subfield
-  def handle_body(%IpFrame{service_type_id: service_type_id(:routing_ind)}, body) do
+  def handle_body(
+        %IpFrame{
+          service_type_id: service_type_id(:routing_ind),
+          ip_src_endpoint: ip_src_endpoint
+        },
+        body
+      ) do
     cemi_frame = DataCemiFrame.handle(body)
 
-    # TODO move to right place
-    {:ok, knx_queue_pid} = LeakyBucket.start_link(%{queue_type: :knx_queue, queue_poll_rate: 100})
+    case LeakyBucket.enqueue(
+           :knx_queue,
+           {ip_src_endpoint, DataCemiFrame.knx_frame_struct(cemi_frame)}
+         ) do
+      :queue_overflow ->
+        {new_props, number_of_lost_messages} =
+          KnxnetIpParam.increment_queue_overflow_to_knx(Cache.get_obj(:knxnet_ip_parameter))
 
-    queue_size = LeakyBucket.enqueue(knx_queue_pid, DataCemiFrame.knx_frame_struct(cemi_frame))
+        Cache.put_obj(:knxnet_ip_parameter, new_props)
+        [routing_lost_message(number_of_lost_messages)]
 
-    # TODO get latest indv src addr (this is only mock)
-    src = %Ep{
-      protocol_code: protocol_code(:udp),
-      ip_addr: 0x12345678,
-      port: 1000
-    }
+      5 ->
+        [routing_busy(ip_src_endpoint)]
 
-    case queue_size do
-      5 -> [routing_busy(src)]
-      10 -> [routing_busy(get_multicast_endpoint())]
-      _ -> []
+      10 ->
+        [routing_busy(get_multicast_endpoint())]
+
+      _ ->
+        []
     end
   end
 
@@ -55,26 +62,19 @@ defmodule Knx.KnxnetIp.Routing do
         <<
           structure_length(:busy_info)::8,
           _device_state::8,
-          _routing_busy_wait_time::16,
+          routing_busy_wait_time::16,
           routing_busy_control_field::16
         >>
       ) do
     # TODO a device state different from 0 indicates problems with access
     # to either KNX or IP network. Not explicitly stated, but use this info somehow?
 
-    # TODO I don't understand the use of values different from 0
-    if routing_busy_control_field == 0 do
-      # TODO calculate delay; depends on routing_busy_wait_time, see 2.3.5
-      delay_time = 100
+    LeakyBucket.delay(
+      :ip_queue,
+      get_delay_time(routing_busy_control_field, routing_busy_wait_time)
+    )
 
-      # TODO move to right place
-      {:ok, ip_queue_pid} = LeakyBucket.start_link(%{queue_type: :ip_queue, queue_poll_rate: 20})
-
-      LeakyBucket.delay(ip_queue_pid, delay_time)
-      []
-    else
-      []
-    end
+    []
   end
 
   '''
@@ -118,6 +118,7 @@ defmodule Knx.KnxnetIp.Routing do
 
   # TODO what are the use cases of KNX IP devices sending routing indications?
   # when do we send routing indications?
+  # TODO in case of overflow of ip_queue, increment PID queue_overflow_to_ip
   def routing_ind(%F{} = knx_frame, dest_endpoint) do
     cemi_struct = DataCemiFrame.handle_knx_frame_struct(knx_frame)
 
@@ -155,7 +156,6 @@ defmodule Knx.KnxnetIp.Routing do
           structure_length(:busy_info)::8,
           KnxnetIpParam.get_device_state(props)::8,
           KnxnetIpParam.get_busy_wait_time(props)::16,
-          # TODO this is the routing busy control_field. I don't understand values different from 0
           0x0000::16
         >>
 
@@ -168,11 +168,7 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.3
   '''
 
-  # TODO in event of overflow of LAN-to-KNX queue, increment PID_QUEUE_OVERFLOW_TO_KNX
-  # and send routing_lost_message
-  defp routing_lost_message() do
-    props = Cache.get_obj(:knxnet_ip_parameter)
-
+  defp routing_lost_message(number_of_lost_messages) do
     frame =
       Ip.header(
         service_type_id(:routing_lost_message),
@@ -183,8 +179,8 @@ defmodule Knx.KnxnetIp.Routing do
       ) <>
         <<
           structure_length(:lost_message_info)::8,
-          KnxnetIpParam.get_device_state(props)::8,
-          KnxnetIpParam.get_queue_overflow_to_knx(props)::16
+          KnxnetIpParam.get_device_state(IO.inspect(Cache.get_obj(:knxnet_ip_parameter)))::8,
+          number_of_lost_messages::16
         >>
 
     {:ethernet, :transmit, {get_multicast_endpoint(), frame}}
@@ -199,5 +195,23 @@ defmodule Knx.KnxnetIp.Routing do
       ip_addr: KnxnetIpParam.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)),
       port: 3671
     }
+  end
+
+  defp get_delay_time(control_field, wait_time) do
+    # TODO What is this supposed to mean?:
+    # "If the ROUTING_BUSY Frame contains a routing busy control field value not equal to 0000h
+    # then any device that does not interpret this routing busy control field SHALL stop sending
+    # for the time tw."
+    if control_field == 0 do
+      # get random number between 0 and 1
+      :random.seed(:erlang.now())
+      random_number = :random.uniform()
+
+      # TODO calc routing busy count: need state for that
+      routing_busy_count = 1
+      wait_time + 50 * random_number * routing_busy_count
+    else
+      wait_time
+    end
   end
 end

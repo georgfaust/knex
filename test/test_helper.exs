@@ -11,6 +11,8 @@ defmodule Helper do
   alias Knx.Ail.Property, as: P
   alias Knx.Ail.GroupObject, as: GO
 
+  use Bitwise
+
   @addr_tab [-1, 1, 2, 3, 4, 5, 6]
 
   @assoc_tab [
@@ -194,5 +196,9 @@ defmodule Helper do
       # TODO write, r_lvl, w_lvl
       P.new(:routing_busy_wait_time, [100], max: 1, write: true, r_lvl: 3, w_lvl: 2)
     ]
+  end
+
+  def convert_ip_to_number({e3, e2, e1, e0}) do
+    (e3 <<< 24) + (e2 <<< 16) + (e1 <<< 8) + e0
   end
 end

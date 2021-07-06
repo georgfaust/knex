@@ -7,26 +7,22 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.ConTab
+  alias Knx.KnxnetIp.LeakyBucket
 
   require Knx.Defs
   import Knx.Defs
 
-  # 192.168.178.62
-  @ip_interface_ip 0xC0A8_B23E
-  # 3671 (14, 87)
-  @ip_interface_port 0x0E57
+  @multicast_ip Helper.convert_ip_to_number({224, 0, 23, 12})
+  @multicast_port 3671
 
-  # 192.168.178.21
-  @ets_ip 0xC0A8_B215
+  @ip_interface_ip Helper.convert_ip_to_number({192, 168, 178, 62})
+  @ip_interface_port 3671
 
-  # 60427
-  @ets_port_discovery 0xEC0B
-  # 52250
-  @ets_port_control 0xCC1A
-  # 52252
-  @ets_port_device_mgmt_data 0xCC1C
-  # 52252
-  @ets_port_tunnelling_data 0xCC1C
+  @ets_ip Helper.convert_ip_to_number({192, 168, 178, 21})
+  @ets_port_discovery 60427
+  @ets_port_control 52250
+  @ets_port_device_mgmt_data 52252
+  @ets_port_tunnelling_data 52252
 
   @ets_discovery_endpoint %Ep{
     protocol_code: protocol_code(:udp),
@@ -58,6 +54,12 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     port: @ets_port_tunnelling_data
   }
 
+  @multicast_endpoint %Ep{
+    protocol_code: protocol_code(:udp),
+    ip_addr: @multicast_ip,
+    port: @multicast_port
+  }
+
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
 
@@ -81,6 +83,20 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
         0 => @con_0
       }
     })
+
+    # LeakyBucket.start_link(%{
+    #   name: :knx_queue,
+    #   queue_type: :knx_queue,
+    #   max_queue_size: 100,
+    #   queue_poll_rate: 100
+    # })
+
+    # LeakyBucket.start_link(%{
+    #   name: :ip_queue,
+    #   queue_type: :ip_queue,
+    #   max_queue_size: 100,
+    #   queue_poll_rate: 20
+    # })
 
     :timer.sleep(5)
     :ok
@@ -1190,14 +1206,10 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "routing ind" do
-    # @knx_frame_routing_req_l_data_req %F{
-    #   data: <<0x47D5_000B_1001::8*6>>,
-    #   prio: 0,
-    #   src: @knx_indv_addr,
-    #   dest: 0x2102,
-    #   addr_t: 0,
-    #   hops: 7
-    # }
+    # @total_length_routing_lost_message Ip.get_structure_length([
+    #                                      :header,
+    #                                      :lost_message_info
+    #                                    ])
 
     def routing_ind() do
       Ip.handle(
@@ -1234,8 +1246,43 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     end
 
     test("successful") do
+      LeakyBucket.start_link(%{
+        name: :knx_queue,
+        queue_type: :knx_queue,
+        queue_size: 0,
+        max_queue_size: 100,
+        queue_poll_rate: 100
+      })
+
       assert [] = routing_ind()
     end
+
+    # test("queue_overflow") do
+    #   LeakyBucket.start_link(%{
+    #     name: :knx_queue,
+    #     queue_type: :knx_queue,
+    #     queue_size: 100,
+    #     max_queue_size: 100,
+    #     queue_poll_rate: 100
+    #   })
+
+    #   assert [
+    #            {:ethernet, :transmit,
+    #             {@multicast_endpoint,
+    #              <<
+    #                # Header ------------------------------------------------------------
+    #                structure_length(:header)::8,
+    #                protocol_version(:knxnetip)::8,
+    #                service_family_id(:routing)::8,
+    #                service_type_id(:routing_lost_message)::8,
+    #                @total_length_routing_lost_message::16,
+    #                # Lost Message Info -------------------------------------------------
+    #                structure_length(:lost_message_info)::8,
+    #                0::8,
+    #                0::16
+    #              >>}}
+    #          ] = routing_ind()
+    # end
   end
 
   # ---------------------------------------------------------------------------
@@ -1271,7 +1318,7 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
     def routing_lost_message() do
       Ip.handle(
         {:knip, :from_ip,
-         {@router_endpoint,
+         {@multicast_endpoint,
           <<
             # Header ------------------------------------------------------------
             structure_length(:header)::8,
@@ -1292,4 +1339,6 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       assert [] = routing_lost_message()
     end
   end
+
+  # ----------------------------------------------------------------------------
 end
