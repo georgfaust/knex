@@ -2,9 +2,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
   alias Knx.Ail.Property, as: P
   use Bitwise
 
-  import Knx.Defs
-  require Knx.Defs
-
   def get_current_ip_addr(props),
     do: P.read_prop_value(props, :current_ip_address)
 
@@ -33,13 +30,9 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
     num = P.read_prop_value(props, :queue_overflow_to_knx)
 
     if num < 65535 do
-      # TODO why doesn't write_prop_value work here?
-      {P.write_prop(nil, props, 0,
-         pid: prop_id(:queue_overflow_to_knx),
-         elems: 1,
-         start: 1,
-         data: <<num + 1>>
-       ), num + 1}
+      new_props = P.write_prop_value(props, :queue_overflow_to_knx, <<num + 1::16>>)
+
+      {new_props, num + 1}
     else
       {props, num}
     end
@@ -49,13 +42,9 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
     num = P.read_prop_value(props, :queue_overflow_to_ip)
 
     if num < 65535 do
-      # TODO why doesn't write_prop_value work here?
-      {P.write_prop(nil, props, 0,
-         pid: prop_id(:queue_overflow_to_knx),
-         elems: 1,
-         start: 1,
-         data: <<num + 1>>
-       ), num + 1}
+      new_props = P.write_prop_value(props, :queue_overflow_to_ip, <<num + 1::16>>)
+
+      {new_props, num + 1}
     else
       {props, num}
     end

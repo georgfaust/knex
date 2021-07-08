@@ -179,7 +179,7 @@ defmodule Knx.KnxnetIp.Routing do
       ) <>
         <<
           structure_length(:lost_message_info)::8,
-          KnxnetIpParam.get_device_state(IO.inspect(Cache.get_obj(:knxnet_ip_parameter)))::8,
+          KnxnetIpParam.get_device_state(Cache.get_obj(:knxnet_ip_parameter))::8,
           number_of_lost_messages::16
         >>
 

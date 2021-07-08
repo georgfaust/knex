@@ -1,7 +1,6 @@
 defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   use ExUnit.Case
 
-  # alias Knx.Ail.Property, as: P
   alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
 
   @props Helper.get_knxnetip_parameter_props()
@@ -47,17 +46,4 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   test "get_queue_overflow_to_knx" do
     assert 0 = KnxnetIpParam.get_queue_overflow_to_knx(@props)
   end
-
-  # TODO
-  # test "increment_queue_overflow_to_knx" do
-  #   props = Cache.get_obj(:knxnet_ip_parameter)
-  #   props_queue_1 = P.write_prop_value(props, :queue_overflow_to_knx, <<1::16>>)
-  #   assert {props_queue_1, 1} = KnxnetIpParam.increment_queue_overflow_to_knx(props)
-  # end
-
-  # test "increment_queue_overflow_to_ip" do
-  #   props = Cache.get_obj(:knxnet_ip_parameter)
-  #   props_queue_1 = P.write_prop_value(props, :queue_overflow_to_ip, <<1::16>>)
-  #   assert {props_queue_1, 1} = KnxnetIpParam.increment_queue_overflow_to_ip(props)
-  # end
 end

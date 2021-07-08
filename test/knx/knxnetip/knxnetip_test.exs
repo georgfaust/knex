@@ -84,20 +84,6 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       }
     })
 
-    # LeakyBucket.start_link(%{
-    #   name: :knx_queue,
-    #   queue_type: :knx_queue,
-    #   max_queue_size: 100,
-    #   queue_poll_rate: 100
-    # })
-
-    # LeakyBucket.start_link(%{
-    #   name: :ip_queue,
-    #   queue_type: :ip_queue,
-    #   max_queue_size: 100,
-    #   queue_poll_rate: 20
-    # })
-
     :timer.sleep(5)
     :ok
   end
@@ -1206,24 +1192,28 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
 
   # ----------------------------------------------------------------------------
   describe "routing ind" do
-    # @total_length_routing_lost_message Ip.get_structure_length([
-    #                                      :header,
-    #                                      :lost_message_info
-    #                                    ])
+    @total_length_routing_lost_message Ip.get_structure_length([
+                                         :header,
+                                         :lost_message_info
+                                       ])
+    @total_length_routing_busy Ip.get_structure_length([
+                                 :header,
+                                 :busy_info
+                               ])
 
     def routing_ind() do
       Ip.handle(
         {:knip, :from_ip,
          {@router_endpoint,
           <<
-            # Header ------------------------------------------------------------
+            # Header -----------------------------------------------------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_ind)::8,
             structure_length(:header) + 14::16,
             # TODO is this a use case?
-            # cEMI --------------------------------------------------------------
+            # cEMI -------------------------------------------------------------
             cemi_message_code(:l_data_req)::8,
             0::8,
             1::1,
@@ -1257,35 +1247,91 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
       assert [] = routing_ind()
     end
 
-    # test("queue_overflow") do
-    #   LeakyBucket.start_link(%{
-    #     name: :knx_queue,
-    #     queue_type: :knx_queue,
-    #     queue_size: 100,
-    #     max_queue_size: 100,
-    #     queue_poll_rate: 100
-    #   })
+    test("queue_overflow") do
+      LeakyBucket.start_link(%{
+        name: :knx_queue,
+        queue_type: :knx_queue,
+        queue_size: 100,
+        max_queue_size: 100,
+        queue_poll_rate: 100
+      })
 
-    #   assert [
-    #            {:ethernet, :transmit,
-    #             {@multicast_endpoint,
-    #              <<
-    #                # Header ------------------------------------------------------------
-    #                structure_length(:header)::8,
-    #                protocol_version(:knxnetip)::8,
-    #                service_family_id(:routing)::8,
-    #                service_type_id(:routing_lost_message)::8,
-    #                @total_length_routing_lost_message::16,
-    #                # Lost Message Info -------------------------------------------------
-    #                structure_length(:lost_message_info)::8,
-    #                0::8,
-    #                0::16
-    #              >>}}
-    #          ] = routing_ind()
-    # end
+      assert [
+               {:ethernet, :transmit,
+                {@multicast_endpoint,
+                 <<
+                   # Header ----------------------------------------------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   service_family_id(:routing)::8,
+                   service_type_id(:routing_lost_message)::8,
+                   @total_length_routing_lost_message::16,
+                   # Lost Message Info -----------------------------------------
+                   structure_length(:lost_message_info)::8,
+                   0::8,
+                   1::16
+                 >>}}
+             ] = routing_ind()
+    end
+
+    test("trigger routing_busy, target: indv addr") do
+      LeakyBucket.start_link(%{
+        name: :knx_queue,
+        queue_type: :knx_queue,
+        queue_size: 4,
+        max_queue_size: 100,
+        queue_poll_rate: 100
+      })
+
+      assert [
+               {:ethernet, :transmit,
+                {@router_endpoint,
+                 <<
+                   # Header ----------------------------------------------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   service_family_id(:routing)::8,
+                   service_type_id(:routing_busy)::8,
+                   @total_length_routing_busy::16,
+                   # Busy Info -------------------------------------------------
+                   structure_length(:busy_info)::8,
+                   0::8,
+                   100::16,
+                   0x0000::16
+                 >>}}
+             ] = routing_ind()
+    end
+
+    test("trigger routing_busy, target: multicast") do
+      LeakyBucket.start_link(%{
+        name: :knx_queue,
+        queue_type: :knx_queue,
+        queue_size: 9,
+        max_queue_size: 100,
+        queue_poll_rate: 100
+      })
+
+      assert [
+               {:ethernet, :transmit,
+                {@multicast_endpoint,
+                 <<
+                   # Header ----------------------------------------------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   service_family_id(:routing)::8,
+                   service_type_id(:routing_busy)::8,
+                   @total_length_routing_busy::16,
+                   # Busy Info -------------------------------------------------
+                   structure_length(:busy_info)::8,
+                   0::8,
+                   100::16,
+                   0x0000::16
+                 >>}}
+             ] = routing_ind()
+    end
   end
 
-  # ---------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
   describe "routing busy" do
     def routing_busy(device_state, routing_busy_control_field) do
       Ip.handle(
