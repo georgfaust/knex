@@ -1,0 +1,2 @@
+2021-07-10 13:46:34 INFO  src/configure.c:85: uart-config: /dev/ttyUSB0, 19200, 8-N-1
+2021-07-10 13:46:34 ERROR src/uart.c:12: exit(5)
