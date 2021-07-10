@@ -154,9 +154,9 @@ defmodule Knx.Defs do
       system_setup_multicast_address: :unsigned_long,
       routing_multicast_address: :unsigned_long,
       ttl: :unsigned_char,
-      KnxnetIp_device_capabilities: :bitset16,
-      KnxnetIp_device_state: :unsigned_char,
-      KnxnetIp_routing_capabilities: :unsigned_char,
+      knxnetip_device_capabilities: :bitset16,
+      knxnetip_device_state: :unsigned_char,
+      knxnetip_routing_capabilities: :unsigned_char,
       priority_fifo_enabled: :binary_information,
       queue_overflow_to_ip: :unsigned_int,
       queue_overflow_to_knx: :unsigned_int,
@@ -247,9 +247,9 @@ defmodule Knx.Defs do
       system_setup_multicast_address: 65,
       routing_multicast_address: 66,
       ttl: 67,
-      KnxnetIp_device_capabilities: 68,
-      KnxnetIp_device_state: 69,
-      KnxnetIp_routing_capabilities: 70,
+      knxnetip_device_capabilities: 68,
+      knxnetip_device_state: 69,
+      knxnetip_routing_capabilities: 70,
       priority_fifo_enabled: 71,
       queue_overflow_to_ip: 72,
       queue_overflow_to_knx: 73,
@@ -360,7 +360,9 @@ defmodule Knx.Defs do
       cri_tunnel_con: 0x04,
       crd_device_mgmt_con: 0x02,
       crd_tunnel_con: 0x04,
-      cemi_l_data_without_data: 0x09
+      cemi_l_data_without_data: 0x09,
+      busy_info: 0x06,
+      lost_message_info: 0x04
     ]
   )
 
@@ -372,12 +374,13 @@ defmodule Knx.Defs do
   )
 
   enum(service_family_id,
-  do: [
-    core: 0x02,
-    device_management: 0x03,
-    tunnelling: 0x04
-  ]
-)
+    do: [
+      core: 0x02,
+      device_management: 0x03,
+      tunnelling: 0x04,
+      routing: 0x05
+    ]
+  )
 
   # this is only the low byte of what the knx specification calls "service type id"
   enum(service_type_id,
@@ -395,7 +398,10 @@ defmodule Knx.Defs do
       device_configuration_req: 0x10,
       device_configuration_ack: 0x11,
       tunnelling_req: 0x20,
-      tunnelling_ack: 0x21
+      tunnelling_ack: 0x21,
+      routing_ind: 0x30,
+      routing_lost_message: 0x31,
+      routing_busy: 0x32
     ]
   )
 

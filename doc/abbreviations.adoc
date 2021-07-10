@@ -1,0 +1,68 @@
+== Abbreviations 
+
+=== Introduced in KNeX
+[horizontal]
+src:: source
+dest:: destination
+addr:: address
+addr_t:: address type
+indv_addr:: individual (knx) address
+prio:: priority
+len:: length
+
+[horizontal]
+.Interface Objects
+prop:: property
+p_idx:: property id
+o_idx / obj_idx:: object index
+write:: write enable flag
+max:: maximum number of elements
+r_level:: read_level
+w_level:: write_level
+elems:: number of elements
+start:: start index
+
+
+[horizontal]
+.KNeXnet/IP
+seq_counter:: sequence counter
+
+=== Introduced in KNX Standard (and used in KNeX)
+
+[horizontal]
+req:: request
+resp:: response
+ind:: indication
+con:: confirmation
+ack:: acknowledgement
+eff:: extended frame format
+
+[horizontal]
+.Interface Objects
+pid:: property id
+pdt:: property datatype
+
+[horizontal]
+.KNeXnet/IP
+hpai:: host protocol address information
+dib:: description information block
+cri:: connection request information
+crd:: connection response data block
+supp_svc_families:: supported service families
+
+=== Not yet handled consistently (to discuss)
+[horizontal]
+obj:: object
+
+[horizontal]
+.KNeXnet/IP
+con:: connection (con_type, con_tab vs. connection)
+mgmt:: management
+tunnel:: tunnelling
+
+
+=== Proposels
+[horizontal]
+.KNeXnet/IP
+ep:: endpoint
+

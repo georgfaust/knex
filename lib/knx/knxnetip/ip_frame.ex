@@ -1,10 +1,10 @@
 defmodule Knx.KnxnetIp.IpFrame do
-  alias Knx.KnxnetIp.TunnelCemiFrame
+  alias Knx.KnxnetIp.DataCemiFrame
 
   require Knx.Defs
   import Knx.Defs
 
-  defstruct ip_src: nil,
+  defstruct ip_src_endpoint: nil,
             header_size: 6,
             protocol_version: 0x10,
             discovery_endpoint: nil,
@@ -19,5 +19,5 @@ defmodule Knx.KnxnetIp.IpFrame do
             client_seq_counter: nil,
             server_seq_counter: nil,
             knx_layer: nil,
-            cemi: %TunnelCemiFrame{}
+            cemi: %DataCemiFrame{}
 end

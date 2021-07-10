@@ -113,6 +113,12 @@ defmodule Knx.KnxnetIp.ConTabTest do
     assert @con_tab_0 = ConTab.increment_server_seq_counter(@con_tab_0_server_seq_255, 0)
   end
 
+  test "compare client seq counter" do
+    assert :counter_equal == ConTab.compare_client_seq_counter(@con_tab_0, 0, 0)
+    assert :counter_off_by_minus_one == ConTab.compare_client_seq_counter(@con_tab_0, 0, 255)
+    assert :any_other_case == ConTab.compare_client_seq_counter(@con_tab_0, 0, 10)
+  end
+
   test "is seq counter equal?" do
     assert true == ConTab.client_seq_counter_equal?(@con_tab_0, 0, 0)
     assert false == ConTab.client_seq_counter_equal?(@con_tab_0, 0, 7)

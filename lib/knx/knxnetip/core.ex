@@ -48,7 +48,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint}
 
@@ -69,9 +69,9 @@ defmodule Knx.KnxnetIp.Core do
           cri::bits
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
-    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src)
+    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
 
@@ -110,7 +110,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{
       ip_frame
@@ -145,7 +145,7 @@ defmodule Knx.KnxnetIp.Core do
           control_hpai::bytes-structure_length(:hpai)
         >>
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src)
+    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
 
     ip_frame = %{
       ip_frame
@@ -169,6 +169,7 @@ defmodule Knx.KnxnetIp.Core do
 
   def handle_body(_ip_frame, _src, _frame) do
     warning(:no_matching_handler)
+    []
   end
 
   # ----------------------------------------------------------------------------
@@ -187,11 +188,11 @@ defmodule Knx.KnxnetIp.Core do
            ip_addr::32,
            port::16
          >>,
-         ip_src \\ nil
+         ip_src_endpoint \\ nil
        ) do
     # [XXIX]
-    if (ip_addr == 0 || port == 0) && ip_src do
-      ip_src
+    if (ip_addr == 0 || port == 0) && ip_src_endpoint do
+      ip_src_endpoint
     else
       %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
     end
@@ -345,6 +346,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   # TODO to be sent when timer of associated channel runs out
+  # TODO handle possible error due to property read
   def disconnect_req(channel_id) do
     con_tab = Cache.get_obj(:con_tab)
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
@@ -368,14 +370,13 @@ defmodule Knx.KnxnetIp.Core do
   Structure: 7.5.1
   '''
 
-  defp hpai(host_protocol_code) do
+  defp hpai(protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
-    props = Cache.get_obj(:knxnet_ip_parameter)
-    ip_addr = KnxnetIpParam.get_current_ip_addr(props)
+    ip_addr = KnxnetIpParam.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     <<
       structure_length(:hpai)::8,
-      host_protocol_code::8,
+      protocol_code::8,
       ip_addr::32,
       knxnetip_constant(:port)::16
     >>

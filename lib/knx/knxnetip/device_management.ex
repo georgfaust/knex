@@ -119,6 +119,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
   def handle_body(_ip_frame, _frame) do
     warning(:no_matching_handler)
+    []
   end
 
   # ----------------------------------------------------------------------------
