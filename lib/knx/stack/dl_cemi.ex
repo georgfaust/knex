@@ -16,4 +16,15 @@ defmodule Knx.Stack.DlCemi do
     # :logger.debug("DL_CEMI UP #{inspect {prim, frame}}")
     [{:nl, prim, frame}]
   end
+
+  # {:knip, :from_knx, @knx_frame}, -> handled ip_inderface.ex 1187
+
+  # in knxnetip :dl -> :dl_cemi umbenennen
+
+  # IGMP:
+  #   {:knip, :from_ip,
+  #     {@ets_tunnelling_data_endpoint,
+  #     <<
+
+  # IGMP-socket aufmachen KNX-MC-IP und KNX-port
 end

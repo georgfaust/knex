@@ -8,24 +8,24 @@ defmodule Shell.Server do
   @me __MODULE__
   # @timer_config %{{:tlsm, :ack} => 3000, {:tlsm, :connection} => 6000}
 
-  def start_link(name: name, objects: objects, mem: mem, driver_mod: driver_mod) do
-    GenServer.start_link(@me, {objects, mem, driver_mod}, name: name)
+  def start_link(name: _name, objects: objects, mem: mem, driver_mod: driver_mod) do
+    GenServer.start_link(@me, {objects, mem, driver_mod}, name: __MODULE__)
   end
 
   # def stop(name) do
   #   GenServer.cast(name, :stop)
   # end
 
-  def dispatch(pid, impulse) do
-    GenServer.cast(pid, impulse)
+  def dispatch(_pid, impulse) do
+    GenServer.cast(__MODULE__, impulse)
   end
 
-  def set_prog_mode(pid, prog_mode) do
-    GenServer.cast(pid, {:prog_mode, prog_mode})
+  def set_prog_mode(_pid, prog_mode) do
+    GenServer.cast(__MODULE__, {:prog_mode, prog_mode})
   end
 
-  def cache_get(pid, key) do
-    GenServer.call(pid, {:cache_get, key})
+  def cache_get(_pid, key) do
+    GenServer.call(__MODULE__, {:cache_get, key})
   end
 
   # --------------------------------------------------------------------
@@ -95,19 +95,8 @@ defmodule Shell.Server do
 
   # --------------------------------------------------------------------
 
-  defp handle_impulse({target, _, _} = impulse, %S{} = state) do
-    handle =
-      Map.fetch!(
-        %{
-          dl_cemi: fn impulse -> Knx.handle_impulses(state, [impulse]) end,
-          tlsm: fn impulse -> Knx.handle_impulses(state, [impulse]) end,
-          al: fn impulse -> Knx.handle_impulses(state, [impulse]) end,
-          go: fn impulse -> Knx.handle_impulses(state, [impulse]) end
-        },
-        target
-      )
-
-    {effects, state} = handle.(impulse)
+  defp handle_impulse({_, _, _} = impulse, %S{} = state) do
+    {effects, state} = Knx.handle_impulses(state, [impulse])
     Enum.each(effects, fn effect -> handle_effect(effect, state) end)
     state
   end

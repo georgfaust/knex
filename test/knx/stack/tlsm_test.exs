@@ -387,7 +387,6 @@ defmodule KnxTest do
       end)
     end
 
-    @tag :current
     test "5.5.3.5 Reception of T_NAK_PDU with correct Sequence Number" do
       assert {
                [

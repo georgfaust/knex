@@ -19,7 +19,9 @@ defmodule Knx.KnxnetIp.IpInterface do
       ) do
     %IpFrame{ip_src_endpoint: ip_src_endpoint}
     |> handle_header(header)
+    |> IO.inspect()
     |> check_length(body)
+    |> IO.inspect()
     |> handle_body(body)
   end
 
