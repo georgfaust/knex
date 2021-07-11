@@ -51,6 +51,7 @@ defmodule Shell.Server do
     :logger.info("[D: #{Process.get(:cache_id)}] NEW. addr: #{state.addr}")
     :logger.debug("[D: #{Process.get(:cache_id)}] addr_tab: #{inspect(Cache.get(:addr_tab))}")
     :logger.debug("[D: #{Process.get(:cache_id)}] assoc_tab: #{inspect(Cache.get(:assoc_tab))}")
+    :logger.debug("[D: #{Process.get(:cache_id)}] go_tab: #{inspect(Cache.get(:go_tab))}")
 
     {:ok, driver_pid} = driver_mod.start_link(addr: state.addr)
     # {:ok, timer_pid} = Shell.Timer.start_link({self(), @timer_config})

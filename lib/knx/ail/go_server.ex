@@ -47,13 +47,16 @@ defmodule Knx.Ail.GoServer do
     case get_first(:readable, tsap: tsap) do
       {:ok, {_, go}} ->
         {:ok, {resp_tsap, _}} = get_first(:readable, asap: go.asap)
-        go_value = Map.fetch!(values, go.asap)
+        # TODO !!! warum is values leer??
+        # go_value = Map.fetch!(values, go.asap)
+        # HACK
+        go_value = [<<0::6>>]
 
         state
         |> update_tsap(resp_tsap, go_value)
         |> transmit(
           {:al, :req,
-           %F{apci: :group_resp, tsap: resp_tsap, data: [go_value], service: :t_data_group}}
+           %F{apci: :group_resp, tsap: resp_tsap, data: go_value, service: :t_data_group}}
         )
 
       :error ->

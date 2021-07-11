@@ -8,6 +8,7 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
   defstruct message_code: nil,
             frame_type: nil,
             repeat: nil,
+            confirm: 0,
             prio: nil,
             addr_t: nil,
             hops: nil,
@@ -20,8 +21,11 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
   # ----------------------------------------------------------------------------
 
   def handle(<<
-        cemi_message_code(:l_data_req)::8,
+        mc::8,
+        # --- additional info len - not implemented, expect always 0
         0::8,
+
+        # --- Ctrl1
         frame_type::1,
         0::1,
         # TODO 1 means, DL repetitions may be sent. how do we handle this? (03_06_03:4.1.5.3.3)
@@ -31,8 +35,9 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
         prio::2,
         # TODO for TP1, L2-Acks are requested independent of value
         _ack::1,
-        # !info: don't care (03_06_03:4.1.5.3.3)
-        _confirm::1,
+        confirm::1,
+
+        # Ctrl2
         addr_t::1,
         hops::3,
         0::4,
@@ -40,11 +45,17 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
         dest_addr::16,
         len::8,
         data::bits
-      >>) do
+      >>)
+      when mc in [
+             cemi_message_code(:l_data_ind),
+             cemi_message_code(:l_data_con),
+             cemi_message_code(:l_data_req)
+           ] do
     %__MODULE__{
-      message_code: cemi_message_code(:l_data_req),
+      message_code: mc,
       frame_type: frame_type,
       repeat: repeat,
+      confirm: confirm,
       prio: prio,
       addr_t: addr_t,
       hops: hops,
@@ -74,6 +85,32 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
       hops: hops,
       src: src,
       dest: dest,
+      # TODO len ist hier noch nicht gesetzt, siehe unten
+      len: len,
+      data: data
+    }
+  end
+
+  def handle_knx_frame_struct2(primitive, %F{
+        prio: prio,
+        addr_t: addr_t,
+        hops: hops,
+        src: src,
+        dest: dest,
+        data: data
+      }) do
+    len = byte_size(data) - 1
+
+    %__MODULE__{
+      message_code: cemi_message_code2(primitive),
+      frame_type: if(len <= 15, do: 1, else: 0),
+      # TODO repeat, see 03_06_03:4.1.5.3.5
+      repeat: 1,
+      prio: prio,
+      addr_t: addr_t,
+      hops: hops,
+      src: src,
+      dest: dest,
       len: len,
       data: data
     }
@@ -88,14 +125,12 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
         addr_t: addr_t,
         src: src,
         dest: dest,
+        confirm: confirm,
         len: len,
         data: data
       }) do
     # repeat, system_broadcast and ack bits are not interpreted by client and therefore set to 0
     repeat = system_broadcast = ack = 0
-
-    # TODO: evaluate if error in l_data_req?
-    confirm = 0
 
     # TODO: does every knx frame get the hop count value 7?
     hops = 7
@@ -121,14 +156,44 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
   end
 
   def knx_frame_struct(%__MODULE__{
+        message_code: mc,
         prio: prio,
         addr_t: addr_t,
         hops: hops,
         src: src,
         dest: dest,
-        data: data
+        data: data,
+        confirm: confirm
       }) do
-    %F{data: data, prio: prio, src: src, dest: dest, addr_t: addr_t, hops: hops}
+    {ok?, _primitive} =
+      case mc do
+        cemi_message_code(:l_data_con) -> {if(confirm == 1, do: false, else: true), :conf}
+        cemi_message_code(:l_data_ind) -> {nil, :ind}
+        cemi_message_code(:l_data_req) -> {nil, :req}
+      end
+
+    %F{data: data, prio: prio, src: src, dest: dest, addr_t: addr_t, hops: hops, ok?: ok?}
+  end
+
+  def knx_frame_struct2(%__MODULE__{
+        message_code: mc,
+        prio: prio,
+        addr_t: addr_t,
+        hops: hops,
+        src: src,
+        dest: dest,
+        data: data,
+        confirm: confirm
+      }) do
+    {ok?, primitive} =
+      case mc do
+        cemi_message_code(:l_data_con) -> {if(confirm == 1, do: false, else: true), :conf}
+        cemi_message_code(:l_data_ind) -> {nil, :ind}
+        cemi_message_code(:l_data_req) -> {nil, :req}
+      end
+
+    {primitive,
+     %F{data: data, prio: prio, src: src, dest: dest, addr_t: addr_t, hops: hops, ok?: ok?}}
   end
 
   # ----------------------------------------------------------------------------

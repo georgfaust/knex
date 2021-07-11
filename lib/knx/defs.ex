@@ -503,6 +503,14 @@ defmodule Knx.Defs do
     ]
   )
 
+  enum(cemi_message_code2,
+    do: [
+      req: 0x11,
+      conf: 0x2E,
+      ind: 0x29
+    ]
+  )
+
   enum(cemi_error_code,
     do: [
       unspecific: 0x00,
