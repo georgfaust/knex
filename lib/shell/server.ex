@@ -39,7 +39,8 @@ defmodule Shell.Server do
     Cache.start_link(%{
       objects: objects,
       mem: mem,
-      go_values: %{}
+      go_values: %{},
+      con_tab: %{}
     })
 
     state = S.update_from_device_props(%S{}, objects[:device])
@@ -112,6 +113,7 @@ defmodule Shell.Server do
           # timer: fn effect -> send(timer_pid, effect) end,
           timer: fn effect -> log_effect(effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
+          ethernet: fn effect -> Shell.KnipServer.dispatch(effect) end,
           mgmt: fn effect -> send(self(), effect) end,
           app: fn effect -> log_effect(effect) end,
           logger: fn effect -> log_effect(effect) end

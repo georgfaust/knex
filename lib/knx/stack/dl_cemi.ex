@@ -14,7 +14,7 @@ defmodule Knx.Stack.DlCemi do
     data_cemi_frame = Knx.KnxnetIp.DataCemiFrame.handle(cemi_frame)
     {prim, frame} = Knx.KnxnetIp.DataCemiFrame.knx_frame_struct2(data_cemi_frame)
     # :logger.debug("DL_CEMI UP #{inspect {prim, frame}}")
-    [{:nl, prim, frame}]
+    [{:nl, prim, frame}, {:knip, :from_knx, frame}]
   end
 
   # {:knip, :from_knx, @knx_frame}, -> handled ip_inderface.ex 1187

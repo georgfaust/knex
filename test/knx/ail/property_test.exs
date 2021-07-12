@@ -32,7 +32,6 @@ defmodule Knx.Ail.PropertyTest do
     P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 0, w_lvl: 0)
   ]
 
-  @tag :xxxx
   describe "load controls" do
     @addr_tab_mem_ref 4
     test "load address table" do

@@ -5,6 +5,7 @@ defmodule Knx.KnxnetIp.Core do
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
   alias Knx.Ail.Device
+  alias Knx.Ail.Property, as: P
 
   require Knx.Defs
   import Knx.Defs
@@ -170,6 +171,114 @@ defmodule Knx.KnxnetIp.Core do
   def handle_body(_ip_frame, _frame) do
     warning(:no_matching_handler)
     []
+  end
+
+  @doc """
+  iex(3)> :inet.getif
+  {:ok,
+  [
+    {{192, 168, 2, 181}, {192, 168, 2, 255}, {255, 255, 255, 0}},
+    {{127, 0, 0, 1}, {0, 0, 0, 0}, {255, 0, 0, 0}}
+  ]}
+
+  :inet.getifaddrs
+   ...
+
+  {'eno1',
+    [
+      ...
+      hwaddr: [44, 240, 93, 82, 252, 232]
+    ]}
+ ]}
+
+
+  """
+  def get_knxnetip_parameter_props() do
+    # [44, 240, 93, 82, 252, 232]
+
+    # 192.168.2.181
+    current_ip_addr = 0xC0A802B5
+    current_subnet_mask = 0xFFFFFF00
+    current_default_gateway = 0xC0A80001
+    mac_addr = 0x2CF05D52FCE8
+    knx_addr = 0x11FF
+    # friendly_name: "KNXnet/IP Device"
+    friendly_name = 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+
+    [
+      # TODO r_lvl
+      P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
+      # TODO r_lvl, w_lvl
+      P.new(:knx_individual_address, [knx_addr], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO first entry shall be length of list
+      # TODO r_lvl, w_lvl, max
+      P.new(:additional_individual_addresses, [0], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO current assignment method: DHCP; linked to ip_assignment_method?
+      # TODO write, r_lvl, w_lvl
+      P.new(:current_ip_assignment_method, [0x4], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO write, r_lvl, w_lvl
+      P.new(:ip_assignment_method, [0x4], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO r_lvl
+      P.new(:ip_capabilities, [0x1], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO shall be set according to Core, 8.5; linked to ip_address?
+      # TODO r_lvl
+      P.new(:current_ip_address, [current_ip_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # linked to subnet_mask?
+      # TODO write, r_lvl, w_lvl
+      P.new(:current_subnet_mask, [current_subnet_mask], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # linked to default_gateway?
+      # TODO write, r_lvl, w_lvl
+      P.new(:current_default_gateway, [current_default_gateway],
+        max: 1,
+        write: false,
+        r_lvl: 3,
+        w_lvl: 0
+      ),
+      # TODO r_lvl
+      P.new(:ip_address, [], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO r_lvl
+      P.new(:subnet_mask, [], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO r_lvl
+      P.new(:default_gateway, [], max: 1, write: true, r_lvl: 3, w_lvl: 2),
+      # TODO shall contain the IP address of the DHCP/BootP server
+      # TODO r_lvl
+      P.new(:dhcp_bootp_server, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO r_lvl
+      P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO r_lvl
+      P.new(:system_setup_multicast_address, [0xE000170C],
+        max: 1,
+        write: false,
+        r_lvl: 3,
+        w_lvl: 0
+      ),
+      # TODO change of value shall only become acitive after reset of device
+      # TODO r_lvl, w_lvl
+      P.new(:routing_multicast_address, [0xE000170C], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # TODO r_lvl, w_lvl
+      P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # TODO r_lvl
+      P.new(:knxnetip_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO if the value of the Property changes the current value shall be sent using M_PropInfo.ind
+      # TODO r_lvl
+      P.new(:knxnetip_device_state, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # the following properties only have to be implemented by devices providing Routing
+      # P.new(:knxnetip_routing_capabilities, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # P.new(:priority_fifo_enabled, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # TODO r_lvl
+      P.new(:queue_overflow_to_ip, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO r_lvl
+      P.new(:queue_overflow_to_knx, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # the following properties only have to be implemented by devices providing Routing
+      # P.new(:msg_transmit_to_ip, [], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      # P.new(:msg_transmit_to_knx, [], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # TODO write, r_lvl, w_lvl
+      P.new(:friendly_name, [friendly_name], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      # valid value range: 20 - 100
+      # TODO write, r_lvl, w_lvl
+      P.new(:routing_busy_wait_time, [100], max: 1, write: true, r_lvl: 3, w_lvl: 2)
+    ]
   end
 
   # ----------------------------------------------------------------------------
@@ -374,6 +483,8 @@ defmodule Knx.KnxnetIp.Core do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
     ip_addr = KnxnetIpParam.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
+    IO.inspect(ip_addr, label: :IPaddr)
+
     <<
       structure_length(:hpai)::8,
       protocol_code::8,
@@ -400,7 +511,9 @@ defmodule Knx.KnxnetIp.Core do
       KnxnetIpParam.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
-      Device.get_serial(device_props)::48,
+      # Device.get_serial(device_props)::48,
+      # TODO HACK warum serial nicht da??
+      4711::48,
       KnxnetIpParam.get_routing_multicast_addr(knxnet_ip_props)::32,
       KnxnetIpParam.get_mac_addr(knxnet_ip_props)::48,
       KnxnetIpParam.get_friendly_name(knxnet_ip_props)::8*30

@@ -126,7 +126,7 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
         src: src,
         dest: dest,
         confirm: confirm,
-        len: len,
+        len: _len,
         data: data
       }) do
     # repeat, system_broadcast and ack bits are not interpreted by client and therefore set to 0
@@ -135,6 +135,8 @@ defmodule Knx.KnxnetIp.DataCemiFrame do
     # TODO: does every knx frame get the hop count value 7?
     hops = 7
 
+    # TODO HACK
+    len = byte_size(data) - 1
     <<
       message_code::8,
       0::8,

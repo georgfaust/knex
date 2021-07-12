@@ -48,7 +48,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
           [
             tunnelling_ack(ip_frame),
-            {:dl, :req, DataCemiFrame.knx_frame_struct(ip_frame.cemi)},
+            {:dl_cemi, :req, DataCemiFrame.knx_frame_struct(ip_frame.cemi)},
             tunnelling_req(ip_frame),
             {:timer, :restart, {:ip_connection, channel_id}}
           ]
