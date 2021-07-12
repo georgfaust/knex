@@ -167,7 +167,7 @@ defmodule Knx.KnxnetIp.Core do
     end
   end
 
-  def handle_body(_ip_frame, _src, _frame) do
+  def handle_body(_ip_frame, _frame) do
     warning(:no_matching_handler)
     []
   end

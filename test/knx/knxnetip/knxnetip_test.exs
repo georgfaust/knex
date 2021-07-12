@@ -140,23 +140,23 @@ defmodule Knx.KnxnetIp.KnxnetIpTest do
                  {
                    :knip,
                    :from_ip,
-                   {@ets_discovery_endpoint, <<0x6, 0x10, 0x2, 0xB, 0x0, 0x16, 0x8, 0x1, 0xC0, 0xA8, 0x2, 0x78, 0xE5, 0xB9, 0x8, 0x4, 0x1, 0x2, 0x8, 0x6, 0x7, 0x0>>}
+                   # {@ets_discovery_endpoint, <<0x6, 0x10, 0x2, 0xB, 0x0, 0x16, 0x8, 0x1, 0xC0, 0xA8, 0x2, 0x78, 0xE5, 0xB9, 0x8, 0x4, 0x1, 0x2, 0x8, 0x6, 0x7, 0x0>>}
                    # {@ets_discovery_endpoint, <<6, 16, 2, 1, 0, 14, 8, 1, 192, 168, 2, 120, 248, 54>>}
 
-
-                    # <<
-                    #   # Header --------------------------------------------------
-                    #   structure_length(:header)::8,
-                    #   protocol_version(:knxnetip)::8,
-                    #   service_family_id(:core)::8,
-                    #   service_type_id(:search_req)::8,
-                    #   Ip.get_structure_length([:header, :hpai])::16,
-                    #   # HPAI ----------------------------------------------------
-                    #   structure_length(:hpai)::8,
-                    #   protocol_code(:udp)::8,
-                    #   @ets_ip::32,
-                    #   @ets_port_discovery::16
-                    # >>}
+                   {@ets_discovery_endpoint,
+                    <<
+                      # Header --------------------------------------------------
+                      structure_length(:header)::8,
+                      protocol_version(:knxnetip)::8,
+                      service_family_id(:core)::8,
+                      service_type_id(:search_req)::8,
+                      Ip.get_structure_length([:header, :hpai])::16,
+                      # HPAI ----------------------------------------------------
+                      structure_length(:hpai)::8,
+                      protocol_code(:udp)::8,
+                      @ets_ip::32,
+                      @ets_port_discovery::16
+                    >>}
                  },
                  %S{}
                )
