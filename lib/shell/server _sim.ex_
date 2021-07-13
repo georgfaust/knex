@@ -111,7 +111,7 @@ defmodule Shell.ServerSim do
 
   @impl GenServer
   def handle_info(
-        {:mgmt, prim, %F{apci: apci, ok?: ok?} = frame},
+        {:mgmt, prim, %F{apci: apci, confirm: confirm} = frame},
         %S{
           api_expect: %Knx.Api{apci: exp_apci, prim: exp_prim, multi: multi, take: take},
           api_callback: api_callback,
@@ -130,7 +130,7 @@ defmodule Shell.ServerSim do
         call_done(
           timer_pid,
           api_callback,
-          {if(ok? == false, do: :negative_lcon, else: :pdu), :a_discon, exp_apci},
+          {if(confirm == 1, do: :negative_lcon, else: :pdu), :a_discon, exp_apci},
           state
         )
       else

@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.IpFrame do
-  alias Knx.KnxnetIp.DataCemiFrame
+  alias Knx.Frame, as: F
 
   require Knx.Defs
   import Knx.Defs
@@ -19,5 +19,5 @@ defmodule Knx.KnxnetIp.IpFrame do
             client_seq_counter: nil,
             server_seq_counter: nil,
             knx_layer: nil,
-            cemi: %DataCemiFrame{}
+            cemi: %F{}
 end

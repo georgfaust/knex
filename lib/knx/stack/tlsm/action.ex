@@ -53,13 +53,13 @@ defmodule Knx.Stack.Tlsm.Action do
     }
   end
 
-  def action(:a05, %S{} = state, %F{ok?: ok?}) do
+  def action(:a05, %S{} = state, %F{confirm: confirm}) do
     {
       %S{state | c_addr: nil},
       [
         {:timer, :stop, {:tlsm, :connection}},
         {:timer, :stop, {:tlsm, :ack}},
-        {:al, :ind, %F{service: :t_discon, ok?: ok?}}
+        {:al, :ind, %F{service: :t_discon, confirm: confirm}}
       ]
     }
   end

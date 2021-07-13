@@ -61,25 +61,6 @@ defmodule Helper do
   def get_addr_tab(), do: @addr_tab
   def get_go_values(), do: @go_values
 
-  # frames
-  @hops 6
-
-  def get_frame(src: src, dest: dest, addr_t: addr_t, data: data) do
-    len = byte_size(data) - 1
-
-    <<
-      0b10::2,
-      0b11::2,
-      0::2,
-      0::2,
-      src::16,
-      dest::16,
-      addr_t::1,
-      @hops::3,
-      len::4,
-      data::bits
-    >>
-  end
 
   def get_device_props(prog_mode, verify \\ false) do
     device_ctrl = %{@device_ctrl | verify_mode: verify}
@@ -201,6 +182,4 @@ defmodule Helper do
   def convert_ip_to_number({e3, e2, e1, e0}) do
     (e3 <<< 24) + (e2 <<< 16) + (e1 <<< 8) + e0
   end
-
-
 end

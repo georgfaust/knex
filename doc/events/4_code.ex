@@ -34,8 +34,8 @@ def event(:ind, :t_data_con, %F{}, %S{}), do: :e15
 def event(:ind, :t_connect, %F{}, %S{}), do: :e25
 def event(:ind, :t_discon, %F{}, %S{}), do: :e26
 
-def event(:conf, :t_connect, %F{ok?: true}, %S{}), do: :e19
-def event(:conf, :t_connect, %F{ok?: false}, %S{}), do: :e20
+def event(:conf, :t_connect, %F{confirm: 0}, %S{}), do: :e19
+def event(:conf, :t_connect, %F{confirm: 1}, %S{}), do: :e20
 def event(:conf, :t_discon, %F{}, %S{}), do: :e21
 def event(:conf, :t_data_con, %F{}, %S{}), do: :e22
 def event(:conf, :t_ack, %F{}, %S{}), do: :e23

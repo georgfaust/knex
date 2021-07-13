@@ -26,7 +26,7 @@ defmodule Knx.KnxnetIp.IpInterface do
   end
 
   def handle({:knip, :from_knx, %F{} = frame}, %S{}) do
-    Tunnelling.handle_knx_frame_struct(frame)
+    Tunnelling.handle_up_frame(frame)
   end
 
   def handle({:knip, queue_type, %F{} = frame}, %S{}) do
