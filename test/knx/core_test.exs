@@ -189,7 +189,7 @@ defmodule Knx.Ail.CoreTest do
 
     test "group_read.ind" do
       assert {[
-                {:app, :go_value, {3, <<0::6>>}},
+                {:app, :go_value, {3, [<<0::6>>]}},
                 {:driver, :transmit, @group_resp_frm_dest_3_data_0}
               ],
               %S{}} =

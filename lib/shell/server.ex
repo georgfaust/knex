@@ -114,7 +114,8 @@ defmodule Shell.Server do
           timer: fn effect -> log_effect(effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
           ethernet: fn effect -> Shell.KnipServer.dispatch(effect) end,
-          mgmt: fn effect -> send(self(), effect) end,
+          # TODO API Server braucht das!
+          mgmt: fn effect -> log_effect(effect) end,
           app: fn effect -> log_effect(effect) end,
           logger: fn effect -> log_effect(effect) end
         },

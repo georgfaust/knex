@@ -173,30 +173,7 @@ defmodule Knx.KnxnetIp.Core do
     []
   end
 
-  @doc """
-  iex(3)> :inet.getif
-  {:ok,
-  [
-    {{192, 168, 2, 181}, {192, 168, 2, 255}, {255, 255, 255, 0}},
-    {{127, 0, 0, 1}, {0, 0, 0, 0}, {255, 0, 0, 0}}
-  ]}
-
-  :inet.getifaddrs
-   ...
-
-  {'eno1',
-    [
-      ...
-      hwaddr: [44, 240, 93, 82, 252, 232]
-    ]}
- ]}
-
-
-  """
   def get_knxnetip_parameter_props() do
-    # [44, 240, 93, 82, 252, 232]
-
-    # 192.168.2.181
     current_ip_addr = 0xC0A802B5
     current_subnet_mask = 0xFFFFFF00
     current_default_gateway = 0xC0A80001

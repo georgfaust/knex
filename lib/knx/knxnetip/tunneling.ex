@@ -19,7 +19,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
   # ref-frm: binary -> data-cemi-frame -> frame / .message_code = con (falsch!?)
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:tunnelling_req)} = ip_frame,
+        %IpFrame{service_type_id: service_type_id(:tunnelling_req)} = _ip_frame,
         <<
           structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
@@ -190,20 +190,20 @@ defmodule Knx.KnxnetIp.Tunnelling do
   Structure: 4.4.7
   '''
 
-  defp tunnelling_ack(%IpFrame{
-         channel_id: channel_id,
-         client_seq_counter: client_seq_counter,
-         data_endpoint: data_endpoint
-       }) do
-    frame =
-      Ip.header(
-        service_type_id(:tunnelling_ack),
-        Ip.get_structure_length([:header, :connection_header_tunnelling])
-      ) <>
-        connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
+  # defp tunnelling_ack(%IpFrame{
+  #        channel_id: channel_id,
+  #        client_seq_counter: client_seq_counter,
+  #        data_endpoint: data_endpoint
+  #      }) do
+  #   frame =
+  #     Ip.header(
+  #       service_type_id(:tunnelling_ack),
+  #       Ip.get_structure_length([:header, :connection_header_tunnelling])
+  #     ) <>
+  #       connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
 
-    {:ethernet, :transmit, {data_endpoint, frame}}
-  end
+  #   {:ethernet, :transmit, {data_endpoint, frame}}
+  # end
 
   # ----------------------------------------------------------------------------
   # placeholder creators
