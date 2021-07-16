@@ -79,9 +79,42 @@ defmodule Knx.KnxnetIp.CoreTest do
                                 :dib_supp_svc_families
                               ])
     test "successful" do
-      # TODO ethernet in IP umbenennen
+      IO.inspect(<<
+        # Header ----------------------------------------------------
+        structure_length(:header)::8,
+        protocol_version(:knxnetip)::8,
+        service_family_id(:core)::8,
+        service_type_id(:search_resp)::8,
+        @total_length_search_resp::16,
+        # HPAI ------------------------------------------------------
+        structure_length(:hpai)::8,
+        protocol_code(:udp)::8,
+        @ip_interface_ip::32,
+        @ip_interface_port::16,
+        # DIB Device Info -------------------------------------------
+        structure_length(:dib_device_info)::8,
+        description_type_code(:device_info)::8,
+        @knx_medium::8,
+        @device_status::8,
+        @knx_indv_addr::16,
+        @project_installation_id::16,
+        @serial::48,
+        @multicast_addr::32,
+        @mac_addr::48,
+        @friendly_name::8*30,
+        # DIB Supported Service Families ----------------------------
+        structure_length(:dib_supp_svc_families)::8,
+        description_type_code(:supp_svc_families)::8,
+        service_family_id(:core)::8,
+        protocol_version(:core)::8,
+        service_family_id(:device_management)::8,
+        protocol_version(:device_management)::8,
+        service_family_id(:tunnelling)::8,
+        protocol_version(:tunnelling)::8
+      >>)
+
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_discovery_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -151,7 +184,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "successful" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -314,7 +347,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "device management, successful" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -345,7 +378,7 @@ defmodule Knx.KnxnetIp.CoreTest do
       })
 
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -361,7 +394,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "tunnelling, successful" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -395,7 +428,7 @@ defmodule Knx.KnxnetIp.CoreTest do
       Cache.put(:con_tab, %{255 => @con_255})
 
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -415,7 +448,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "tunnelling, error: connection_option" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -435,7 +468,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "error: connection_type" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -494,7 +527,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "successful" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -513,7 +546,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "error: connection_id" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -570,7 +603,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "successful" do
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
                    # Header ----------------------------------------------------

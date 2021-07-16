@@ -155,7 +155,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
             conf_cemi_frame
 
         [
-          {:ethernet, :transmit, {data_endpoint, conf_frame}},
+          {:ip, :transmit, {data_endpoint, conf_frame}},
           # TODO set device_configuration_request_timeout = 10s
           {:timer, :start,
            {:device_management_req,
@@ -187,7 +187,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           status_code
         )
 
-    {:ethernet, :transmit, {data_endpoint, frame}}
+    {:ip, :transmit, {data_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------

@@ -97,7 +97,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     test "m_propread.req, successful" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -112,7 +112,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    0::8,
                    common_error_code(:no_error)::8
                  >>}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -151,7 +151,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     test "m_propread.req, error: property read, invalid pid" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -166,7 +166,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    0::8,
                    common_error_code(:no_error)::8
                  >>}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -205,7 +205,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     test "m_propread.req, error: property read, invalid start" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -220,7 +220,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    0::8,
                    common_error_code(:no_error)::8
                  >>}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------
@@ -259,7 +259,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     test "m_propread.con, successful" do
       assert [
                {:timer, :restart, {:ip_connection, 0}},
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
                    # Header ----------------------------------------------------

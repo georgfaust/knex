@@ -8,12 +8,12 @@
   * CONNECTSTATE_REQUEST -> CONNECTSTATE_RESPONSE
   * DISCONNECT_REQUEST -> DISCONNECT_RESPONSE
   
---> [{:ethernet, :transmit, ip_frame}]
+--> [{:ip, :transmit, ip_frame}]
 
 ### Device Management
   * DEVICE_CONFIGURATION_REQUEST (.req) -> DEVICE_CONFIGURATION_ACK, DEVICE_CONFIGURATION_REQUEST (.con)
   
---> [{:ethernet, :transmit, ip_frame1}, {:ethernet, :transmit, ip_frame2}]
+--> [{:ip, :transmit, ip_frame1}, {:ip, :transmit, ip_frame2}]
 
   * DEVICE_CONFIGURATION_ACK
   
@@ -22,7 +22,7 @@
 ### Tunnelling
   * TUNNELING_REQUEST -> TUNNELING_ACK, tp_frame
 
---> [{:ethernet, :transmit, ip_frame}, {:dl, :req, %DataCemiFrame{}}]
+--> [{:ip, :transmit, ip_frame}, {:dl, :req, %DataCemiFrame{}}]
 
   * TUNNELING_ACK
   

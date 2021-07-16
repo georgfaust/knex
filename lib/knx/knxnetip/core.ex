@@ -326,7 +326,7 @@ defmodule Knx.KnxnetIp.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {discovery_endpoint, frame}}
+    {:ip, :transmit, {discovery_endpoint, frame}}
   end
 
   '''
@@ -344,7 +344,7 @@ defmodule Knx.KnxnetIp.Core do
         dib_device_information() <>
         dib_supp_svc_families()
 
-    {:ethernet, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, frame}}
   end
 
   '''
@@ -380,7 +380,7 @@ defmodule Knx.KnxnetIp.Core do
           <<status_code::8>>
       end
 
-    {:ethernet, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, frame}}
   end
 
   '''
@@ -401,7 +401,7 @@ defmodule Knx.KnxnetIp.Core do
       ) <>
         connection_header(channel_id, status_code)
 
-    {:ethernet, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, frame}}
   end
 
   '''
@@ -422,7 +422,7 @@ defmodule Knx.KnxnetIp.Core do
       ) <>
         connection_header(channel_id, status_code)
 
-    {:ethernet, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, frame}}
   end
 
   '''
@@ -444,7 +444,7 @@ defmodule Knx.KnxnetIp.Core do
       hpai(data_endpoint.protocol_code)::structure_length(:hpai)*8
     >>
 
-    {:ethernet, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------
@@ -488,9 +488,7 @@ defmodule Knx.KnxnetIp.Core do
       KnxnetIpParam.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
-      # Device.get_serial(device_props)::48,
-      # TODO HACK warum serial nicht da??
-      4711::48,
+      Device.get_serial(device_props)::48,
       KnxnetIpParam.get_routing_multicast_addr(knxnet_ip_props)::32,
       KnxnetIpParam.get_mac_addr(knxnet_ip_props)::48,
       KnxnetIpParam.get_friendly_name(knxnet_ip_props)::8*30
