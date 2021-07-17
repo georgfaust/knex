@@ -38,8 +38,8 @@ defmodule Knx.Stack.Tlsm.Event do
   def get_event(:req, :t_connect, %F{}, %S{}), do: :e25
   def get_event(:req, :t_discon, %F{}, %S{}), do: :e26
 
-  def get_event(:conf, :t_connect, %F{ok?: true}, %S{}), do: :e19
-  def get_event(:conf, :t_connect, %F{ok?: false}, %S{}), do: :e20
+  def get_event(:conf, :t_connect, %F{confirm: 0}, %S{}), do: :e19
+  def get_event(:conf, :t_connect, %F{confirm: 1}, %S{}), do: :e20
   def get_event(:conf, :t_discon, %F{}, %S{}), do: :e21
   def get_event(:conf, :t_data_con, %F{}, %S{}), do: :e22
   def get_event(:conf, :t_ack, %F{}, %S{}), do: :e23

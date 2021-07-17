@@ -523,7 +523,7 @@ defmodule Knx.ManagementProcedures do
 
       # TODO die discon-reasons muessen genauer sein, ich bekomme auch ein discon wenn ich zu nicht-existierender ia connecte
       # - ist das richtig?
-      # - einzelne gruende fuer discon duerfen nicht nur ok? sein (event?)
+      # - einzelne gruende fuer discon duerfen nicht nur confirm-flag sein (event?)
       {:pdu, :a_discon, :a_connect} ->
         {:connected, {:error, :connection_refused}}
 

@@ -82,7 +82,7 @@ defmodule Knx.Ail.GoServerTest do
     assert {
              %S{},
              [
-               {:app, :go_value, {3, <<0::6>>}},
+               {:app, :go_value, {3, [<<0::6>>]}},
                {:al, :req, %F{apci: :group_resp, tsap: 3}}
              ]
            } =

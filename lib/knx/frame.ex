@@ -1,6 +1,10 @@
 defmodule Knx.Frame do
   @derive {Inspect, only: [:dest, :seq, :service, :apci, :data]}
-  defstruct src: nil,
+  defstruct message_code: nil,
+            frame_type: nil,
+            # TODO
+            repeat: nil,
+            src: nil,
             dest: nil,
             service: nil,
             apci: nil,
@@ -8,10 +12,10 @@ defmodule Knx.Frame do
             tsap: nil,
             addr_t: nil,
             prio: 0,
-            hops: nil,
+            hops: 6,
             len: nil,
             seq: 0,
             eff: 0,
             data: <<>>,
-            ok?: nil
+            confirm: 0
 end

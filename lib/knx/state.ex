@@ -29,10 +29,10 @@ defmodule Knx.State do
             driver_pid: nil,
             timer_pid: nil,
             connected: false,
-            api_expect: %Knx.Api{},   
-            api_callback: nil,
-            api_timer: nil,
-            api_result: [],
+            # api_expect: %Knx.Api{},
+            # api_callback: nil,
+            # api_timer: nil,
+            # api_result: [],
             # TODO evtl raus aus state, wird nur in handle_impulses gebraucht
             pending_effects: []
 

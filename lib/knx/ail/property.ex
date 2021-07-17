@@ -220,7 +220,7 @@ defmodule Knx.Ail.Property do
   def encode(_, :time, _), do: raise("TODO use DPT encode")
   def encode(_, :date, _), do: raise("TODO use DPT encode")
 
-  def encode(_, pdt, value) do
+  def encode(_pid, pdt, value) do
     # assume unsigned integer for other pdt
     %{length: length} = @pdt_lengths[pdt]
     bit_length = 8 * length

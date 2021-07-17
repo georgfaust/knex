@@ -19,14 +19,12 @@ defmodule Knx.KnxnetIp.IpInterface do
       ) do
     %IpFrame{ip_src_endpoint: ip_src_endpoint}
     |> handle_header(header)
-    #|> IO.inspect()
     |> check_length(body)
-    #|> IO.inspect()
     |> handle_body(body)
   end
 
   def handle({:knip, :from_knx, %F{} = frame}, %S{}) do
-    Tunnelling.handle_knx_frame_struct(frame)
+    Tunnelling.handle_up_frame(frame)
   end
 
   def handle({:knip, queue_type, %F{} = frame}, %S{}) do

@@ -1,7 +1,7 @@
 defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.IpInterface, as: Ip
   alias Knx.KnxnetIp.IpFrame
-  alias Knx.KnxnetIp.DataCemiFrame
+  alias Knx.DataCemiFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
   alias Knx.Frame, as: F
@@ -20,6 +20,7 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.2
   '''
 
+  # ref-frm: binary -> data-cemi-frame -> frame / kein field access
   def handle_body(
         %IpFrame{
           service_type_id: service_type_id(:routing_ind),
@@ -27,11 +28,11 @@ defmodule Knx.KnxnetIp.Routing do
         },
         body
       ) do
-    cemi_frame = DataCemiFrame.handle(body)
+    {_, cemi_frame} = DataCemiFrame.decode(body)
 
     case LeakyBucket.enqueue(
            :knx_queue,
-           {ip_src_endpoint, DataCemiFrame.knx_frame_struct(cemi_frame)}
+           {ip_src_endpoint, cemi_frame}
          ) do
       :queue_overflow ->
         {new_props, number_of_lost_messages} =
@@ -119,19 +120,11 @@ defmodule Knx.KnxnetIp.Routing do
   # TODO what are the use cases of KNX IP devices sending routing indications?
   # when do we send routing indications?
   # TODO in case of overflow of ip_queue, increment PID queue_overflow_to_ip
-  def routing_ind(%F{} = knx_frame, dest_endpoint) do
-    cemi_struct = DataCemiFrame.handle_knx_frame_struct(knx_frame)
-
-    frame =
-      Ip.header(
-        service_type_id(:routing_ind),
-        Ip.get_structure_length([
-          :header,
-          :cemi_l_data_without_data
-        ]) + byte_size(cemi_struct.data)
-      ) <>
-        DataCemiFrame.create(cemi_struct)
-
+  # ref-frm: frame -> data-cemi-frame -> binary  / byte_size(cemi_struct.data) (sieht falsch aus)
+  def routing_ind(%F{} = cemi_frame, dest_endpoint) do
+    cemi_frame = DataCemiFrame.encode(:req, cemi_frame)
+    header_len = Ip.get_structure_length([:header]) + byte_size(cemi_frame)
+    frame = Ip.header(service_type_id(:routing_ind), header_len) <> cemi_frame
     {:ethernet, :transmit, {dest_endpoint, frame}}
   end
 

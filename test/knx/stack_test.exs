@@ -7,15 +7,10 @@ defmodule Knx.TlTest do
   require Knx.Defs
   import Knx.Defs
 
-  alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
+  alias Knx.Stack.{Nl, Tl, Tlsm, Al}
 
-  @std 0b10
-  @r_addr 0xDE
   @o_addr 0xAD
   @group_addr 0x0001
-  @hops 6
-  @len 1
-  @prio 0
   @t_data_group <<0b0000_00::6>>
   @a_group_read <<0b0000_0000_00::10>>
   @addr_tab [-1, 99, @group_addr]
@@ -29,38 +24,38 @@ defmodule Knx.TlTest do
   end
 
   describe "stack up" do
-    test "dl decodes frame" do
-      assert [
-               {:nl, :ind,
-                %F{
-                  src: @r_addr,
-                  dest: @group_addr,
-                  addr_t: addr_t(:grp),
-                  hops: @hops,
-                  len: @len,
-                  prio: @prio,
-                  data: <<@t_data_group::bits, @a_group_read::bits>>,
-                  ok?: nil
-                }}
-             ] =
-               Dl.handle(
-                 {:dl, :ind,
-                  <<
-                    @std::2,
-                    3::2,
-                    @prio::2,
-                    0::2,
-                    @r_addr::16,
-                    @group_addr::16,
-                    addr_t(:grp)::1,
-                    @hops::3,
-                    @len::4,
-                    @t_data_group::bits,
-                    @a_group_read::bits
-                  >>},
-                 %S{}
-               )
-    end
+    # TODO DataCemiFrameTest
+    # test "dl decodes frame" do
+    #   assert [
+    #            {:nl, :ind,
+    #             %F{
+    #               src: @r_addr,
+    #               dest: @group_addr,
+    #               addr_t: addr_t(:grp),
+    #               hops: @hops,
+    #               len: @len,
+    #               prio: @prio,
+    #               data: <<@t_data_group::bits, @a_group_read::bits>>
+    #             }}
+    #          ] =
+    #            Dl.handle(
+    #              {:dl, :ind,
+    #               <<
+    #                 @std::2,
+    #                 3::2,
+    #                 @prio::2,
+    #                 0::2,
+    #                 @r_addr::16,
+    #                 @group_addr::16,
+    #                 addr_t(:grp)::1,
+    #                 @hops::3,
+    #                 @len::4,
+    #                 @t_data_group::bits,
+    #                 @a_group_read::bits
+    #               >>},
+    #              %S{}
+    #            )
+    # end
 
     test "nl lets individual addressed frame with device's ind addr pass" do
       assert [{:tl, :ind, %F{}}] =
@@ -171,41 +166,42 @@ defmodule Knx.TlTest do
              ] = Nl.handle({:nl, :req, %F{hops: :hops_nw_param}}, %S{hops: 6})
     end
 
-    test "dl encodes frame" do
-      assert [
-               {:driver, :transmit,
-                {_, _,
-                 <<
-                   @std::2,
-                   3::2,
-                   @prio::2,
-                   0::2,
-                   @r_addr::16,
-                   @group_addr::16,
-                   addr_t(:grp)::1,
-                   @hops::3,
-                   @len::4,
-                   @t_data_group::bits,
-                   @a_group_read::bits
-                 >>}}
-             ] =
-               Dl.handle(
-                 {
-                   :dl,
-                   :req,
-                   %F{
-                     src: @r_addr,
-                     dest: @group_addr,
-                     addr_t: addr_t(:grp),
-                     hops: @hops,
-                     len: @len,
-                     prio: @prio,
-                     data: <<@t_data_group::bits, @a_group_read::bits>>,
-                     ok?: nil
-                   }
-                 },
-                 %S{}
-               )
-    end
+    # TODO DataCemiFrameTest
+
+    # test "dl encodes frame" do
+    #   assert [
+    #            {:driver, :transmit,
+    #             {_, _,
+    #              <<
+    #                @std::2,
+    #                3::2,
+    #                @prio::2,
+    #                0::2,
+    #                @r_addr::16,
+    #                @group_addr::16,
+    #                addr_t(:grp)::1,
+    #                @hops::3,
+    #                @len::4,
+    #                @t_data_group::bits,
+    #                @a_group_read::bits
+    #              >>}}
+    #          ] =
+    #            Dl.handle(
+    #              {
+    #                :dl,
+    #                :req,
+    #                %F{
+    #                  src: @r_addr,
+    #                  dest: @group_addr,
+    #                  addr_t: addr_t(:grp),
+    #                  hops: @hops,
+    #                  len: @len,
+    #                  prio: @prio,
+    #                  data: <<@t_data_group::bits, @a_group_read::bits>>
+    #                }
+    #              },
+    #              %S{}
+    #            )
+    # end
   end
 end

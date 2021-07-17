@@ -34,12 +34,12 @@ defmodule Helper do
   }
 
   @go_values %{
-    1 => <<0::6>>,
-    2 => <<0::6>>,
-    3 => <<0::6>>,
-    4 => <<0::6>>,
-    5 => <<0::6>>,
-    6 => <<0::6>>
+    1 => [<<0::6>>],
+    2 => [<<0::6>>],
+    3 => [<<0::6>>],
+    4 => [<<0::6>>],
+    5 => [<<0::6>>],
+    6 => [<<0::6>>]
   }
 
   # IO
@@ -61,25 +61,6 @@ defmodule Helper do
   def get_addr_tab(), do: @addr_tab
   def get_go_values(), do: @go_values
 
-  # frames
-  @hops 6
-
-  def get_frame(src: src, dest: dest, addr_t: addr_t, data: data) do
-    len = byte_size(data) - 1
-
-    <<
-      0b10::2,
-      0b11::2,
-      0::2,
-      0::2,
-      src::16,
-      dest::16,
-      addr_t::1,
-      @hops::3,
-      len::4,
-      data::bits
-    >>
-  end
 
   def get_device_props(prog_mode, verify \\ false) do
     device_ctrl = %{@device_ctrl | verify_mode: verify}

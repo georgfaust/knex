@@ -81,6 +81,7 @@ defmodule Knx.Ail.IoServer do
           [o_idx, pid, elems, start, data]
 
         {:error, _reason} ->
+          :logger.warning("can't read o_idx: #{o_idx} pid: #{pid}")
           [o_idx, pid, 0, start, <<>>]
       end
 

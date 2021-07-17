@@ -1,6 +1,6 @@
 defmodule Knx do
   alias Knx.State, as: S
-  alias Knx.Stack.{Dl, DlCemi, Nl, Tl, Tlsm, Al}
+  alias Knx.Stack.{Dl, Nl, Tl, Tlsm, Al}
   alias Knx.Ail.GoServer, as: GO
   alias Knx.Ail.IoServer, as: IO
   alias Knx.{Mem, Restart}
@@ -14,7 +14,6 @@ defmodule Knx do
       Map.fetch!(
         %{
           dl: &Dl.handle/2,
-          dl_cemi: &DlCemi.handle/2,
           nl: &Nl.handle/2,
           tl: &Tl.handle/2,
           tlsm: &Tlsm.handle/2,
@@ -25,6 +24,7 @@ defmodule Knx do
           mem: &Mem.handle/2,
           auth: &Knx.Auth.handle/2,
           knip: &Knx.KnxnetIp.IpInterface.handle/2,
+          ethernet: &append_effect/2,
           timer: &append_effect/2,
           driver: &append_effect/2,
           mgmt: &append_effect/2,

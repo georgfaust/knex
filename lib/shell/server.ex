@@ -39,7 +39,8 @@ defmodule Shell.Server do
     Cache.start_link(%{
       objects: objects,
       mem: mem,
-      go_values: %{}
+      go_values: %{},
+      con_tab: %{}
     })
 
     state = S.update_from_device_props(%S{}, objects[:device])
@@ -74,7 +75,7 @@ defmodule Shell.Server do
 
   @impl GenServer
   def handle_cast({_layer, _prim, _data} = impulse, %S{} = state) do
-    :logger.info("[D: #{Process.get(:cache_id)}] [<< imp] #{inspect(impulse)}")
+    :logger.debug("[D: #{Process.get(:cache_id)}] [<< imp] #{inspect(impulse)}")
     {:noreply, handle_impulse(impulse, state)}
   end
 
@@ -110,11 +111,13 @@ defmodule Shell.Server do
         %{
           # add interface function for timer?
           # timer: fn effect -> send(timer_pid, effect) end,
-          timer: fn effect -> log_effect(effect) end,
+          timer: fn effect -> log_effect(:timer, effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
-          mgmt: fn effect -> send(self(), effect) end,
-          app: fn effect -> log_effect(effect) end,
-          logger: fn effect -> log_effect(effect) end
+          ethernet: fn effect -> Shell.KnipServer.dispatch(effect) end,
+          # TODO API Server braucht das!
+          mgmt: fn effect -> log_effect(:mgmt, effect) end,
+          app: fn effect -> log_effect(:app, effect) end,
+          logger: fn effect -> log_effect(:logger, effect) end
         },
         target
       )
@@ -122,7 +125,9 @@ defmodule Shell.Server do
     handle.(effect)
   end
 
-  defp log_effect(effect) do
-    :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
+  defp log_effect(mod, effect) do
+    if mod in [:logger, :app, :mgmt] do
+      :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
+    end
   end
 end
