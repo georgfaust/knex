@@ -37,7 +37,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     :ok
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "device configuration request" do
     @total_length_device_config_ack Ip.get_structure_length([
                                       :header,
@@ -66,7 +66,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
           :from_ip,
           {@ets_device_mgmt_data_endpoint,
            <<
-             # Header ----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:device_management)::8,
@@ -75,12 +75,12 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                :header,
                :connection_header_device_management
              ]) + 7::16,
-             # Connection header -----------------------------------------------
+             # Connection header ---------------
              structure_length(:connection_header_device_management)::8,
              connection_id::8,
              0::8,
              knxnetip_constant(:reserved)::8,
-             # cEMI ------------------------------------------------------------
+             # cEMI ---------------
              cemi_message_code(cemi_message_type)::8,
              0::16,
              1::8,
@@ -100,13 +100,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
@@ -115,18 +115,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
-                   # cEMI ------------------------------------------------------
+                   # cEMI ---------------
                    cemi_message_code(:m_propread_con)::8,
                    0::16,
                    1::8,
@@ -154,13 +154,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
@@ -169,18 +169,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req_error_prop_read::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
-                   # cEMI ------------------------------------------------------
+                   # cEMI ---------------
                    cemi_message_code(:m_propread_con)::8,
                    0::16,
                    1::8,
@@ -208,13 +208,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
@@ -223,18 +223,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_req)::8,
                    @total_length_device_config_req_error_prop_read::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
-                   # cEMI ------------------------------------------------------
+                   # cEMI ---------------
                    cemi_message_code(:m_propread_con)::8,
                    0::16,
                    1::8,
@@ -262,13 +262,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:ip, :transmit,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    service_type_id(:device_configuration_ack)::8,
                    @total_length_device_config_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_device_management)::8,
                    0::8,
                    0::8,
@@ -300,7 +300,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "device configuration ack" do
     @total_length_device_config_ack Ip.get_structure_length([
                                       :header,
@@ -314,13 +314,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
           :from_ip,
           {@ets_device_mgmt_data_endpoint,
            <<
-             # Header ----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:device_management)::8,
              service_type_id(:device_configuration_ack)::8,
              @total_length_device_config_ack::16,
-             # Connection header -----------------------------------------------
+             # Connection header ---------------
              structure_length(:connection_header_device_management)::8,
              connection_id::8,
              seq_counter::8,
@@ -353,7 +353,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
 
   test("no matching handler") do
     assert [] =
@@ -361,7 +361,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                {:knip, :from_ip,
                 {@ets_device_mgmt_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,

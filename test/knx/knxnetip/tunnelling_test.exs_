@@ -49,7 +49,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
     :ok
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "tunnelling request" do
     @knx_frame_tunnelling_req_l_data_req %F{
       data: <<0x47D5_000B_1001::8*6>>,
@@ -73,18 +73,18 @@ defmodule Knx.KnxnetIp.TunnellingTest do
         {:knip, :from_ip,
          {@ets_tunnelling_data_endpoint,
           <<
-            # Header ------------------------------------------------------------
+            # Header ---------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:tunnelling)::8,
             service_type_id(:tunnelling_req)::8,
             Ip.get_structure_length([:header, :connection_header_tunnelling]) + 15::16,
-            # Connection header -------------------------------------------------
+            # Connection header ---------------
             structure_length(:connection_header_tunnelling),
             connection_id::8,
             seq_counter::8,
             knxnetip_constant(:reserved)::8,
-            # cEMI --------------------------------------------------------------
+            # cEMI ---------------
             cemi_message_code(:l_data_req)::8,
             0::8,
             1::1,
@@ -113,13 +113,13 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                {:ethernet, :transmit,
                 {@ets_tunnelling_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,
                    service_type_id(:tunnelling_ack)::8,
                    @total_length_tunnelling_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    0::8,
@@ -129,18 +129,18 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                {:ethernet, :transmit,
                 {@ets_tunnelling_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,
                    service_type_id(:tunnelling_req)::8,
                    @total_length_tunnelling_req_l_data_con::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_tunnelling),
                    255::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
-                   # cEMI ------------------------------------------------------
+                   # cEMI ---------------
                    cemi_message_code(:l_data_con)::8,
                    0::8,
                    1::1,
@@ -171,13 +171,13 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                {:ethernet, :transmit,
                 {@ets_tunnelling_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,
                    service_type_id(:tunnelling_ack)::8,
                    @total_length_tunnelling_ack::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    255::8,
@@ -205,20 +205,20 @@ defmodule Knx.KnxnetIp.TunnellingTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "tunnelling ack" do
     def receive_tunnelling_ack(connection_id: connection_id, seq_counter: seq_counter) do
       Ip.handle(
         {:knip, :from_ip,
          {@ets_tunnelling_data_endpoint,
           <<
-            # Header ------------------------------------------------------------
+            # Header ---------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:tunnelling)::8,
             service_type_id(:tunnelling_ack)::8,
             Ip.get_structure_length([:header, :connection_header_tunnelling])::16,
-            # Connection header -------------------------------------------------
+            # Connection header ---------------
             structure_length(:connection_header_tunnelling)::8,
             connection_id::8,
             seq_counter::8,
@@ -256,7 +256,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "knx frame" do
     @knx_frame %F{
       prio: 0,
@@ -286,18 +286,18 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                {:ethernet, :transmit,
                 {@ets_tunnelling_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,
                    service_type_id(:tunnelling_req)::8,
                    @total_length_tunnelling_req_l_data_ind::16,
-                   # Connection header -----------------------------------------
+                   # Connection header ---------------
                    structure_length(:connection_header_tunnelling)::8,
                    255::8,
                    0::8,
                    knxnetip_constant(:reserved)::8,
-                   # cEMI ------------------------------------------------------
+                   # cEMI ---------------
                    cemi_message_code(:l_data_ind)::8,
                    0::8,
                    1::1,
@@ -324,7 +324,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
 
   test("no matching handler") do
     assert [] =
@@ -332,7 +332,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                {:knip, :from_ip,
                 {@ets_tunnelling_data_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,

@@ -39,7 +39,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
     :ok
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "routing ind" do
     @total_length_routing_lost_message Ip.get_structure_length([
                                          :header,
@@ -55,14 +55,14 @@ defmodule Knx.KnxnetIp.RoutingTest do
         {:knip, :from_ip,
          {@router_endpoint,
           <<
-            # Header -----------------------------------------------------------
+            # Header ---------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_ind)::8,
             structure_length(:header) + 14::16,
             # TODO is this a use case?
-            # cEMI -------------------------------------------------------------
+            # cEMI ---------------
             cemi_message_code(:l_data_req)::8,
             0::8,
             1::1,
@@ -107,13 +107,13 @@ defmodule Knx.KnxnetIp.RoutingTest do
                {:ethernet, :transmit,
                 {@multicast_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:routing)::8,
                    service_type_id(:routing_lost_message)::8,
                    @total_length_routing_lost_message::16,
-                   # Lost Message Info -----------------------------------------
+                   # Lost Message Info ---------------
                    structure_length(:lost_message_info)::8,
                    0::8,
                    1::16
@@ -133,13 +133,13 @@ defmodule Knx.KnxnetIp.RoutingTest do
                {:ethernet, :transmit,
                 {@router_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:routing)::8,
                    service_type_id(:routing_busy)::8,
                    @total_length_routing_busy::16,
-                   # Busy Info -------------------------------------------------
+                   # Busy Info ---------------
                    structure_length(:busy_info)::8,
                    0::8,
                    100::16,
@@ -160,13 +160,13 @@ defmodule Knx.KnxnetIp.RoutingTest do
                {:ethernet, :transmit,
                 {@multicast_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:routing)::8,
                    service_type_id(:routing_busy)::8,
                    @total_length_routing_busy::16,
-                   # Busy Info -------------------------------------------------
+                   # Busy Info ---------------
                    structure_length(:busy_info)::8,
                    0::8,
                    100::16,
@@ -176,20 +176,20 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "routing busy" do
     def receive_routing_busy(device_state, routing_busy_control_field) do
       Ip.handle(
         {:knip, :from_ip,
          {@router_endpoint,
           <<
-            # Header ------------------------------------------------------------
+            # Header ---------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_busy)::8,
             Ip.get_structure_length([:header, :busy_info])::16,
-            # Busy Info ---------------------------------------------------------
+            # Busy Info ---------------
             structure_length(:busy_info)::8,
             device_state::8,
             100::16,
@@ -204,20 +204,20 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
   end
 
-  # ---------------------------------------------------------------------------
+  # ---------------
   describe "routing lost message" do
     def receive_routing_lost_message() do
       Ip.handle(
         {:knip, :from_ip,
          {@multicast_endpoint,
           <<
-            # Header ------------------------------------------------------------
+            # Header ---------------
             structure_length(:header)::8,
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_lost_message)::8,
             Ip.get_structure_length([:header, :lost_message_info])::16,
-            # Lost Message Info -------------------------------------------------
+            # Lost Message Info ---------------
             structure_length(:lost_message_info)::8,
             0::8,
             0::16
@@ -231,7 +231,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
 
   test("no matching handler") do
     assert [] =
@@ -239,7 +239,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
                {:knip, :from_ip,
                 {@multicast_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:routing)::8,

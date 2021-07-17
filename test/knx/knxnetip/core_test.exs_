@@ -57,20 +57,22 @@ defmodule Knx.KnxnetIp.CoreTest do
   @con_0 %C{id: 0, con_type: :device_mgmt_con, dest_data_endpoint: @ets_device_mgmt_data_endpoint}
   @con_255 %C{id: 255, con_type: :tunnel_con, dest_data_endpoint: @ets_tunnelling_data_endpoint}
 
+  @con_tab_0 %{:free_mgmt_ids => Enum.to_list(1..254), 0 => @con_0}
+
   setup do
     Cache.start_link(%{
       objects: [device: @device_object, knxnet_ip_parameter: @knxnet_ip_parameter_object],
-      con_tab: %{
-        :free_mgmt_ids => Enum.to_list(1..254),
-        0 => @con_0
-      }
+      # con_tab: %{
+      #   :free_mgmt_ids => Enum.to_list(1..254),
+      #   0 => @con_0
+      # }
     })
 
     :timer.sleep(5)
     :ok
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "search request" do
     @total_length_search_resp Ip.get_structure_length([
                                 :header,
@@ -79,90 +81,57 @@ defmodule Knx.KnxnetIp.CoreTest do
                                 :dib_supp_svc_families
                               ])
     test "successful" do
-      IO.inspect(<<
-        # Header ----------------------------------------------------
-        structure_length(:header)::8,
-        protocol_version(:knxnetip)::8,
-        service_family_id(:core)::8,
-        service_type_id(:search_resp)::8,
-        @total_length_search_resp::16,
-        # HPAI ------------------------------------------------------
-        structure_length(:hpai)::8,
-        protocol_code(:udp)::8,
-        @ip_interface_ip::32,
-        @ip_interface_port::16,
-        # DIB Device Info -------------------------------------------
-        structure_length(:dib_device_info)::8,
-        description_type_code(:device_info)::8,
-        @knx_medium::8,
-        @device_status::8,
-        @knx_indv_addr::16,
-        @project_installation_id::16,
-        @serial::48,
-        @multicast_addr::32,
-        @mac_addr::48,
-        @friendly_name::8*30,
-        # DIB Supported Service Families ----------------------------
-        structure_length(:dib_supp_svc_families)::8,
-        description_type_code(:supp_svc_families)::8,
-        service_family_id(:core)::8,
-        protocol_version(:core)::8,
-        service_family_id(:device_management)::8,
-        protocol_version(:device_management)::8,
-        service_family_id(:tunnelling)::8,
-        protocol_version(:tunnelling)::8
-      >>)
-
-      assert [
-               {:ip, :transmit,
-                {@ets_discovery_endpoint,
-                 <<
-                   # Header ----------------------------------------------------
-                   structure_length(:header)::8,
-                   protocol_version(:knxnetip)::8,
-                   service_family_id(:core)::8,
-                   service_type_id(:search_resp)::8,
-                   @total_length_search_resp::16,
-                   # HPAI ------------------------------------------------------
-                   structure_length(:hpai)::8,
-                   protocol_code(:udp)::8,
-                   @ip_interface_ip::32,
-                   @ip_interface_port::16,
-                   # DIB Device Info -------------------------------------------
-                   structure_length(:dib_device_info)::8,
-                   description_type_code(:device_info)::8,
-                   @knx_medium::8,
-                   @device_status::8,
-                   @knx_indv_addr::16,
-                   @project_installation_id::16,
-                   @serial::48,
-                   @multicast_addr::32,
-                   @mac_addr::48,
-                   @friendly_name::8*30,
-                   # DIB Supported Service Families ----------------------------
-                   structure_length(:dib_supp_svc_families)::8,
-                   description_type_code(:supp_svc_families)::8,
-                   service_family_id(:core)::8,
-                   protocol_version(:core)::8,
-                   service_family_id(:device_management)::8,
-                   protocol_version(:device_management)::8,
-                   service_family_id(:tunnelling)::8,
-                   protocol_version(:tunnelling)::8
-                 >>}}
-             ] =
+      assert {%S{},
+              [
+                {:ip, :transmit,
+                 {@ets_discovery_endpoint,
+                  <<
+                    # Header ---------------
+                    structure_length(:header)::8,
+                    protocol_version(:knxnetip)::8,
+                    service_family_id(:core)::8,
+                    service_type_id(:search_resp)::8,
+                    @total_length_search_resp::16,
+                    # HPAI ---------------
+                    structure_length(:hpai)::8,
+                    protocol_code(:udp)::8,
+                    @ip_interface_ip::32,
+                    @ip_interface_port::16,
+                    # DIB Device Info ---------------
+                    structure_length(:dib_device_info)::8,
+                    description_type_code(:device_info)::8,
+                    @knx_medium::8,
+                    @device_status::8,
+                    @knx_indv_addr::16,
+                    @project_installation_id::16,
+                    @serial::48,
+                    @multicast_addr::32,
+                    @mac_addr::48,
+                    @friendly_name::8*30,
+                    # DIB Supported Service Families ---------------
+                    structure_length(:dib_supp_svc_families)::8,
+                    description_type_code(:supp_svc_families)::8,
+                    service_family_id(:core)::8,
+                    protocol_version(:core)::8,
+                    service_family_id(:device_management)::8,
+                    protocol_version(:device_management)::8,
+                    service_family_id(:tunnelling)::8,
+                    protocol_version(:tunnelling)::8
+                  >>}}
+              ]} =
                Ip.handle(
                  {
                    :knip,
                    :from_ip,
                    {@ets_discovery_endpoint,
                     <<
-                      # Header --------------------------------------------------
+                      # Header ---------------
                       structure_length(:header)::8,
                       protocol_version(:knxnetip)::8,
                       service_family_id(:core)::8,
                       service_type_id(:search_req)::8,
                       Ip.get_structure_length([:header, :hpai])::16,
-                      # HPAI ----------------------------------------------------
+                      # HPAI ---------------
                       structure_length(:hpai)::8,
                       protocol_code(:udp)::8,
                       @ets_ip::32,
@@ -174,7 +143,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "description request" do
     @total_length_description_resp Ip.get_structure_length([
                                      :header,
@@ -183,61 +152,52 @@ defmodule Knx.KnxnetIp.CoreTest do
                                    ])
 
     test "successful" do
-      assert [
-               {:ip, :transmit,
-                {@ets_control_endpoint,
-                 <<
-                   # Header ----------------------------------------------------
-                   structure_length(:header)::8,
-                   protocol_version(:knxnetip)::8,
-                   service_family_id(:core)::8,
-                   service_type_id(:description_resp)::8,
-                   @total_length_description_resp::16,
-                   # DIB Device Info -------------------------------------------
-                   structure_length(:dib_device_info)::8,
-                   description_type_code(:device_info)::8,
-                   @knx_medium::8,
-                   @device_status::8,
-                   # wir muessen uns auf einheitliche abkuerzungen einigen (--> Gloassar)
-                   # einige deiner consts koennte man evtl auch noch so abkuerzen
-                   # dass es weiter gut lesbar bleibt und mehr function header in eine zeile passen
-                   # zb
-                   #  structure -> struct
-                   #  protocol -> prot
-                   #  service -> srv
-                   #  ...
-                   # ist zu diskutieren!
-                   # es gibt auch gute gruende das nicht zu tun
-                   @knx_indv_addr::16,
-                   @project_installation_id::16,
-                   @serial::48,
-                   @multicast_addr::32,
-                   @mac_addr::48,
-                   @friendly_name::8*30,
-                   # DIB Supported Service Families ----------------------------
-                   structure_length(:dib_supp_svc_families)::8,
-                   description_type_code(:supp_svc_families)::8,
-                   service_family_id(:core)::8,
-                   protocol_version(:core)::8,
-                   service_family_id(:device_management)::8,
-                   protocol_version(:device_management)::8,
-                   service_family_id(:tunnelling)::8,
-                   protocol_version(:tunnelling)::8
-                 >>}}
-             ] =
+      assert {%S{},
+              [
+                {:ip, :transmit,
+                 {@ets_control_endpoint,
+                  <<
+                    # Header ---------------
+                    structure_length(:header)::8,
+                    protocol_version(:knxnetip)::8,
+                    service_family_id(:core)::8,
+                    service_type_id(:description_resp)::8,
+                    @total_length_description_resp::16,
+                    # DIB Device Info ---------------
+                    structure_length(:dib_device_info)::8,
+                    description_type_code(:device_info)::8,
+                    @knx_medium::8,
+                    @device_status::8,
+                    @knx_indv_addr::16,
+                    @project_installation_id::16,
+                    @serial::48,
+                    @multicast_addr::32,
+                    @mac_addr::48,
+                    @friendly_name::8*30,
+                    # DIB Supported Service Families ---------------
+                    structure_length(:dib_supp_svc_families)::8,
+                    description_type_code(:supp_svc_families)::8,
+                    service_family_id(:core)::8,
+                    protocol_version(:core)::8,
+                    service_family_id(:device_management)::8,
+                    protocol_version(:device_management)::8,
+                    service_family_id(:tunnelling)::8,
+                    protocol_version(:tunnelling)::8
+                  >>}}
+              ]} =
                Ip.handle(
                  {
                    :knip,
                    :from_ip,
                    {@ets_control_endpoint,
                     <<
-                      # Header --------------------------------------------------
+                      # Header ---------------
                       structure_length(:header)::8,
                       protocol_version(:knxnetip)::8,
                       service_family_id(:core)::8,
                       service_type_id(:description_req)::8,
                       Ip.get_structure_length([:header, :hpai])::16,
-                      # HPAI ----------------------------------------------------
+                      # HPAI ---------------
                       structure_length(:hpai)::8,
                       protocol_code(:udp)::8,
                       @ets_ip::32,
@@ -249,7 +209,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "connect request" do
     @total_length_connect_resp_management Ip.get_structure_length([
                                             :header,
@@ -273,7 +233,7 @@ defmodule Knx.KnxnetIp.CoreTest do
           :from_ip,
           {@ets_control_endpoint,
            <<
-             # Header -----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:core)::8,
@@ -284,17 +244,17 @@ defmodule Knx.KnxnetIp.CoreTest do
                :hpai,
                :crd_device_mgmt_con
              ])::16,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
              @ets_port_control::16,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
              @ets_port_device_mgmt_data::16,
-             # CRI --------------------------------------------------------------
+             # CRI ---------------
              structure_length(:crd_device_mgmt_con)::8,
              con_type_code(:device_mgmt_con)::8
            >>}
@@ -313,7 +273,7 @@ defmodule Knx.KnxnetIp.CoreTest do
           :from_ip,
           {@ets_control_endpoint,
            <<
-             # Header -----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:core)::8,
@@ -324,17 +284,17 @@ defmodule Knx.KnxnetIp.CoreTest do
                :hpai,
                :crd_tunnel_con
              ])::16,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
              @ets_port_control::16,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
              @ets_port_tunnelling_data::16,
-             # CRI --------------------------------------------------------------
+             # CRI ---------------
              structure_length(:cri_tunnel_con)::8,
              con_type_code(con_type)::8,
              tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
@@ -350,21 +310,21 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    service_type_id(:connect_resp)::8,
                    @total_length_connect_resp_management::16,
-                   # Connection Header -----------------------------------------
+                   # Connection Header ---------------
                    1::8,
                    connect_response_status_code(:no_error)::8,
-                   # HPAI ------------------------------------------------------
+                   # HPAI ---------------
                    structure_length(:hpai)::8,
                    protocol_code(:udp)::8,
                    @ip_interface_ip::32,
                    @ip_interface_port::16,
-                   # CRD -------------------------------------------------------
+                   # CRD ---------------
                    structure_length(:crd_device_mgmt_con)::8,
                    con_type_code(:device_mgmt_con)::8
                  >>}},
@@ -373,15 +333,11 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
 
     test "device management, error: no_more_connections" do
-      Cache.put(:con_tab, %{
-        :free_mgmt_ids => []
-      })
-
       assert [
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
@@ -397,21 +353,21 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    service_type_id(:connect_resp)::8,
                    @total_length_connect_resp_tunnelling::16,
-                   # Connection Header -----------------------------------------
+                   # Connection Header ---------------
                    255::8,
                    connect_response_status_code(:no_error)::8,
-                   # HPAI ------------------------------------------------------
+                   # HPAI ---------------
                    structure_length(:hpai)::8,
                    protocol_code(:udp)::8,
                    @ip_interface_ip::32,
                    @ip_interface_port::16,
-                   # CRD -------------------------------------------------------
+                   # CRD ---------------
                    structure_length(:crd_tunnel_con)::8,
                    con_type_code(:tunnel_con)::8,
                    @knx_indv_addr::16
@@ -431,7 +387,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
@@ -451,7 +407,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
@@ -471,7 +427,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
@@ -487,7 +443,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "connectionstate request" do
     @total_length_connectionstate_resp Ip.get_structure_length([
                                          :header,
@@ -501,7 +457,7 @@ defmodule Knx.KnxnetIp.CoreTest do
           :from_ip,
           {@ets_control_endpoint,
            <<
-             # Header -----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:core)::8,
@@ -511,10 +467,10 @@ defmodule Knx.KnxnetIp.CoreTest do
                :connection_header_core,
                :hpai
              ])::16,
-             # Connection Header ------------------------------------------------
+             # Connection Header ---------------
              connection_id::8,
              knxnetip_constant(:reserved)::8,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
@@ -530,13 +486,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    service_type_id(:connectionstate_resp)::8,
                    @total_length_connectionstate_resp::16,
-                   # Connection Header -----------------------------------------
+                   # Connection Header ---------------
                    0::8,
                    connectionstate_response_status_code(:no_error)::8
                  >>}},
@@ -549,13 +505,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    service_type_id(:connectionstate_resp)::8,
                    @total_length_connectionstate_resp::16,
-                   # Connection Header -----------------------------------------
+                   # Connection Header ---------------
                    27::8,
                    connectionstate_response_status_code(:connection_id)::8
                  >>}}
@@ -563,7 +519,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
   describe "disconnect request" do
     @total_length_disconnect_resp Ip.get_structure_length([
                                     :header,
@@ -577,7 +533,7 @@ defmodule Knx.KnxnetIp.CoreTest do
           :from_ip,
           {@ets_control_endpoint,
            <<
-             # Header -----------------------------------------------------------
+             # Header ---------------
              structure_length(:header)::8,
              protocol_version(:knxnetip)::8,
              service_family_id(:core)::8,
@@ -587,10 +543,10 @@ defmodule Knx.KnxnetIp.CoreTest do
                :connection_header_core,
                :hpai
              ])::16,
-             # Connection Header ------------------------------------------------
+             # Connection Header ---------------
              connection_id::8,
              knxnetip_constant(:reserved)::8,
-             # HPAI -------------------------------------------------------------
+             # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
              @ets_ip::32,
@@ -606,13 +562,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:ip, :transmit,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    service_type_id(:disconnect_resp)::8,
                    @total_length_disconnect_resp::16,
-                   # Connection Header -----------------------------------------
+                   # Connection Header ---------------
                    0::8,
                    common_error_code(:no_error)::8
                  >>}},
@@ -625,7 +581,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     end
   end
 
-  # ----------------------------------------------------------------------------
+  # ---------------
 
   test("no matching handler") do
     assert [] =
@@ -633,7 +589,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                {:knip, :from_ip,
                 {@ets_control_endpoint,
                  <<
-                   # Header ----------------------------------------------------
+                   # Header ---------------
                    structure_length(:header)::8,
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
