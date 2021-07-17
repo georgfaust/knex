@@ -23,7 +23,6 @@ defmodule Knx.Stack.Tlsm.Action do
 
   def action(:a02, %S{c_addr: c_addr, r_seq: r_seq} = state, %F{} = frame) do
     {
-      # TODO wrap seq?
       %S{state | r_seq: inc(r_seq)},
       [
         {:tl, :req, %F{service: :t_ack, prio: @prio_system, dest: c_addr, seq: r_seq}},
@@ -171,7 +170,7 @@ defmodule Knx.Stack.Tlsm.Action do
 
   # ---
 
-  defp inc(seq), do: rem(seq + 1, 0xF)
+  defp inc(seq), do: rem(seq + 1, 0x10)
 
   defp recall_frame(%S{deferred_frames: [frame | deferred_frames]} = state),
     do: {[{:tlsm, :req, frame}], %S{state | deferred_frames: deferred_frames}}
