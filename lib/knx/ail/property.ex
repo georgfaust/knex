@@ -221,7 +221,7 @@ defmodule Knx.Ail.Property do
   def encode(_, :date, _), do: raise("TODO use DPT encode")
 
   def encode(pid, pdt, value) do
-    IO.inspect({pid, pdt, value}, label: :prop_decode_________________)
+    # IO.inspect({pid, pdt, value}, label: :prop_decode_________________)
     # assume unsigned integer for other pdt
     %{length: length} = @pdt_lengths[pdt]
     bit_length = 8 * length

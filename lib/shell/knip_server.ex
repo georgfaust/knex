@@ -61,20 +61,22 @@ defmodule Shell.KnipServer do
     {:noreply, handle(impulse, state)}
   end
 
-  defp handle({:ethernet, :transmit, {ep, data}}, %{socket: socket} = state) do
+  defp handle({:ip, :transmit, {ep, data}}, %{socket: socket} = state) do
     %Ep{ip_addr: ip, port: port} = ep
     # HACK -> TODO leon: immer tuple in %EP{}
-    ip = case ip do
-      {_, _, _, _} = ip -> ip
-      ip -> convert_number_to_ip(ip)
-    end
+    ip =
+      case ip do
+        {_, _, _, _} = ip -> ip
+        ip -> convert_number_to_ip(ip)
+      end
+
     :logger.info("[KS:] [>> eff] TX #{inspect({ip, port, data})}")
     :gen_udp.send(socket, ip, port, data)
     state
   end
 
-  defp  convert_number_to_ip(ip) do
+  defp convert_number_to_ip(ip) do
     use Bitwise
-    {(ip >>> 24) &&& 0xFF, (ip >>> 16) &&& 0xFF, (ip >>> 8) &&& 0xFF, ip &&& 0xFF}
+    {ip >>> 24 &&& 0xFF, ip >>> 16 &&& 0xFF, ip >>> 8 &&& 0xFF, ip &&& 0xFF}
   end
 end
