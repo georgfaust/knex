@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.Core do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
+  alias Knx.KnxnetIp.KnxnetIpParameter
   alias Knx.Ail.Device
   alias Knx.State.KnxnetIp, as: IpState
 
@@ -77,7 +77,15 @@ defmodule Knx.KnxnetIp.Core do
 
     data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
 
-    ip_frame = %{ip_frame | control_endpoint: control_endpoint, data_endpoint: data_endpoint}
+    con_knx_indv_addr =
+      KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+
+    ip_frame = %{
+      ip_frame
+      | control_endpoint: control_endpoint,
+        data_endpoint: data_endpoint,
+        con_knx_indv_addr: con_knx_indv_addr
+    }
 
     with {:ok, con_type} <- handle_cri(cri),
          {:ok, con_tab, channel_id} <- ConTab.open(con_tab, con_type, ip_frame) do
@@ -378,7 +386,7 @@ defmodule Knx.KnxnetIp.Core do
 
   defp hpai(protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
-    ip_addr = KnxnetIpParam.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
+    ip_addr = KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     <<
       structure_length(:hpai)::8,
@@ -403,13 +411,13 @@ defmodule Knx.KnxnetIp.Core do
       # TODO alternatively knx ip has to be set as knx_medium
       knx_medium_code(:tp1)::8,
       Device.get_prog_mode(device_props)::8,
-      KnxnetIpParam.get_knx_indv_addr(knxnet_ip_props)::16,
+      KnxnetIpParameter.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
       Device.get_serial(device_props)::48,
-      KnxnetIpParam.get_routing_multicast_addr(knxnet_ip_props)::32,
-      KnxnetIpParam.get_mac_addr(knxnet_ip_props)::48,
-      KnxnetIpParam.get_friendly_name(knxnet_ip_props)::8*30
+      KnxnetIpParameter.get_routing_multicast_addr(knxnet_ip_props)::32,
+      KnxnetIpParameter.get_mac_addr(knxnet_ip_props)::48,
+      KnxnetIpParameter.get_friendly_name(knxnet_ip_props)::8*30
     >>
   end
 
@@ -449,16 +457,13 @@ defmodule Knx.KnxnetIp.Core do
   Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
   '''
 
-  defp crd(%IpFrame{con_type: con_type}) do
-    props = Cache.get_obj(:knxnet_ip_parameter)
-
+  defp crd(%IpFrame{con_type: con_type, con_knx_indv_addr: con_knx_indv_addr}) do
     case con_type_code(con_type) do
       con_type_code(:device_mgmt_con) ->
         <<structure_length(:crd_device_mgmt_con)::8, con_type_code(con_type)::8>>
 
       con_type_code(:tunnel_con) ->
-        <<structure_length(:crd_tunnel_con)::8, con_type_code(con_type),
-          KnxnetIpParam.get_knx_indv_addr(props)::16>>
+        <<structure_length(:crd_tunnel_con)::8, con_type_code(con_type), con_knx_indv_addr::16>>
     end
   end
 end

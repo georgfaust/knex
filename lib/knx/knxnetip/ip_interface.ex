@@ -27,8 +27,10 @@ defmodule Knx.KnxnetIp.IpInterface do
     {%{state | knxnetip: ip_state}, impulses}
   end
 
-  def handle({:knip, :from_knx, %F{} = frame}, %S{}) do
-    Tunnelling.handle_up_frame(frame)
+  # TODO is this correct? instead of %F{}, impulse includes binary
+  def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: ip_state} = state) do
+    {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
+    {%{state | knxnetip: ip_state}, impulses}
   end
 
   def handle({:knip, queue_type, %F{} = frame}, %S{}) do
@@ -95,8 +97,12 @@ defmodule Knx.KnxnetIp.IpInterface do
     DeviceManagement.handle_body(ip_frame, body, ip_state)
   end
 
-  defp handle_body(%IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame, body) do
-    Tunnelling.handle_body(ip_frame, body)
+  defp handle_body(
+         %IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame,
+         body,
+         %IpState{} = ip_state
+       ) do
+    Tunnelling.handle_body(ip_frame, body, ip_state)
   end
 
   defp handle_body(%IpFrame{service_family_id: service_family_id(:routing)} = ip_frame, body) do

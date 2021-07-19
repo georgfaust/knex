@@ -6,7 +6,8 @@ defmodule Knx.State.GoServer do
 end
 
 defmodule Knx.State.KnxnetIp do
-  defstruct con_tab: %{}
+  defstruct con_tab: %{},
+            tunnelling_state: :idle
 end
 
 defmodule Knx.State do

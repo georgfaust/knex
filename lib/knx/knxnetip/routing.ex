@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.DataCemiFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
+  alias Knx.KnxnetIp.KnxnetIpParameter
   alias Knx.Frame, as: F
   alias Knx.KnxnetIp.LeakyBucket
 
@@ -36,7 +36,7 @@ defmodule Knx.KnxnetIp.Routing do
          ) do
       :queue_overflow ->
         {new_props, number_of_lost_messages} =
-          KnxnetIpParam.increment_queue_overflow_to_knx(Cache.get_obj(:knxnet_ip_parameter))
+          KnxnetIpParameter.increment_queue_overflow_to_knx(Cache.get_obj(:knxnet_ip_parameter))
 
         Cache.put_obj(:knxnet_ip_parameter, new_props)
         [routing_lost_message(number_of_lost_messages)]
@@ -125,7 +125,7 @@ defmodule Knx.KnxnetIp.Routing do
     cemi_frame = DataCemiFrame.encode(:req, cemi_frame)
     header_len = Ip.get_structure_length([:header]) + byte_size(cemi_frame)
     frame = Ip.header(service_type_id(:routing_ind), header_len) <> cemi_frame
-    {:ethernet, :transmit, {dest_endpoint, frame}}
+    {:ip, :transmit, {dest_endpoint, frame}}
   end
 
   '''
@@ -147,12 +147,12 @@ defmodule Knx.KnxnetIp.Routing do
       ) <>
         <<
           structure_length(:busy_info)::8,
-          KnxnetIpParam.get_device_state(props)::8,
-          KnxnetIpParam.get_busy_wait_time(props)::16,
+          KnxnetIpParameter.get_device_state(props)::8,
+          KnxnetIpParameter.get_busy_wait_time(props)::16,
           0x0000::16
         >>
 
-    {:ethernet, :transmit, {dest_endpoint, frame}}
+    {:ip, :transmit, {dest_endpoint, frame}}
   end
 
   '''
@@ -172,11 +172,11 @@ defmodule Knx.KnxnetIp.Routing do
       ) <>
         <<
           structure_length(:lost_message_info)::8,
-          KnxnetIpParam.get_device_state(Cache.get_obj(:knxnet_ip_parameter))::8,
+          KnxnetIpParameter.get_device_state(Cache.get_obj(:knxnet_ip_parameter))::8,
           number_of_lost_messages::16
         >>
 
-    {:ethernet, :transmit, {get_multicast_endpoint(), frame}}
+    {:ip, :transmit, {get_multicast_endpoint(), frame}}
   end
 
   # ----------------------------------------------------------------------------
@@ -185,7 +185,7 @@ defmodule Knx.KnxnetIp.Routing do
   defp get_multicast_endpoint() do
     %Ep{
       protocol_code: protocol_code(:udp),
-      ip_addr: KnxnetIpParam.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)),
+      ip_addr: KnxnetIpParameter.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)),
       port: 3671
     }
   end

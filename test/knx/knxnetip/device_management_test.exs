@@ -84,7 +84,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                                                     ]) + 8
 
     def receive_device_configuration_req_m_propread(
-          %S{} = status,
+          %S{} = state,
           connection_id: connection_id,
           cemi_message_type: cemi_message_type,
           pid: pid,
@@ -121,7 +121,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
            >> <>
              <<data::bits>>}
         },
-        status
+        state
       )
     end
 

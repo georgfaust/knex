@@ -64,6 +64,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     con_type: :device_mgmt_con,
     dest_control_endpoint: @ets_control_endpoint,
     dest_data_endpoint: @ets_device_mgmt_data_endpoint,
+    con_knx_indv_addr: @knx_indv_addr,
     client_seq_counter: 0,
     server_seq_counter: 0
   }
@@ -73,6 +74,7 @@ defmodule Knx.KnxnetIp.CoreTest do
     con_type: :tunnel_con,
     dest_control_endpoint: @ets_control_endpoint,
     dest_data_endpoint: @ets_tunnelling_data_endpoint,
+    con_knx_indv_addr: @knx_indv_addr,
     client_seq_counter: 0,
     server_seq_counter: 0
   }
@@ -84,12 +86,14 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   @con_tab_0 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => @con_mgmt
   }
 
   @con_tab_1 %{
     :free_ids => @list_2_255,
+    :tunnel_cons => %{@knx_indv_addr => 1},
     :tunnel_cons_left => 0,
     0 => @con_mgmt,
     1 => @con_tunnel
@@ -266,7 +270,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                                           ])
     @total_length_connect_resp_error structure_length(:header) + 1
 
-    def receive_connect_req_device_management(%S{} = status) do
+    def receive_connect_req_device_management(%S{} = state) do
       Ip.handle(
         {
           :knip,
@@ -299,12 +303,12 @@ defmodule Knx.KnxnetIp.CoreTest do
              con_type_code(:device_mgmt_con)::8
            >>}
         },
-        status
+        state
       )
     end
 
     def receive_connect_req_tunnelling(
-          %S{} = status,
+          %S{} = state,
           con_type: con_type,
           tunnelling_knx_layer: tunnelling_knx_layer
         ) do
@@ -342,7 +346,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              knxnetip_constant(:reserved)::8
            >>}
         },
-        status
+        state
       )
     end
 

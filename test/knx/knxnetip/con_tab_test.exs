@@ -6,6 +6,8 @@ defmodule Knx.KnxnetIp.ConTabTest do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
 
+  @knx_indv_addr 0x11FF
+
   @control_endpoint %Ep{ip_addr: 0xC0A8_B23E, port: 0x0E75}
   @data_endpoint %Ep{ip_addr: 0xC0A8_B23E, port: 0x0E76}
 
@@ -27,18 +29,21 @@ defmodule Knx.KnxnetIp.ConTabTest do
     con_type: :tunnel_con,
     dest_control_endpoint: @control_endpoint,
     dest_data_endpoint: @data_endpoint,
+    con_knx_indv_addr: @knx_indv_addr,
     client_seq_counter: 0,
     server_seq_counter: 0
   }
 
   @con_tab_0 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => @con_mgmt
   }
 
   @con_tab_1 %{
     :free_ids => @list_2_255,
+    :tunnel_cons => %{@knx_indv_addr => 1},
     :tunnel_cons_left => 0,
     0 => @con_mgmt,
     1 => @con_tunnel
@@ -46,27 +51,41 @@ defmodule Knx.KnxnetIp.ConTabTest do
 
   @con_tab_0_client_seq_1 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => %C{@con_mgmt | client_seq_counter: 1}
   }
 
   @con_tab_0_client_seq_255 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => %C{@con_mgmt | client_seq_counter: 255}
   }
 
   @con_tab_0_server_seq_1 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => %C{@con_mgmt | server_seq_counter: 1}
   }
 
   @con_tab_0_server_seq_255 %{
     :free_ids => @list_1_255,
+    :tunnel_cons => %{},
     :tunnel_cons_left => 1,
     0 => %C{@con_mgmt | server_seq_counter: 255}
   }
+
+  # @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+  # setup do
+  #   Cache.start_link(%{
+  #     objects: [knxnet_ip_parameter: @knxnet_ip_parameter_object]
+  #   })
+
+  #   :timer.sleep(5)
+  #   :ok
+  # end
 
   test "open: device management connection" do
     assert {:ok, @con_tab_0, 0} =
@@ -97,7 +116,8 @@ defmodule Knx.KnxnetIp.ConTabTest do
                :tunnel_con,
                %IpFrame{
                  control_endpoint: @control_endpoint,
-                 data_endpoint: @data_endpoint
+                 data_endpoint: @data_endpoint,
+                 con_knx_indv_addr: @knx_indv_addr
                }
              )
 
@@ -107,7 +127,8 @@ defmodule Knx.KnxnetIp.ConTabTest do
                :tunnel_con,
                %IpFrame{
                  control_endpoint: @control_endpoint,
-                 data_endpoint: @data_endpoint
+                 data_endpoint: @data_endpoint,
+                 con_knx_indv_addr: @knx_indv_addr
                }
              )
   end

@@ -17,6 +17,7 @@ defmodule Knx.KnxnetIp.ConTab do
           con_type: con_type,
           dest_control_endpoint: ip_frame.control_endpoint,
           dest_data_endpoint: ip_frame.data_endpoint,
+          con_knx_indv_addr: ip_frame.con_knx_indv_addr,
           client_seq_counter: 0,
           server_seq_counter: 0
         }
@@ -26,7 +27,12 @@ defmodule Knx.KnxnetIp.ConTab do
 
         con_tab =
           if con_type == :tunnel_con do
-            %{con_tab | tunnel_cons_left: tunnel_cons_left - 1}
+            %{
+              con_tab
+              | tunnel_cons:
+                  Map.put_new(con_tab[:tunnel_cons], ip_frame.con_knx_indv_addr, free_id),
+                tunnel_cons_left: tunnel_cons_left - 1
+            }
           else
             con_tab
           end
@@ -38,6 +44,7 @@ defmodule Knx.KnxnetIp.ConTab do
   def open(%{} = con_tab, con_type, %IpFrame{} = ip_frame) do
     # initialize map on first call
     con_tab = Map.put_new(con_tab, :free_ids, Enum.to_list(0..255))
+    con_tab = Map.put_new(con_tab, :tunnel_cons, %{})
     # limit number of simultaneous tunnelling connections
     con_tab = Map.put_new(con_tab, :tunnel_cons_left, 1)
 
@@ -49,12 +56,18 @@ defmodule Knx.KnxnetIp.ConTab do
       {nil, _} ->
         {:error, :connection_id}
 
-      {%C{con_type: con_type}, %{tunnel_cons_left: tunnel_cons_left} = con_tab} ->
+      {%C{con_type: con_type, con_knx_indv_addr: con_knx_indv_addr},
+       %{tunnel_cons_left: tunnel_cons_left} = con_tab} ->
         con_tab = Map.put(con_tab, :free_ids, [id | con_tab[:free_ids]])
+
 
         con_tab =
           if con_type == :tunnel_con do
-            %{con_tab | tunnel_cons_left: tunnel_cons_left + 1}
+            %{
+              con_tab
+              | tunnel_cons: Map.delete(con_tab[:tunnel_cons], con_knx_indv_addr),
+                tunnel_cons_left: tunnel_cons_left + 1
+            }
           else
             con_tab
           end

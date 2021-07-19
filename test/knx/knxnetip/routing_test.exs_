@@ -104,7 +104,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       })
 
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@multicast_endpoint,
                  <<
                    # Header ---------------
@@ -130,7 +130,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       })
 
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@router_endpoint,
                  <<
                    # Header ---------------
@@ -157,7 +157,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       })
 
       assert [
-               {:ethernet, :transmit,
+               {:ip, :transmit,
                 {@multicast_endpoint,
                  <<
                    # Header ---------------
