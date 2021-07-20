@@ -36,7 +36,7 @@ defmodule Knx.Ail.PropertyTest do
   ]
 
   describe "load controls" do
-    @interface_prog_props Knx.Ail.InterfaceProg.get_props(@ref_interface_prog, 1)
+    @interface_prog_props Knx.Ail.InterfaceProg.get_props(0, 1)
     @tag :current
     test "unload interface prog (this is the first load control ETS calls)" do
       Cache.start_link(%{
@@ -44,7 +44,7 @@ defmodule Knx.Ail.PropertyTest do
         mem: <<1>>
       })
 
-      assert {:ok, props, %{values: [load_state(:unloaded)]}, _} =
+      assert {:ok, _props, %{values: [load_state(:unloaded)]}, _} =
                P.write_prop(
                  @interface_prog_o_idx,
                  @interface_prog_props,

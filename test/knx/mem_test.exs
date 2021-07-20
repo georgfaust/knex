@@ -7,8 +7,6 @@ defmodule MemTest do
 
   @mem1 <<0::64>>
   @mem2 <<0::128>>
-  @table_size 4
-  @table_data <<1::16, 2::16, 3::16, 4::16>>
 
   setup do
     Cache.start_link(%{})
