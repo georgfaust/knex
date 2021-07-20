@@ -87,9 +87,8 @@ defmodule Knx.Ail.IoServer do
   defp serve(props, access_lvl, %F{apci: :prop_write, data: [o_idx, pid, elems, start, data]} = f) do
     {props, apdu, impulses} =
       case P.write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
-        {:ok, props, %P{id: id}, impulses} ->
-          {props, [o_idx, id, elems, start, data], impulses}
-
+        {:ok, props, %P{id: id, values: values, pdt: pdt}, impulses} ->
+          {props, [o_idx, id, elems, start, P.encode_list(pid, pdt, values)], impulses}
         {:error, _reason} ->
           {nil, [o_idx, pid, 0, start, <<>>], []}
       end

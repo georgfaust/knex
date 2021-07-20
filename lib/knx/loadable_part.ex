@@ -48,7 +48,8 @@ defmodule Knx.LoadablePart do
             nil
 
           {:alc_data_rel_alloc, [_req_mem_size, _mode, _fill]} ->
-            raise("additional_load_control alc_data_rel_alloc not implemented")
+            # TODO additional_load_control alc_data_rel_alloc not implemented"
+            nil
 
           additional_load_control ->
             raise("unknown additional_load_control: #{inspect(additional_load_control)}")

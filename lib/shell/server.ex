@@ -118,7 +118,8 @@ defmodule Shell.Server do
           # TODO API Server braucht das!
           mgmt: fn effect -> log_effect(:mgmt, effect) end,
           app: fn effect -> log_effect(:app, effect) end,
-          logger: fn effect -> log_effect(:logger, effect) end
+          logger: fn effect -> log_effect(:logger, effect) end,
+          control: fn effect -> log_effect(:control, effect) end
         },
         target
       )
@@ -127,7 +128,7 @@ defmodule Shell.Server do
   end
 
   defp log_effect(mod, effect) do
-    if mod in [:logger, :app, :mgmt] do
+    if mod in [:logger, :app, :control] do
       :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
     end
   end

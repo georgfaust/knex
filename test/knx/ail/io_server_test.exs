@@ -138,6 +138,7 @@ defmodule Knx.Ail.IoServerTest do
   end
 
   describe "responds to prop_write" do
+    @tag :cur
     test "(valid pid) with a prop_resp" do
       assert {%S{}, [{:al, :req, %F{apci: :prop_resp, data: @manu_prop_write_resp}}]} =
                IoServer.handle(

@@ -4,6 +4,14 @@ defmodule Knx.Ail.Property do
 
   # TODO darf nicht ueber ende der liste lesen!
 
+  defstruct id: nil,
+            pdt: nil,
+            values: [],
+            max: 1,
+            write: false,
+            r_lvl: 3,
+            w_lvl: 0
+
   @pdt_lengths %{
     ctrl: %{length: 1, write_length: 10},
     char: %{length: 1},
@@ -57,14 +65,6 @@ defmodule Knx.Ail.Property do
     escape: %{length: 3}
   }
 
-  defstruct id: nil,
-            pdt: nil,
-            values: [],
-            max: 1,
-            write: false,
-            r_lvl: 3,
-            w_lvl: 0
-
   import Knx.Toolbox
 
   @me __MODULE__
@@ -82,11 +82,13 @@ defmodule Knx.Ail.Property do
   end
 
   def write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
+
     with {:ok, prop_index, _, %@me{pdt: pdt_atom} = prop} <- get_prop(props, pid),
          :ok <- validate(start - 1 + elems <= prop.max, :array_index_out_of_bounds),
          :ok <- authorize(access_lvl, prop.w_lvl),
          values <- decode_into_list(pid, pdt_atom, data),
-         {:ok, %@me{} = prop, impulses} <- write_prop_({o_idx, pdt_atom, pid}, prop, elems, start, values) do
+         {:ok, %@me{} = prop, impulses} <-
+           write_prop_({o_idx, pdt_atom, pid}, prop, elems, start, values) do
       props = List.replace_at(props, prop_index, prop)
       {:ok, props, prop, impulses}
     end
@@ -124,7 +126,9 @@ defmodule Knx.Ail.Property do
   end
 
   def write_prop_value(props, pid, data) do
-    {:ok, props, _, _} = write_prop(nil, props, 0, pid: prop_id(pid), elems: 1, start: 1, data: data)
+    {:ok, props, _, _} =
+      write_prop(nil, props, 0, pid: prop_id(pid), elems: 1, start: 1, data: data)
+
     props
   end
 
@@ -142,10 +146,10 @@ defmodule Knx.Ail.Property do
 
   defp write_prop_({o_idx, pdt, pid}, prop, 1, 1, data)
        when pdt in [:ctrl, :function] do
-
     case Knx.Ail.PropertyFunction.handle(o_idx, pid, prop, data) do
       {:ok, result, impulses} ->
         {:ok, %{prop | values: result}, impulses}
+
       {:error, result} ->
         {:ok, %{prop | values: result}, []}
     end

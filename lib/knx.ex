@@ -29,7 +29,8 @@ defmodule Knx do
           driver: &append_effect/2,
           mgmt: &append_effect/2,
           logger: &append_effect/2,
-          app: &append_effect/2
+          app: &append_effect/2,
+          control: &append_effect/2
         },
         target
       )

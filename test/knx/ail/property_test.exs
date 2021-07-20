@@ -11,11 +11,14 @@ defmodule Knx.Ail.PropertyTest do
   @pid2 102
   @ptd 0x11
 
+  @access_level_all 0
+  @interface_prog_o_idx 5
+
   # @noop 0
   @start_loading 1
   @load_completed 2
   # @additional_lc 3
-  # @unload 4
+  @unload 4
 
   # @alc_data_rel_alloc 0xB
 
@@ -33,11 +36,33 @@ defmodule Knx.Ail.PropertyTest do
   ]
 
   describe "load controls" do
+    @interface_prog_props Knx.Ail.InterfaceProg.get_props(@ref_interface_prog, 1)
+    @tag :current
+    test "unload interface prog (this is the first load control ETS calls)" do
+      Cache.start_link(%{
+        objects: [interface_prog: nil],
+        mem: <<1>>
+      })
+
+      assert {:ok, props, %{values: [load_state(:unloaded)]}, _} =
+               P.write_prop(
+                 @interface_prog_o_idx,
+                 @interface_prog_props,
+                 @access_level_all,
+                 pid: prop_id(:load_state_ctrl),
+                 elems: 1,
+                 start: 1,
+                 data: <<@unload::8, 0::unit(8)-9>>
+               )
+    end
+
     @addr_tab_mem_ref 4
     test "load address table" do
       Cache.start_link(%{
         objects: [addr_tab: Helper.get_table_props(1, @addr_tab_mem_ref)],
-        mem: <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16, 0::800>>
+        mem:
+          <<0::unit(8)-size(@addr_tab_mem_ref), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16,
+            0::800>>
       })
 
       assert {:ok, props, %{values: [load_state(:loading)]}, _} =
