@@ -5,6 +5,11 @@ defmodule Knx.State.GoServer do
             transmitting: false
 end
 
+defmodule Knx.State.KnxnetIp do
+  defstruct con_tab: %{},
+            tunnelling_state: :idle
+end
+
 defmodule Knx.State do
   @derive {Inspect, only: [:addr, :c_addr, :handler]}
 
@@ -25,6 +30,8 @@ defmodule Knx.State do
             # nl
             hops: 6,
             go_server: %Knx.State.GoServer{},
+            # knxnetip
+            knxnetip: %Knx.State.KnxnetIp{},
             # shell
             driver_pid: nil,
             timer_pid: nil,

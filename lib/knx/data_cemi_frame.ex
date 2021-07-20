@@ -3,7 +3,7 @@ defmodule Knx.DataCemiFrame do
   import Knx.Defs
 
   alias Knx.Frame, as: F
-  alias Knx.KnxnetIp.KnxnetIpParameter, as: KnxnetIpParam
+  alias Knx.KnxnetIp.KnxnetIpParameter
 
   def decode(<<
         mc::8,
@@ -93,11 +93,21 @@ defmodule Knx.DataCemiFrame do
     >>
   end
 
+  # ----------------------------------------------------------------------------
+
+  def is_con?(<<cemi_message_code(:l_data_con)::8, _rest::bits>>) do
+    true
+  end
+
+  def is_con?(_) do
+    false
+  end
+
   # [XXX]
   def check_src_addr(src) do
     # TODO if multiple individual addresses will be supported, src might not be replaced
     if src == 0 do
-      KnxnetIpParam.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+      KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
     else
       src
     end

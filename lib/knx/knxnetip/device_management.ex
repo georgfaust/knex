@@ -4,6 +4,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   alias Knx.KnxnetIp.MgmtCemiFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.Ail.Property, as: P
+  alias Knx.State.KnxnetIp, as: IpState
 
   require Knx.Defs
   import Knx.Defs
@@ -32,14 +33,12 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           elems::4,
           start::12,
           data::bits
-        >>
+        >>,
+        %IpState{con_tab: con_tab} = ip_state
       ) do
-    con_tab = Cache.get(:con_tab)
-
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.client_seq_counter_equal?(con_tab, channel_id, client_seq_counter) do
       con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
-      Cache.put(:con_tab, con_tab)
 
       mgmt_cemi_frame = %MgmtCemiFrame{
         message_code: cemi_message_code,
@@ -60,11 +59,15 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           cemi: mgmt_cemi_frame
       }
 
-      [{:timer, :restart, {:ip_connection, channel_id}}, device_configuration_ack(ip_frame)] ++
-        device_configuration_req(ip_frame)
+      {%{ip_state | con_tab: con_tab},
+       [
+         {:timer, :restart, {:ip_connection, channel_id}},
+         device_configuration_ack(ip_frame)
+       ] ++
+         device_configuration_req(ip_frame, con_tab)}
     else
       # [XXXI]
-      []
+      {ip_state, []}
     end
   end
 
@@ -81,10 +84,11 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           _client_seq_counter::8,
           knxnetip_constant(:reserved)::8,
           cemi_message_code(:m_reset_req)::8
-        >>
+        >>,
+        %IpState{} = ip_state
       ) do
     # TODO trigger device restart
-    []
+    {ip_state, []}
   end
 
   '''
@@ -100,26 +104,26 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           channel_id::8,
           server_seq_counter::8,
           _status_code::8
-        >>
+        >>,
+        %IpState{con_tab: con_tab} = ip_state
       ) do
-    con_tab = Cache.get(:con_tab)
-
     if ConTab.is_open?(con_tab, channel_id) &&
          ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
-      Cache.put(:con_tab, ConTab.increment_server_seq_counter(con_tab, channel_id))
+      con_tab = ConTab.increment_server_seq_counter(con_tab, channel_id)
 
-      [
-        {:timer, :restart, {:ip_connection, channel_id}},
-        {:timer, :stop, {:device_management_req, server_seq_counter}}
-      ]
+      {%{ip_state | con_tab: con_tab},
+       [
+         {:timer, :restart, {:ip_connection, channel_id}},
+         {:timer, :stop, {:device_management_req, server_seq_counter}}
+       ]}
     else
-      []
+      {ip_state, []}
     end
   end
 
-  def handle_body(_ip_frame, _frame) do
+  def handle_body(_ip_frame, _frame, %IpState{} = ip_state) do
     warning(:no_matching_handler)
-    []
+    {ip_state, []}
   end
 
   # ----------------------------------------------------------------------------
@@ -135,7 +139,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
          channel_id: channel_id,
          data_endpoint: data_endpoint,
          cemi: received_cemi_frame
-       }) do
+       }, con_tab) do
     case mgmt_cemi_frame(received_cemi_frame) do
       :no_reply ->
         []
@@ -149,17 +153,17 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           ) <>
             connection_header(
               channel_id,
-              ConTab.get_server_seq_counter(Cache.get(:con_tab), channel_id),
+              ConTab.get_server_seq_counter(con_tab, channel_id),
               knxnetip_constant(:reserved)
             ) <>
             conf_cemi_frame
 
         [
-          {:ethernet, :transmit, {data_endpoint, conf_frame}},
+          {:ip, :transmit, {data_endpoint, conf_frame}},
           # TODO set device_configuration_request_timeout = 10s
           {:timer, :start,
            {:device_management_req,
-            ConTab.get_server_seq_counter(Cache.get(:con_tab), channel_id)}}
+            ConTab.get_server_seq_counter(con_tab, channel_id)}}
         ]
     end
   end
@@ -187,7 +191,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           status_code
         )
 
-    {:ethernet, :transmit, {data_endpoint, frame}}
+    {:ip, :transmit, {data_endpoint, frame}}
   end
 
   # ----------------------------------------------------------------------------

@@ -5,6 +5,7 @@ defmodule Knx.KnxnetIp.IpInterface do
   alias Knx.KnxnetIp.Routing
   alias Knx.KnxnetIp.IpFrame
   alias Knx.State, as: S
+  alias Knx.State.KnxnetIp, as: IpState
   alias Knx.Frame, as: F
 
   import PureLogger
@@ -15,16 +16,21 @@ defmodule Knx.KnxnetIp.IpInterface do
   def handle(
         {:knip, :from_ip,
          {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>>}},
-        %S{}
+        %S{knxnetip: ip_state} = state
       ) do
-    %IpFrame{ip_src_endpoint: ip_src_endpoint}
-    |> handle_header(header)
-    |> check_length(body)
-    |> handle_body(body)
+    {ip_state, impulses} =
+      %IpFrame{ip_src_endpoint: ip_src_endpoint}
+      |> handle_header(header)
+      |> check_length(body)
+      |> handle_body(body, ip_state)
+
+    {%{state | knxnetip: ip_state}, impulses}
   end
 
-  def handle({:knip, :from_knx, %F{} = frame}, %S{}) do
-    Tunnelling.handle_up_frame(frame)
+  # TODO is this correct? instead of %F{}, impulse includes binary
+  def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: ip_state} = state) do
+    {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
+    {%{state | knxnetip: ip_state}, impulses}
   end
 
   def handle({:knip, queue_type, %F{} = frame}, %S{}) do
@@ -75,19 +81,28 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
-  defp handle_body(%IpFrame{service_family_id: service_family_id(:core)} = ip_frame, body) do
-    Core.handle_body(ip_frame, body)
+  defp handle_body(
+         %IpFrame{service_family_id: service_family_id(:core)} = ip_frame,
+         body,
+         %IpState{} = ip_state
+       ) do
+    Core.handle_body(ip_frame, body, ip_state)
   end
 
   defp handle_body(
          %IpFrame{service_family_id: service_family_id(:device_management)} = ip_frame,
-         body
+         body,
+         %IpState{} = ip_state
        ) do
-    DeviceManagement.handle_body(ip_frame, body)
+    DeviceManagement.handle_body(ip_frame, body, ip_state)
   end
 
-  defp handle_body(%IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame, body) do
-    Tunnelling.handle_body(ip_frame, body)
+  defp handle_body(
+         %IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame,
+         body,
+         %IpState{} = ip_state
+       ) do
+    Tunnelling.handle_body(ip_frame, body, ip_state)
   end
 
   defp handle_body(%IpFrame{service_family_id: service_family_id(:routing)} = ip_frame, body) do

@@ -1,7 +1,11 @@
 defmodule Knx.Ail.AssocTab do
-  alias Knx.Mem
+  use Knx.LoadablePart, object_type: :assoc_tab, mem_size: 100, unloaded_mem: [0]
 
-  def get_object_type(), do: :assoc_tab
+  @impl true
+  def decode(mem) do
+    table = Knx.Ail.Table.get_table_bytes(mem, 4)
+    for(<<tsap::16, asap::16 <- table>>, do: {tsap, asap})
+  end
 
   def get_assocs(asap: asap) do
     assoc_tab = Cache.get(:assoc_tab)
@@ -12,17 +16,4 @@ defmodule Knx.Ail.AssocTab do
     assoc_tab = Cache.get(:assoc_tab)
     Enum.filter(assoc_tab, fn {tsap_, _} -> tsap_ == tsap end)
   end
-
-  def load(ref) do
-    case Mem.read_table(ref, 4) do
-      {:ok, _, table} ->
-        table = for(<<tsap::16, asap::16 <- table>>, do: {tsap, asap})
-        {:ok, Cache.put(:assoc_tab, table)}
-
-      error ->
-        error
-    end
-  end
-
-  def unload(), do: {:ok, Cache.put(:assoc_tab, [0])}
 end

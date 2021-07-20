@@ -45,9 +45,10 @@ defmodule Shell.Server do
 
     state = S.update_from_device_props(%S{}, objects[:device])
 
-    Knx.Ail.Table.load(Knx.Ail.AddrTab)
-    Knx.Ail.Table.load(Knx.Ail.AssocTab)
-    Knx.Ail.Table.load(Knx.Ail.GoTab)
+    {:ok, _} = Knx.Ail.AddrTab.load()
+    {:ok, _} = Knx.Ail.AssocTab.load()
+    {:ok, _} = Knx.Ail.GoTab.load()
+    {:ok, _} = Knx.Ail.AppProg.load()
 
     :logger.info("[D: #{Process.get(:cache_id)}] NEW. addr: #{state.addr}")
     :logger.debug("[D: #{Process.get(:cache_id)}] addr_tab: #{inspect(Cache.get(:addr_tab))}")

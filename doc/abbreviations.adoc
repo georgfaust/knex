@@ -62,7 +62,13 @@ tunnel:: tunnelling
 
 
 === Proposels
+
+[horizontal]
+srv:: service
+
 [horizontal]
 .KNeXnet/IP
 ep:: endpoint
+struct:: structure
+prot:: protocol         
 

@@ -9,7 +9,6 @@ defmodule MemTest do
   @mem2 <<0::128>>
   @table_size 4
   @table_data <<1::16, 2::16, 3::16, 4::16>>
-  @table_mem <<0::24, @table_size::16, @table_data::bits>>
 
   setup do
     Cache.start_link(%{})
@@ -99,8 +98,5 @@ defmodule MemTest do
     end
   end
 
-  test "read_table" do
-    Cache.put(:mem, @table_mem)
-    assert {:ok, @table_size, @table_data} == Mem.read_table(3, 2)
-  end
+
 end
