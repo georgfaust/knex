@@ -29,7 +29,7 @@ defmodule Knx.Stack.Tlsm do
 
     # TODO check closed entry and delete stored and deferred, seqs should be handled by actions!?
 
-    :logger.info("[D: #{Process.get(:cache_id)}] (#{handler}) --[#{event}/#{action}]--> (#{new_handler}) -- #{inspect Map.take(state, [:r_seq, :s_seq])}")
+    :logger.debug("[D: #{Process.get(:cache_id)}] (#{handler}) --[#{event}/#{action}]--> (#{new_handler}) -- #{inspect Map.take(state, [:r_seq, :s_seq])}")
 
     Action.action(action, %S{state | handler: new_handler}, frame)
   end

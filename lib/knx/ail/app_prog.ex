@@ -8,14 +8,16 @@ defmodule Knx.Ail.AppProg do
     P.read_prop_value(props, :table_reference)
   end
 
-  def get_table_props(mem_ref, program_version) do
+  def get_props(type, mem_ref, program_version) do
     [
-      P.new(:object_type, [object_type(:app_prog)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:object_type, [object_type(type)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:program_version, [program_version], max: 1, write: false, r_lvl: 3, w_lvl: 0)
+      P.new(:prog_version, [program_version], max: 1, write: false, r_lvl: 3, w_lvl: 0)
       # not mandatory -- aber sinnvoll um dl-zeit zu reduzieren
       # Memory Control Table  27 = PID_MCB_TABLE  PDT_GENERIC_08[]
     ]
   end
+
+  def unload(), do: {:ok, [0]}
 end

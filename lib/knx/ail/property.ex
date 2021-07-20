@@ -143,8 +143,11 @@ defmodule Knx.Ail.Property do
   defp write_prop_({o_idx, pdt, pid}, prop, 1, 1, data)
        when pdt in [:ctrl, :function] do
     case Knx.Ail.PropertyFunction.handle(o_idx, pid, prop, data) do
-      {:ok, result} -> {:ok, %{prop | values: result}}
-      {:error, result} -> {:ok, %{prop | values: result}}
+      {:ok, result} ->
+        :logger.info("PropertyFunction exec. #{inspect {o_idx, pid, prop, data}} -> {:ok, #{inspect result}}")
+        {:ok, %{prop | values: result}}
+      {:error, result} ->
+        {:ok, %{prop | values: result}}
     end
   end
 

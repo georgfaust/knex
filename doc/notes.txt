@@ -4,6 +4,8 @@ problem trennen in de/encode und namen
 
 ## de/encode
 
+-- interface object index -- wo ist definiert auf welchem index die IO liegen muessen? ETS geht davon aus das interface-prog auf 5 liegt.
+
 TODO:
 
     # ARRAY!

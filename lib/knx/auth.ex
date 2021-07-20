@@ -19,7 +19,7 @@ defmodule Knx.Auth do
   system manufacturer            | DevEdit/TransApp | lvl 0
 
   """
-  defstruct keys: [0, 0, 0, @anon_key],
+  defstruct keys: [0, 0, @anon_key, @anon_key],
             access_lvl: @default_lvl
 
   @me __MODULE__
