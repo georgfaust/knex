@@ -48,7 +48,6 @@ defmodule Knx.Ail.IoServerTest do
   end
 
   describe "responds to prop_desc_read" do
-    @tag :current
     test "(existing pid) with a prop_desc_resp" do
       assert {%S{}, [{:al, :req, %F{apci: :prop_desc_resp, data: @manu_prop_desc_resp}}]} =
                IoServer.handle(
@@ -85,7 +84,6 @@ defmodule Knx.Ail.IoServerTest do
                )
     end
 
-    @tag :xxx
     test "(invalid pid) with an error-prop_desc_resp" do
       assert {%S{}, [{:al, :req, %F{apci: :prop_desc_resp, data: @error_pid_prop_desc_resp}}]} =
                IoServer.handle(
@@ -98,7 +96,6 @@ defmodule Knx.Ail.IoServerTest do
                )
     end
 
-    @tag :xxx
     test "(invalid index) with an error-prop_desc_resp" do
       assert {%S{}, [{:al, :req, %F{apci: :prop_desc_resp, data: @error_idx_prop_desc_resp}}]} =
                IoServer.handle(
@@ -141,6 +138,7 @@ defmodule Knx.Ail.IoServerTest do
   end
 
   describe "responds to prop_write" do
+    @tag :cur
     test "(valid pid) with a prop_resp" do
       assert {%S{}, [{:al, :req, %F{apci: :prop_resp, data: @manu_prop_write_resp}}]} =
                IoServer.handle(

@@ -2,16 +2,24 @@ defmodule Knx.Ail.AddrTabTest do
   use ExUnit.Case
   import Knx.Ail.AddrTab
 
-  @mem <<0::unit(8)-size(4), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16>>
+  @ref_addr_tab 4
+  @mem <<0::unit(8)-size(4), 5::16, 10::16, 20::16, 30::16, 40::16, 50::16, 0::size(800)>>
   @addr_tab [-1, 10, 20, 30, 40, 50]
 
   setup do
-    Cache.start_link(%{addr_tab: @addr_tab, mem: @mem})
+    Cache.start_link(%{
+      objects: [addr_tab: Knx.Ail.Table.get_table_props(:addr_tab, @ref_addr_tab)],
+      mem: @mem
+    })
+
+    load()
+
     :ok
   end
 
   test "addr tab" do
-    assert {:ok, @addr_tab} == load(4)
+    assert {:ok, []} == load()
+    assert @addr_tab = Cache.get(:addr_tab)
   end
 
   test "get tsap" do

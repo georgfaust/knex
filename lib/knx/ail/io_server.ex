@@ -5,6 +5,9 @@ defmodule Knx.Ail.IoServer do
   alias Knx.State, as: S
   alias Knx.Frame, as: F
 
+  require Knx.Defs
+  import Knx.Defs
+
   alias Knx.Ail.Device
 
   @device_object_apcis [
@@ -23,7 +26,7 @@ defmodule Knx.Ail.IoServer do
 
   def handle({:io, :ind, %F{apci: apci} = frame}, state)
       when apci in @device_object_apcis,
-      do: load_and_serve(0, frame, state)
+      do: load_and_serve(object_type(:device), frame, state)
 
   def handle({:io, :ind, %F{data: [o_idx | _]} = frame}, state),
     do: load_and_serve(o_idx, frame, state)
@@ -33,14 +36,7 @@ defmodule Knx.Ail.IoServer do
   defp load_and_serve(o_idx, frame, %S{access_lvl: access_lvl} = state) do
     props = Cache.get_obj_idx(o_idx)
 
-    {impulses, new_props} =
-      case serve(props, access_lvl, frame) do
-        nil -> {[], props}
-        {nil, nil} -> {[], props}
-        {nil, new_props} -> {[], new_props}
-        {impulse, new_props} -> {[impulse], new_props}
-        impulse -> {[impulse], props}
-      end
+    {impulses, new_props} = serve(props, access_lvl, frame)
 
     # TODO make it not suck so much
     state =
@@ -71,7 +67,7 @@ defmodule Knx.Ail.IoServer do
           [o_idx, pid, p_idx, 0, 0, 0, 0, 0]
       end
 
-    al_req_impulse(:prop_desc_resp, f, apdu)
+    {[al_req_impulse(:prop_desc_resp, f, apdu)], props}
   end
 
   defp serve(props, access_lvl, %F{apci: :prop_read, data: [o_idx, pid, elems, start]} = f) do
@@ -81,49 +77,59 @@ defmodule Knx.Ail.IoServer do
           [o_idx, pid, elems, start, data]
 
         {:error, _reason} ->
+          :logger.warning("can't read o_idx: #{o_idx} pid: #{pid}")
           [o_idx, pid, 0, start, <<>>]
       end
 
-    al_req_impulse(:prop_resp, f, apdu)
+    {[al_req_impulse(:prop_resp, f, apdu)], props}
   end
 
   defp serve(props, access_lvl, %F{apci: :prop_write, data: [o_idx, pid, elems, start, data]} = f) do
-    {props, apdu} =
+    {props, apdu, impulses} =
       case P.write_prop(o_idx, props, access_lvl, pid: pid, elems: elems, start: start, data: data) do
-        {:ok, props, %P{id: id}} ->
-          {props, [o_idx, id, elems, start, data]}
-
+        {:ok, props, %P{id: id, values: values, pdt: pdt}, impulses} ->
+          {props, [o_idx, id, elems, start, P.encode_list(pid, pdt, values)], impulses}
         {:error, _reason} ->
-          {nil, [o_idx, pid, 0, start, <<>>]}
+          {nil, [o_idx, pid, 0, start, <<>>], []}
       end
 
-    {al_req_impulse(:prop_resp, f, apdu), props}
+    {impulses ++ [al_req_impulse(:prop_resp, f, apdu)], props}
   end
 
   defp serve(props, _, %F{apci: :ind_addr_write, data: [address]}) do
-    props = if Device.prog_mode?(props), do: Device.set_address(props, address)
-    {nil, props}
+    props = if Device.prog_mode?(props), do: Device.set_address(props, address), else: props
+    {[], props}
   end
 
   defp serve(props, _, %F{apci: :ind_addr_read} = f) do
-    if Device.prog_mode?(props), do: al_req_impulse(:ind_addr_resp, f)
+    impulses = if Device.prog_mode?(props), do: [al_req_impulse(:ind_addr_resp, f)], else: []
+    {impulses, props}
   end
 
   defp serve(props, _, %F{apci: :ind_addr_serial_write, data: [serial, address]}) do
-    props = if Device.serial_matches?(props, serial), do: Device.set_address(props, address)
-    {nil, props}
+    props =
+      if Device.serial_matches?(props, serial),
+        do: Device.set_address(props, address),
+        else: props
+
+    {[], props}
   end
 
   defp serve(props, _, %F{apci: :ind_addr_serial_read, data: [serial]} = f) do
-    if Device.serial_matches?(props, serial) do
-      # domain address is only relevant for open media, set to 0 for TP
-      domain_address = 0
-      al_req_impulse(:ind_addr_serial_resp, f, [serial, domain_address])
-    end
+    impulses =
+      if Device.serial_matches?(props, serial) do
+        # domain address is only relevant for open media, set to 0 for TP
+        domain_address = 0
+        [al_req_impulse(:ind_addr_serial_resp, f, [serial, domain_address])]
+      else
+        []
+      end
+
+    {impulses, props}
   end
 
   defp serve(props, _, %F{apci: :device_desc_read, data: [0 = desc_type]} = f) do
-    al_req_impulse(:device_desc_resp, f, [desc_type, <<Device.get_desc(props)::16>>])
+    {[al_req_impulse(:device_desc_resp, f, [desc_type, <<Device.get_desc(props)::16>>])], props}
   end
 
   defp serve(_props, _, %F{apci: :device_desc_read, service: _service, data: [_desc_type]}) do

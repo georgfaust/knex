@@ -17,8 +17,9 @@ defmodule Knx.Auth do
   configuration                  | ETS              | lvl 2
   product manufacturer           | DevEdit/TransApp | lvl 1
   system manufacturer            | DevEdit/TransApp | lvl 0
-
   """
+
+  # defstruct keys: [0, 0, @anon_key, @anon_key],
   defstruct keys: [0, 0, 0, @anon_key],
             access_lvl: @default_lvl
 

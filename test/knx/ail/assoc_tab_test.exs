@@ -2,6 +2,7 @@ defmodule Knx.Ail.AssocTabTest do
   use ExUnit.Case
   import Knx.Ail.AssocTab
 
+  @ref_assoc_tab 4
   @mem <<
     0::unit(8)-size(4),
     5::16,
@@ -14,7 +15,8 @@ defmodule Knx.Ail.AssocTabTest do
     3::16,
     2::16,
     1::16,
-    3::16
+    3::16,
+    0::800
   >>
 
   @assoc_tab [
@@ -25,13 +27,19 @@ defmodule Knx.Ail.AssocTabTest do
     {1, 3}
   ]
   setup do
-    Cache.start_link(%{mem: @mem})
-    load(4)
+    Cache.start_link(%{
+      objects: [assoc_tab: Knx.Ail.Table.get_table_props(:assoc_tab, @ref_assoc_tab)],
+      mem: @mem
+    })
+
+    load()
+
     :ok
   end
 
   test "load" do
-    assert {:ok, @assoc_tab} = load(4)
+    assert {:ok, []} == load()
+    assert @assoc_tab = Cache.get(:assoc_tab)
   end
 
   test "get by asap" do

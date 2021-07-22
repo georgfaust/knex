@@ -45,9 +45,10 @@ defmodule Shell.Server do
 
     state = S.update_from_device_props(%S{}, objects[:device])
 
-    Knx.Ail.Table.load(Knx.Ail.AddrTab)
-    Knx.Ail.Table.load(Knx.Ail.AssocTab)
-    Knx.Ail.Table.load(Knx.Ail.GoTab)
+    {:ok, _} = Knx.Ail.AddrTab.load()
+    {:ok, _} = Knx.Ail.AssocTab.load()
+    {:ok, _} = Knx.Ail.GoTab.load()
+    {:ok, _} = Knx.Ail.AppProg.load()
 
     :logger.info("[D: #{Process.get(:cache_id)}] NEW. addr: #{state.addr}")
     :logger.debug("[D: #{Process.get(:cache_id)}] addr_tab: #{inspect(Cache.get(:addr_tab))}")
@@ -75,7 +76,7 @@ defmodule Shell.Server do
 
   @impl GenServer
   def handle_cast({_layer, _prim, _data} = impulse, %S{} = state) do
-    :logger.info("[D: #{Process.get(:cache_id)}] [<< imp] #{inspect(impulse)}")
+    :logger.debug("[D: #{Process.get(:cache_id)}] [<< imp] #{inspect(impulse)}")
     {:noreply, handle_impulse(impulse, state)}
   end
 
@@ -111,13 +112,14 @@ defmodule Shell.Server do
         %{
           # add interface function for timer?
           # timer: fn effect -> send(timer_pid, effect) end,
-          timer: fn effect -> log_effect(effect) end,
+          timer: fn effect -> log_effect(:timer, effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
           ethernet: fn effect -> Shell.KnipServer.dispatch(effect) end,
           # TODO API Server braucht das!
-          mgmt: fn effect -> log_effect(effect) end,
-          app: fn effect -> log_effect(effect) end,
-          logger: fn effect -> log_effect(effect) end
+          mgmt: fn effect -> log_effect(:mgmt, effect) end,
+          app: fn effect -> log_effect(:app, effect) end,
+          logger: fn effect -> log_effect(:logger, effect) end,
+          control: fn effect -> log_effect(:control, effect) end
         },
         target
       )
@@ -125,7 +127,9 @@ defmodule Shell.Server do
     handle.(effect)
   end
 
-  defp log_effect(effect) do
-    :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
+  defp log_effect(mod, effect) do
+    if mod in [:logger, :app, :control] do
+      :logger.info("[D: #{Process.get(:cache_id)}] [eff >>] #{inspect(effect)}")
+    end
   end
 end

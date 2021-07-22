@@ -29,12 +29,13 @@ defmodule Knx do
           driver: &append_effect/2,
           mgmt: &append_effect/2,
           logger: &append_effect/2,
-          app: &append_effect/2
+          app: &append_effect/2,
+          control: &append_effect/2
         },
         target
       )
 
-    :logger.debug("[D: #{Process.get(:cache_id)}] #{inspect(impulse)}")
+    log_impulse(impulse)
 
     case handle.(impulse, state) do
       {%S{} = new_state, new_impulses} -> {new_state, new_impulses}
@@ -49,4 +50,10 @@ defmodule Knx do
 
   def handle_impulses(%S{pending_effects: effects} = state, []),
     do: {effects, %S{state | pending_effects: []}}
+
+  def log_impulse({mod, _, _} = impulse) do
+    if mod in [:auth, :io, :mem] do
+      :logger.info("[D: #{Process.get(:cache_id)}] #{inspect(impulse)}")
+    end
+  end
 end

@@ -22,16 +22,22 @@ defmodule Knx.Ail.GoTabTest do
   @go4 <<1::1, 0::1, 0::1, 0::1, 0::1, 1::1, 3::2, 0xFF::8>>
   @go5 <<0::1, 1::1, 0::1, 0::1, 1::1, 1::1, 0::2, 0x00::8>>
   @go6 <<1::1, 1::1, 0::1, 0::1, 1::1, 1::1, 0::2, 0x00::8>>
-  @mem <<6::16, @go1::bits, @go2::bits, @go3::bits, @go4::bits, @go5::bits, @go6::bits>>
+  @mem <<6::16, @go1::bits, @go2::bits, @go3::bits, @go4::bits, @go5::bits, @go6::bits, 0::800>>
 
   setup do
-    Cache.start_link(%{mem: @mem})
-    load(0)
+    Cache.start_link(%{
+      objects: [go_tab: Knx.Ail.Table.get_table_props(:go_tab, 0)],
+      mem: @mem
+    })
+
+    load()
+
     :ok
   end
 
   test "load" do
-    assert {:ok, @go_tab} = load(0)
+    assert {:ok, []} == load()
+    assert @go_tab = Cache.get(:go_tab)
   end
 
   test "get all any" do

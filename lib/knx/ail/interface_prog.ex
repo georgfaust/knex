@@ -1,5 +1,5 @@
-defmodule Knx.Ail.AppProg do
-  use Knx.LoadablePart, object_type: :app_prog, mem_size: 100, unloaded_mem: <<>>
+defmodule Knx.Ail.InterfaceProg do
+  use Knx.LoadablePart, object_type: :interface_prog, mem_size: 100, unloaded_mem: <<>>
 
   alias Knx.Ail.Property, as: P
   require Knx.Defs
@@ -15,7 +15,7 @@ defmodule Knx.Ail.AppProg do
 
   def get_props(mem_ref, prog_version) do
     [
-      P.new(:object_type, [object_type(:app_prog)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:object_type, [object_type(:interface_prog)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:table_reference, [mem_ref], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:prog_version, [prog_version], max: 1, write: false, r_lvl: 3, w_lvl: 0)

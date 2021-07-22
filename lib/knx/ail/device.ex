@@ -69,7 +69,7 @@ defmodule Knx.Ail.Device do
       P.new(:object_type, [object_type(:device)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:load_state_ctrl, [load_state(:unloaded)], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:serial, [serial], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:manu_id, [0xAFFE], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:manu_id, [0x0102], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:device_ctrl, [@device_ctrl], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:order_info, [order_info], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:version, [0x0001], max: 1, write: false, r_lvl: 3, w_lvl: 0),

@@ -1,8 +1,19 @@
 defmodule Knx.Ail.GoTab do
-  alias Knx.Ail.GroupObject
-  alias Knx.Mem
+  use Knx.LoadablePart, object_type: :go_tab, mem_size: 100, unloaded_mem: [0]
 
-  def get_object_type(), do: :go_tab
+  alias Knx.Ail.GroupObject
+
+  @impl true
+  def decode(mem) do
+    table = Knx.Ail.Table.get_table_bytes(mem, 2)
+
+    for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
+    |> Enum.with_index(1)
+    |> Enum.map(fn {d, i} -> {i, GroupObject.new(d, i)} end)
+    |> Enum.into(%{})
+  end
+
+  # ---
 
   def get_first(assocs, flag) do
     assocs
@@ -18,25 +29,7 @@ defmodule Knx.Ail.GoTab do
     |> Enum.filter(fn {_, go} -> go && flag_set?(go, flag) end)
   end
 
-  def load(ref) do
-    case Mem.read_table(ref, 2) do
-      {:ok, _, table} ->
-        table =
-          for(<<descriptor::16 <- table>>, do: <<descriptor::16>>)
-          |> Enum.with_index(1)
-          |> Enum.map(fn {d, i} -> {i, GroupObject.new(d, i)} end)
-          |> Enum.into(%{})
-
-        {:ok, Cache.put(:go_tab, table)}
-
-      error ->
-        error
-    end
-  end
-
-  def unload(), do: {:ok, Cache.put(:go_tab, [0])}
-
-  # -----------------------------------------------------
+  # ---
 
   defp flag_set?(_, :any), do: true
   defp flag_set?(go, flag), do: Map.get(go, flag)

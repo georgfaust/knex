@@ -183,3 +183,11 @@ XXXIII: |
   expected sequence number and not equal to one less than the expected sequence number, then the KNXnet/IP 
   Tunnelling Server shall not reply and shall discard the received frame.
   [03_08_04:2.6]
+  
+XXIXa: |
+  PID_TABLE_REFERENCE
+  If the Load State of the related Resource changes to ‘unloaded’ then the Management Server shall set the
+  value to zero. When the Management Client has successfully allocated memory then the value shall be set
+  to the absolute memory location from where the Resource will be downloaded. When memory allocation
+  is not successful then the value shall be set to zero.
+  [Resources:4.2.7]
