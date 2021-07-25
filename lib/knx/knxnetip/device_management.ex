@@ -148,21 +148,23 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         []
 
       conf_cemi_frame ->
-        conf_frame =
-          Ip.header(
-            service_type_id(:device_configuration_req),
-            Ip.get_structure_length([:header, :connection_header_device_management]) +
-              byte_size(conf_cemi_frame)
-          ) <>
-            connection_header(
-              channel_id,
-              ConTab.get_server_seq_counter(con_tab, channel_id),
-              knxnetip_constant(:reserved)
-            ) <>
-            conf_cemi_frame
+        total_length =
+          Ip.get_structure_length([:header, :connection_header_device_management]) +
+            byte_size(conf_cemi_frame)
+
+        header = Ip.header(service_type_id(:device_configuration_req), total_length)
+
+        connection_header =
+          connection_header(
+            channel_id,
+            ConTab.get_server_seq_counter(con_tab, channel_id),
+            knxnetip_constant(:reserved)
+          )
+
+        body = connection_header <> conf_cemi_frame
 
         [
-          {:ip, :transmit, {data_endpoint, conf_frame}},
+          {:ip, :transmit, {data_endpoint, header <> body}},
           # TODO set device_configuration_request_timeout = 10s
           {:timer, :start,
            {:device_management_req, ConTab.get_server_seq_counter(con_tab, channel_id)}}
@@ -182,18 +184,11 @@ defmodule Knx.KnxnetIp.DeviceManagement do
          status_code: status_code,
          data_endpoint: data_endpoint
        }) do
-    frame =
-      Ip.header(
-        service_type_id(:device_configuration_ack),
-        Ip.get_structure_length([:header, :connection_header_device_management])
-      ) <>
-        connection_header(
-          channel_id,
-          client_seq_counter,
-          status_code
-        )
+    total_length = Ip.get_structure_length([:header, :connection_header_device_management])
+    header = Ip.header(service_type_id(:device_configuration_ack), total_length)
+    body = connection_header(channel_id, client_seq_counter, status_code)
 
-    {:ip, :transmit, {data_endpoint, frame}}
+    {:ip, :transmit, {data_endpoint, header <> body}}
   end
 
   # ----------------------------------------------------------------------------

@@ -245,16 +245,16 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp search_resp(%IpFrame{discovery_endpoint: discovery_endpoint}) do
-    frame =
-      Ip.header(
-        service_type_id(:search_resp),
-        Ip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
-      ) <>
-        hpai(discovery_endpoint.protocol_code) <>
-        dib_device_information() <>
-        dib_supp_svc_families()
+    total_length =
+      Ip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
 
-    {:ip, :transmit, {discovery_endpoint, frame}}
+    header = Ip.header(service_type_id(:search_resp), total_length)
+
+    body =
+      hpai(discovery_endpoint.protocol_code) <>
+        dib_device_information() <> dib_supp_svc_families()
+
+    {:ip, :transmit, {discovery_endpoint, header <> body}}
   end
 
   '''
@@ -264,15 +264,11 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp description_resp(%IpFrame{control_endpoint: control_endpoint}) do
-    frame =
-      Ip.header(
-        service_type_id(:description_resp),
-        Ip.get_structure_length([:header, :dib_device_info, :dib_supp_svc_families])
-      ) <>
-        dib_device_information() <>
-        dib_supp_svc_families()
+    total_length = Ip.get_structure_length([:header, :dib_device_info, :dib_supp_svc_families])
+    header = Ip.header(service_type_id(:description_resp), total_length)
+    body = dib_device_information() <> dib_supp_svc_families()
 
-    {:ip, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, header <> body}}
   end
 
   '''
@@ -292,20 +288,22 @@ defmodule Knx.KnxnetIp.Core do
        ) do
     frame =
       if status_code == common_error_code(:no_error) do
-        Ip.header(
-          service_type_id(:connect_resp),
+        total_length =
           Ip.get_structure_length([:header, :connection_header_core, :hpai]) +
             crd_structure_length(con_type)
-        ) <>
+
+        header = Ip.header(service_type_id(:connect_resp), total_length)
+
+        body =
           connection_header(channel_id, status_code) <>
-          hpai(data_endpoint.protocol_code) <>
-          crd(ip_frame)
+            hpai(data_endpoint.protocol_code) <>
+            crd(ip_frame)
+
+        header <> body
       else
-        Ip.header(
-          service_type_id(:connect_resp),
-          structure_length(:header) + 1
-        ) <>
-          <<status_code::8>>
+        header = Ip.header(service_type_id(:connect_resp), structure_length(:header) + 1)
+        body = <<status_code::8>>
+        header <> body
       end
 
     {:ip, :transmit, {control_endpoint, frame}}
@@ -322,14 +320,11 @@ defmodule Knx.KnxnetIp.Core do
          channel_id: channel_id,
          status_code: status_code
        }) do
-    frame =
-      Ip.header(
-        service_type_id(:connectionstate_resp),
-        Ip.get_structure_length([:header, :connection_header_core])
-      ) <>
-        connection_header(channel_id, status_code)
+    total_length = Ip.get_structure_length([:header, :connection_header_core])
+    header = Ip.header(service_type_id(:connectionstate_resp), total_length)
+    body = connection_header(channel_id, status_code)
 
-    {:ip, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, header <> body}}
   end
 
   '''
@@ -343,14 +338,11 @@ defmodule Knx.KnxnetIp.Core do
          channel_id: channel_id,
          status_code: status_code
        }) do
-    frame =
-      Ip.header(
-        service_type_id(:disconnect_resp),
-        Ip.get_structure_length([:header, :connection_header_core])
-      ) <>
-        connection_header(channel_id, status_code)
+    total_length = Ip.get_structure_length([:header, :connection_header_core])
+    header = Ip.header(service_type_id(:disconnect_resp), total_length)
+    body = connection_header(channel_id, status_code)
 
-    {:ip, :transmit, {control_endpoint, frame}}
+    {:ip, :transmit, {control_endpoint, header <> body}}
   end
 
   '''
@@ -360,6 +352,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   # TODO to be sent when timer of associated channel runs out
+  # TODO fix
   def disconnect_req(channel_id, con_tab) do
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)

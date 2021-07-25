@@ -258,22 +258,22 @@ defmodule Knx.KnxnetIp.Tunnelling do
     channel_id = get_channel_id(con_tab)
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
 
-    frame =
-      Ip.header(
-        service_type_id(:tunnelling_req),
-        Ip.get_structure_length([
-          :header,
-          :connection_header_tunnelling
-        ]) + byte_size(data_cemi_frame)
-      ) <>
-        connection_header(
-          channel_id,
-          ConTab.get_server_seq_counter(con_tab, channel_id),
-          knxnetip_constant(:reserved)
-        ) <>
-        data_cemi_frame
+    total_length =
+      Ip.get_structure_length([:header, :connection_header_tunnelling]) +
+        byte_size(data_cemi_frame)
 
-    {:ip, :transmit, {data_endpoint, frame}}
+    header = Ip.header(service_type_id(:tunnelling_req), total_length)
+
+    connection_header =
+      connection_header(
+        channel_id,
+        ConTab.get_server_seq_counter(con_tab, channel_id),
+        knxnetip_constant(:reserved)
+      )
+
+    body = connection_header <> data_cemi_frame
+
+    {:ip, :transmit, {data_endpoint, header <> body}}
   end
 
   '''
@@ -287,14 +287,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
          client_seq_counter: client_seq_counter,
          data_endpoint: data_endpoint
        }) do
-    frame =
-      Ip.header(
-        service_type_id(:tunnelling_ack),
-        Ip.get_structure_length([:header, :connection_header_tunnelling])
-      ) <>
-        connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
+    total_length = Ip.get_structure_length([:header, :connection_header_tunnelling])
+    header = Ip.header(service_type_id(:tunnelling_ack), total_length)
+    body = connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
 
-    {:ip, :transmit, {data_endpoint, frame}}
+    {:ip, :transmit, {data_endpoint, header <> body}}
   end
 
   # ----------------------------------------------------------------------------
