@@ -6,7 +6,6 @@ defmodule Knx.KnxnetIp.IpInterface do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.Frame, as: F
 
   import PureLogger
   require Knx.Defs
@@ -32,10 +31,6 @@ defmodule Knx.KnxnetIp.IpInterface do
     {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
     {%{state | knxnetip: ip_state}, impulses}
   end
-
-  # def handle({:knip, queue_type, %F{} = frame}, %S{}) do
-  #   Routing.handle_queue(queue_type, frame)
-  # end
 
   # ----------------------------------------------------------------------------
 

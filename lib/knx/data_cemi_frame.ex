@@ -95,12 +95,13 @@ defmodule Knx.DataCemiFrame do
 
   # ----------------------------------------------------------------------------
 
-  def is_con?(<<cemi_message_code(:l_data_con)::8, _rest::bits>>) do
-    true
+  def convert_to_cons(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
+    [pos_con: <<cemi_message_code(:l_data_con)::8, first_chunk::15, 0::1, rest::bits>>,
+    neg_con: <<cemi_message_code(:l_data_con)::8, first_chunk::15, 1::1, rest::bits>>]
   end
 
-  def is_con?(_) do
-    false
+  def convert_to_req(<<_cemi_message_code::8, rest::bits>>) do
+    <<cemi_message_code(:l_data_req)::8, rest::bits>>
   end
 
   # [XXX]

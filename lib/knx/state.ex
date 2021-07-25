@@ -7,7 +7,9 @@ end
 
 defmodule Knx.State.KnxnetIp do
   defstruct con_tab: %{},
-            tunnelling_state: :idle,
+            expd_tunnelling_con: :none,
+            tunnelling_queue: :queue.new(),
+            tunnelling_queue_size: 0,
             last_routing_busy: nil,
             routing_busy_count: 0,
             reset_time_routing_busy_count: nil

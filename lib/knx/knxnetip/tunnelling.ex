@@ -3,7 +3,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.KnxnetIpParameter
-  alias Knx.KnxnetIp.Queue
   alias Knx.State.KnxnetIp, as: IpState
   alias Knx.DataCemiFrame
 
@@ -20,10 +19,12 @@ defmodule Knx.KnxnetIp.Tunnelling do
   Structure: 4.4.6
   '''
 
-  # ref-frm: binary -> data-cemi-frame -> frame / .message_code = con (falsch!?)
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:tunnelling_req), total_length: total_length} =
-          ip_frame,
+        %IpFrame{
+          service_type_id: service_type_id(:tunnelling_req),
+          ip_src_endpoint: ip_src_endpoint,
+          total_length: total_length
+        } = ip_frame,
         <<
           structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
@@ -31,47 +32,60 @@ defmodule Knx.KnxnetIp.Tunnelling do
           knxnetip_constant(:reserved)::8,
           data_cemi_frame::bits
         >> = body,
-        %IpState{con_tab: con_tab, tunnelling_state: tunnelling_state} = ip_state
+        %IpState{
+          con_tab: con_tab,
+          expd_tunnelling_con: expd_tunnelling_con,
+          tunnelling_queue: tunnelling_queue,
+          tunnelling_queue_size: tunnelling_queue_size
+        } = ip_state
       ) do
     if ConTab.is_open?(con_tab, channel_id) do
-      # TODO case
-      if tunnelling_state == :idle do
-        ip_frame = %{
-          ip_frame
-          | channel_id: channel_id,
-            client_seq_counter: client_seq_counter,
-            data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
-        }
+      case expd_tunnelling_con do
+        # we don't wait for another frame to be confirmed: send data_cemi_frame to knx if seq counter correct
+        :none ->
+          ip_frame = %{
+            ip_frame
+            | channel_id: channel_id,
+              client_seq_counter: client_seq_counter,
+              data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
+          }
 
-        case ConTab.compare_client_seq_counter(con_tab, channel_id, client_seq_counter) do
-          :counter_equal ->
-            con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
+          case ConTab.compare_client_seq_counter(con_tab, channel_id, client_seq_counter) do
+            :counter_equal ->
+              con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
 
-            {%{ip_state | con_tab: con_tab, tunnelling_state: :waiting},
-             [
-               tunnelling_ack(ip_frame),
-               {:driver, :transmit, data_cemi_frame},
-               {:timer, :restart, {:ip_connection, channel_id}}
-             ]}
+              {%{
+                 ip_state
+                 | con_tab: con_tab,
+                   expd_tunnelling_con: DataCemiFrame.convert_to_cons(data_cemi_frame)
+               },
+               [
+                 tunnelling_ack(ip_frame),
+                 {:driver, :transmit, data_cemi_frame},
+                 {:timer, :restart, {:ip_connection, channel_id}}
+               ]}
 
-          # [XXXII]
-          :counter_off_by_minus_one ->
-            ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
+            # [XXXII]
+            :counter_off_by_minus_one ->
+              ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
 
-            {ip_state, [tunnelling_ack(ip_frame)]}
+              {ip_state, [tunnelling_ack(ip_frame)]}
 
-          # [XXXIII]
-          :any_other_case ->
-            {ip_state, []}
-        end
-      else
-        frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
+            # [XXXIII]
+            :any_other_case ->
+              {ip_state, []}
+          end
 
-        if Queue.enqueue(:tunnelling_queue, frame) == :queue_overflow do
-          warning(:tunnelling_queue_overflow)
-        end
+        # we wait for another frame to be confirmed: enqueue data_cemi_frame
+        [pos_con: <<_::bits>>, neg_con: <<_::bits>>] ->
+          frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
 
-        {ip_state, []}
+          # TODO introduce max queue size? then: warn in case of overflow
+          {%{
+             ip_state
+             | tunnelling_queue: :queue.in({ip_src_endpoint, frame}, tunnelling_queue),
+               tunnelling_queue_size: tunnelling_queue_size + 1
+           }, []}
       end
     else
       {ip_state, []}
@@ -143,38 +157,88 @@ defmodule Knx.KnxnetIp.Tunnelling do
   Description & Structure: 03_06_03:4.1.5.3.4
   '''
 
-  # handles both indications and confirmations received on knx
+  # handle positive confirmations received on knx
+  # tunnelling_queue_size = 0 : queue is empty, therefore only con must be sent
   # TODO cleaner solution: driver also returns knx indv src address
   def handle_up_frame(
         data_cemi_frame,
-        %IpState{con_tab: con_tab, tunnelling_state: tunnelling_state} = ip_state
+        %IpState{
+          con_tab: con_tab,
+          expd_tunnelling_con: [pos_con: data_cemi_frame, neg_con: _],
+          tunnelling_queue_size: 0
+        } = ip_state
       ) do
-    props = Cache.get_obj(:knxnet_ip_parameter)
-    channel_id = con_tab[:tunnel_cons][KnxnetIpParameter.get_knx_indv_addr(props)]
+    server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
 
-    ip_frame = %IpFrame{
-      # TODO if knx indv src address available via driver: look up channel id
-      channel_id: channel_id,
-      cemi: data_cemi_frame,
-      data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
-    }
-
-    server_seq_counter = ConTab.get_server_seq_counter(con_tab, channel_id)
-
-    ip_state =
-      if tunnelling_state == :waiting && DataCemiFrame.is_con?(data_cemi_frame) &&
-           Queue.pop(:tunnelling_queue) == :empty do
-        %{ip_state | tunnelling_state: :idle}
-      else
-        ip_state
-      end
-
-    {ip_state,
+    {%{ip_state | expd_tunnelling_con: :none},
      [
-       tunnelling_req(ip_frame, con_tab),
+       tunnelling_req(data_cemi_frame, con_tab),
        # TODO set tunneling_request_timeout = 1s
        {:timer, :start, {:tunnelling_req, server_seq_counter}}
      ]}
+  end
+
+  # handle positive confirmations received on knx
+  # tunnelling_queue_size > 0 : queue is non-empty, therefore con must be sent
+  #  and new impulse with popped frame must be generated
+  def handle_up_frame(
+        data_cemi_frame,
+        %IpState{
+          con_tab: con_tab,
+          expd_tunnelling_con: [pos_con: data_cemi_frame, neg_con: _],
+          tunnelling_queue: tunnelling_queue,
+          tunnelling_queue_size: tunnelling_queue_size
+        } = ip_state
+      ) do
+    server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
+    {{:value, {ip_src_endpoint, frame}}, tunnelling_queue} = :queue.out(tunnelling_queue)
+
+    {%{
+       ip_state
+       | tunnelling_queue: tunnelling_queue,
+         tunnelling_queue_size: tunnelling_queue_size - 1,
+         expd_tunnelling_con: DataCemiFrame.convert_to_cons(frame)
+     },
+     [
+       tunnelling_req(data_cemi_frame, con_tab),
+       {:timer, :start, {:tunnelling_req, server_seq_counter}},
+       {:knip, :from_ip, {ip_src_endpoint, frame}}
+     ]}
+  end
+
+  # handle negative confirmations received on knx
+  def handle_up_frame(
+        data_cemi_frame,
+        %IpState{
+          expd_tunnelling_con: [pos_con: _, neg_con: data_cemi_frame]
+        } = ip_state
+      ) do
+    # TODO could this be problematic? could driver be repeatedly unable to send frame?
+    {ip_state, [{:driver, :transmit, DataCemiFrame.convert_to_req(data_cemi_frame)}]}
+  end
+
+  # handle indications received on knx
+  def handle_up_frame(
+        <<cemi_message_code(:l_data_ind)::8, _rest::bits>> = data_cemi_frame,
+        %IpState{
+          con_tab: con_tab
+        } = ip_state
+      ) do
+    server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
+
+    {ip_state,
+     [
+       tunnelling_req(data_cemi_frame, con_tab),
+       {:timer, :start, {:tunnelling_req, server_seq_counter}}
+     ]}
+  end
+
+  # handle unexpected frames received on knx: ignore
+  def handle_up_frame(
+        _data_cemi_frame,
+        %IpState{} = ip_state
+      ) do
+    {ip_state, []}
   end
 
   # ----------------------------------------------------------------------------
@@ -188,13 +252,12 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
   # Achtung! Leon, cemi_frame ist jetzt ein binary direkt vom driver!
   defp tunnelling_req(
-         %IpFrame{
-           channel_id: channel_id,
-           cemi: data_cemi_frame,
-           data_endpoint: data_endpoint
-         },
+         data_cemi_frame,
          con_tab
        ) do
+    channel_id = get_channel_id(con_tab)
+    data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
+
     frame =
       Ip.header(
         service_type_id(:tunnelling_req),
@@ -244,5 +307,14 @@ defmodule Knx.KnxnetIp.Tunnelling do
       seq_counter::8,
       last_octet::8
     >>
+  end
+
+  # ----------------------------------------------------------------------------
+  # helper function
+
+  defp get_channel_id(con_tab) do
+    # TODO if knx indv src address available via driver: look up channel id
+    props = Cache.get_obj(:knxnet_ip_parameter)
+    con_tab[:tunnel_cons][KnxnetIpParameter.get_knx_indv_addr(props)]
   end
 end
