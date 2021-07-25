@@ -77,8 +77,7 @@ defmodule Knx.KnxnetIp.Core do
 
     data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
 
-    con_knx_indv_addr =
-      KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+    con_knx_indv_addr = KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     ip_frame = %{
       ip_frame
@@ -216,7 +215,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
   CRI (Connection Request Information)
   Core - Description/Structure: 7.5.2,
-  Device Management - Structure: 4.2.3, Tunneling - Structure: 4.4.3
+  Device Management - Structure: 4.2.3, Tunnelling - Structure: 4.4.3
   '''
 
   defp handle_cri(<<
@@ -361,7 +360,6 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   # TODO to be sent when timer of associated channel runs out
-  # TODO handle possible error due to property read
   def disconnect_req(channel_id, con_tab) do
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
@@ -454,7 +452,7 @@ defmodule Knx.KnxnetIp.Core do
   '''
   CRD (Connection Response Data Block)
   Core - Description/Structure: 7.5.3,
-  Device Management - Structure: 4.2.4, Tunneling - Structure: 4.4.4
+  Device Management - Structure: 4.2.4, Tunnelling - Structure: 4.4.4
   '''
 
   defp crd(%IpFrame{con_type: con_type, con_knx_indv_addr: con_knx_indv_addr}) do

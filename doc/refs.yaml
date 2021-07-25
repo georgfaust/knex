@@ -183,7 +183,7 @@ XXXIII: |
   expected sequence number and not equal to one less than the expected sequence number, then the KNXnet/IP 
   Tunnelling Server shall not reply and shall discard the received frame.
   [03_08_04:2.6]
-  
+
 XXIXa: |
   PID_TABLE_REFERENCE
   If the Load State of the related Resource changes to ‘unloaded’ then the Management Server shall set the
@@ -191,3 +191,10 @@ XXIXa: |
   to the absolute memory location from where the Resource will be downloaded. When memory allocation
   is not successful then the value shall be set to zero.
   [Resources:4.2.7]
+
+XXXIV: |
+  N [routing_busy_count] is defined as the number of ROUTING_BUSY Frames received in a moving period. 
+  N shall be incremented by one with each ROUTING_BUSY Frame received after 10 ms have passed since the 
+  last ROUTING_BUSY and decremented by one every t_bd = 5 ms after t_slowduration has elapsed.
+  t_slowduration = N * 100 ms.
+  [03_08_05:2.3.5]

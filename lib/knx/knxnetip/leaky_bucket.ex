@@ -5,23 +5,22 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   require Logger
 
-  def start_link(%{name: name} = opts) do
-    GenServer.start_link(__MODULE__, opts, name: name)
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
   @impl true
   def init(%{
-        queue_type: queue_type,
-        queue_size: queue_size,
         max_queue_size: max_queue_size,
-        queue_poll_rate: queue_poll_rate
+        queue_poll_rate: queue_poll_rate,
+        pop_fun: pop_fun
       }) do
     state = %{
       queue: :queue.new(),
-      queue_type: queue_type,
-      queue_size: queue_size,
+      queue_size: 0,
       max_queue_size: max_queue_size,
       queue_poll_rate: queue_poll_rate,
+      pop_fun: pop_fun,
       send_after_ref: nil
     }
 
@@ -30,12 +29,12 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   # Interface Functions --------------------------------------------------------
 
-  def enqueue(pid, object) do
-    GenServer.call(pid, {:enqueue, object})
+  def enqueue(object) do
+    GenServer.call(__MODULE__, {:enqueue, object})
   end
 
-  def delay(pid, delay_time) do
-    GenServer.cast(pid, {:delay, delay_time})
+  def delay(delay_time) do
+    GenServer.cast(__MODULE__, {:delay, delay_time})
   end
 
   # Server Callback Functions --------------------------------------------------
@@ -51,16 +50,14 @@ defmodule Knx.KnxnetIp.LeakyBucket do
         _,
         %{queue_size: max_queue_size, max_queue_size: max_queue_size} = state
       ) do
-    # queue is full: stack shall send routing lost message
     {:reply, :queue_overflow, state}
   end
 
   def handle_call({:enqueue, object}, _, %{queue: queue, queue_size: queue_size} = state) do
-    new_queue = :queue.in(object, queue)
-    new_queue_size = queue_size + 1
+    queue = :queue.in(object, queue)
+    queue_size = queue_size + 1
 
-    # report back new queue size, allowing stack to react via flow control (routing busy frame)
-    {:reply, new_queue_size, %{state | queue: new_queue, queue_size: new_queue_size}}
+    {:reply, queue_size, %{state | queue: queue, queue_size: queue_size}}
   end
 
   @impl true
@@ -84,20 +81,13 @@ defmodule Knx.KnxnetIp.LeakyBucket do
           queue_size: queue_size,
           queue_poll_rate: queue_poll_rate,
           queue: queue,
-          queue_type: queue_type
+          pop_fun: pop_fun
         } = state
       ) do
     {{:value, object}, new_queue} = :queue.out(queue)
 
-    case queue_type do
-      :knx_queue ->
-        # object: %F-Struct
-        Shell.Server.dispatch(:server, {:knip, :from_knx, object})
-
-      :ip_queue ->
-        # object: {%Ep-Struct (of ip src), %F-Struct}
-        Shell.Server.dispatch(:server, {:knip, :from_ip, object})
-    end
+    # Shell.Server.dispatch(nil, object)
+    pop_fun.(object)
 
     {:no_reply,
      %{

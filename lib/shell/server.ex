@@ -114,7 +114,7 @@ defmodule Shell.Server do
           # timer: fn effect -> send(timer_pid, effect) end,
           timer: fn effect -> log_effect(:timer, effect) end,
           driver: fn effect -> send(driver_pid, effect) end,
-          ethernet: fn effect -> Shell.KnipServer.dispatch(effect) end,
+          ip: fn effect -> Shell.KnipServer.dispatch(effect) end,
           # TODO API Server braucht das!
           mgmt: fn effect -> log_effect(:mgmt, effect) end,
           app: fn effect -> log_effect(:app, effect) end,

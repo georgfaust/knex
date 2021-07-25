@@ -34,6 +34,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
         %IpState{con_tab: con_tab, tunnelling_state: tunnelling_state} = ip_state
       ) do
     if ConTab.is_open?(con_tab, channel_id) do
+      # TODO case
       if tunnelling_state == :idle do
         ip_frame = %{
           ip_frame
@@ -172,7 +173,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
      [
        tunnelling_req(ip_frame, con_tab),
        # TODO set tunneling_request_timeout = 1s
-       {:timer, :start, {:tunneling_req, server_seq_counter}}
+       {:timer, :start, {:tunnelling_req, server_seq_counter}}
      ]}
   end
 

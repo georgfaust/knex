@@ -195,7 +195,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                     0::8,
                     knxnetip_constant(:reserved)::8
                   >> <> @knx_frame_tunnelling_req_l_data_con}},
-                {:timer, :start, {:tunneling_req, 0}}
+                {:timer, :start, {:tunnelling_req, 0}}
               ]} =
                Ip.handle(
                  {:knip, :from_knx, @knx_frame_tunnelling_req_l_data_con},

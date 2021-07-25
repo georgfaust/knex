@@ -4,6 +4,7 @@ defmodule Knx.Stack.Dl do
 
   def handle({:dl, :req, %F{} = frame}, %S{}) do
     frame = Knx.DataCemiFrame.encode(:req, frame)
+    # TODO for KNX-IP-device: call Knx.KnxnetIp.Routing.enqueue(frame)
     [{:driver, :transmit, frame}]
   end
 

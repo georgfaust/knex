@@ -33,9 +33,9 @@ defmodule Knx.KnxnetIp.IpInterface do
     {%{state | knxnetip: ip_state}, impulses}
   end
 
-  def handle({:knip, queue_type, %F{} = frame}, %S{}) do
-    Routing.handle_queue(queue_type, frame)
-  end
+  # def handle({:knip, queue_type, %F{} = frame}, %S{}) do
+  #   Routing.handle_queue(queue_type, frame)
+  # end
 
   # ----------------------------------------------------------------------------
 
@@ -105,13 +105,17 @@ defmodule Knx.KnxnetIp.IpInterface do
     Tunnelling.handle_body(ip_frame, body, ip_state)
   end
 
-  defp handle_body(%IpFrame{service_family_id: service_family_id(:routing)} = ip_frame, body) do
-    Routing.handle_body(ip_frame, body)
+  defp handle_body(
+         %IpFrame{service_family_id: service_family_id(:routing)} = ip_frame,
+         body,
+         %IpState{} = ip_state
+       ) do
+    Routing.handle_body(ip_frame, body, ip_state)
   end
 
-  defp handle_body(%IpFrame{}, _body) do
+  defp handle_body(%IpFrame{}, _body, %IpState{} = ip_state) do
     warning(:invalid_service_familiy)
-    []
+    {ip_state, []}
   end
 
   # ----------------------------------------------------------------------------

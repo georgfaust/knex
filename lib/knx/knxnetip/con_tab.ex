@@ -60,7 +60,6 @@ defmodule Knx.KnxnetIp.ConTab do
        %{tunnel_cons_left: tunnel_cons_left} = con_tab} ->
         con_tab = Map.put(con_tab, :free_ids, [id | con_tab[:free_ids]])
 
-
         con_tab =
           if con_type == :tunnel_con do
             %{

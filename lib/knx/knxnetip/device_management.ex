@@ -135,11 +135,14 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   Structure: 4.2.6
   '''
 
-  defp device_configuration_req(%IpFrame{
-         channel_id: channel_id,
-         data_endpoint: data_endpoint,
-         cemi: received_cemi_frame
-       }, con_tab) do
+  defp device_configuration_req(
+         %IpFrame{
+           channel_id: channel_id,
+           data_endpoint: data_endpoint,
+           cemi: received_cemi_frame
+         },
+         con_tab
+       ) do
     case mgmt_cemi_frame(received_cemi_frame) do
       :no_reply ->
         []
@@ -162,8 +165,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           {:ip, :transmit, {data_endpoint, conf_frame}},
           # TODO set device_configuration_request_timeout = 10s
           {:timer, :start,
-           {:device_management_req,
-            ConTab.get_server_seq_counter(con_tab, channel_id)}}
+           {:device_management_req, ConTab.get_server_seq_counter(con_tab, channel_id)}}
         ]
     end
   end
@@ -224,7 +226,6 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         >> <>
           new_data
 
-      # TODO more specific error codes for prop read failure given in 03_06_03, 4.1.7.3.7.2
       {:error, _} ->
         <<
           cemi_message_code(:m_propread_con)::8,
@@ -275,7 +276,6 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           start::12
         >>
 
-      # TODO more specific error codes for prop write failure given in 03_06_03, 4.1.7.3.7.2
       {:error, _} ->
         <<
           cemi_message_code(:m_propwrite_con)::8,
