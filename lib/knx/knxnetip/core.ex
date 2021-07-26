@@ -380,7 +380,6 @@ defmodule Knx.KnxnetIp.Core do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
     ip_addr =
       KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
-      |> Ip.convert_ip_to_number()
 
     <<
       structure_length(:hpai)::8,
@@ -409,8 +408,7 @@ defmodule Knx.KnxnetIp.Core do
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
       Device.get_serial(device_props)::48,
-      KnxnetIpParameter.get_routing_multicast_addr(knxnet_ip_props)
-      |> Ip.convert_ip_to_number()::32,
+      KnxnetIpParameter.get_routing_multicast_addr(knxnet_ip_props)::32,
       KnxnetIpParameter.get_mac_addr(knxnet_ip_props)::48,
       KnxnetIpParameter.get_friendly_name(knxnet_ip_props)::8*30
     >>

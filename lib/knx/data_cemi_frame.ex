@@ -86,6 +86,7 @@ defmodule Knx.DataCemiFrame do
       addr_t::1,
       hops::3,
       0::4,
+      # TODO add check_src_addr
       src::16,
       dest::16,
       len::8,

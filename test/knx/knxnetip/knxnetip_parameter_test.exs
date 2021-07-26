@@ -2,8 +2,12 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   use ExUnit.Case
 
   alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.IpInterface, as: Ip
 
-  @props Helper.get_knxnetip_parameter_props()
+  @props KnxnetIpParameter.get_knxnetip_parameter_props()
+
+  @device_ip_addr Ip.convert_ip_to_number({192, 168, 178, 62})
+  @ip_multicast_addr Ip.convert_ip_to_number({224, 0, 23, 12})
 
   setup do
     Cache.start_link(%{
@@ -15,7 +19,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   end
 
   test "get_current_ip_addr" do
-    assert {192, 168, 178, 62} = KnxnetIpParameter.get_current_ip_addr(@props)
+    assert @device_ip_addr = KnxnetIpParameter.get_current_ip_addr(@props)
   end
 
   test "get_knx_indv_addr" do
@@ -27,7 +31,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   end
 
   test "get_mac_addr" do
-    assert 0x0 = KnxnetIpParameter.get_mac_addr(@props)
+    assert 0x2CF05D52FCE8 = KnxnetIpParameter.get_mac_addr(@props)
   end
 
   test "get_friendly_name" do
@@ -36,7 +40,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   end
 
   test "get_routing_multicast_addr" do
-    assert {224, 0, 23, 12} = KnxnetIpParameter.get_routing_multicast_addr(@props)
+    assert @ip_multicast_addr = KnxnetIpParameter.get_routing_multicast_addr(@props)
   end
 
   test "get_busy_waiting_time" do

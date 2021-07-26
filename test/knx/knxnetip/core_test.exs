@@ -6,6 +6,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   alias Knx.KnxnetIp.IpInterface, as: Ip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
+  alias Knx.KnxnetIp.KnxnetIpParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -46,7 +47,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
   @knx_medium 0x02
   @device_status 1
@@ -54,7 +55,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   @project_installation_id 0x0000
   @serial 0x112233445566
   @multicast_addr 0xE000170C
-  @mac_addr 0x000000000000
+  @mac_addr 0x2CF05D52FCE8
   @friendly_name 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
 
   @list_0_255 Enum.to_list(0..255)

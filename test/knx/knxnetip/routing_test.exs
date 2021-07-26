@@ -9,6 +9,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.LeakyBucket
   alias Knx.KnxnetIp.Routing
+  alias Knx.KnxnetIp.KnxnetIpParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -32,7 +33,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
   @cemi_frame_struct %F{
     data: <<0x47D5_000B_1001::8*6>>,
@@ -43,9 +44,6 @@ defmodule Knx.KnxnetIp.RoutingTest do
     hops: 7,
     confirm: 0
   }
-
-  @cemi_frame_ind DataCemiFrame.encode(:ind, @cemi_frame_struct)
-  @cemi_frame_req DataCemiFrame.encode(:req, @cemi_frame_struct)
 
   setup do
     Cache.start_link(%{
@@ -58,6 +56,8 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   # ---------------
   describe "routing ind" do
+    @cemi_frame_ind DataCemiFrame.encode(:ind, @cemi_frame_struct)
+
     def receive_routing_ind(%S{} = state) do
       Ip.handle(
         {:knip, :from_ip,
@@ -163,6 +163,8 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   # ---------------
   describe "routing indication" do
+    @cemi_frame_req DataCemiFrame.encode(:req, @cemi_frame_struct)
+
     @routing_ind_header Ip.header(
                           service_type_id(:routing_ind),
                           structure_length(:header) + byte_size(@cemi_frame_req)
@@ -175,31 +177,31 @@ defmodule Knx.KnxnetIp.RoutingTest do
                  ip_addr: {224, 0, 23, 12},
                  port: 3671
                },
-               @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_struct)
+               @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_req)
     end
   end
 
   # ---------------
   describe "enqueue" do
     test("successful") do
-      LeakyBucket.start_link(%{
+      LeakyBucket.start_link(
         max_queue_size: 1000,
         queue_poll_rate: 20,
         pop_fun: fn object -> Shell.Server.dispatch(nil, object) end
-      })
+      )
 
-      assert 1 = Routing.enqueue(@cemi_frame_struct)
+      assert 1 = Routing.enqueue(@cemi_frame_req)
     end
 
     test("queue overflow") do
-      LeakyBucket.start_link(%{
+      LeakyBucket.start_link(
         max_queue_size: 1,
         queue_poll_rate: 20,
         pop_fun: fn object -> Shell.Server.dispatch(nil, object) end
-      })
+      )
 
-      assert 1 = Routing.enqueue(@cemi_frame_struct)
-      assert :queue_overflow = Routing.enqueue(@cemi_frame_struct)
+      assert 1 = Routing.enqueue(@cemi_frame_req)
+      assert :queue_overflow = Routing.enqueue(@cemi_frame_req)
     end
   end
 

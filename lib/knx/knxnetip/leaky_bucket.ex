@@ -5,16 +5,12 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   require Logger
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(max_queue_size: max_queue_size, queue_poll_rate: queue_poll_rate, pop_fun: pop_fun) do
+    GenServer.start_link(__MODULE__, {max_queue_size, queue_poll_rate, pop_fun}, name: __MODULE__)
   end
 
   @impl true
-  def init(%{
-        max_queue_size: max_queue_size,
-        queue_poll_rate: queue_poll_rate,
-        pop_fun: pop_fun
-      }) do
+  def init({max_queue_size, queue_poll_rate, pop_fun}) do
     state = %{
       queue: :queue.new(),
       queue_size: 0,

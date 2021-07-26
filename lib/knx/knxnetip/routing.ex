@@ -4,9 +4,7 @@ defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.KnxnetIpParameter
   alias Knx.KnxnetIp.LeakyBucket
-  alias Knx.Frame, as: F
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.DataCemiFrame
 
   require Knx.Defs
   import Knx.Defs
@@ -25,10 +23,10 @@ defmodule Knx.KnxnetIp.Routing do
         %IpFrame{
           service_type_id: service_type_id(:routing_ind)
         },
-        body,
+        cemi_frame,
         %IpState{} = ip_state
       ) do
-    {ip_state, [{:dl, :up, body}]}
+    {ip_state, [{:dl, :up, cemi_frame}]}
   end
 
   '''
@@ -96,8 +94,7 @@ defmodule Knx.KnxnetIp.Routing do
   Structure: 5.2
   '''
 
-  def routing_ind(%F{} = cemi_frame) do
-    cemi_frame = DataCemiFrame.encode(:req, cemi_frame)
+  def routing_ind(cemi_frame) do
     total_len = structure_length(:header) + byte_size(cemi_frame)
     frame = Ip.header(service_type_id(:routing_ind), total_len) <> cemi_frame
     {:ip, :transmit, {get_multicast_endpoint(), frame}}
@@ -106,7 +103,7 @@ defmodule Knx.KnxnetIp.Routing do
   # ----------------------------------------------------------------------------
   # queue interface
 
-  def enqueue(%F{} = cemi_frame) do
+  def enqueue(cemi_frame) when is_binary(cemi_frame) do
     queue_size = LeakyBucket.enqueue(routing_ind(cemi_frame))
 
     if queue_size == :queue_overflow do
@@ -125,7 +122,7 @@ defmodule Knx.KnxnetIp.Routing do
   defp get_multicast_endpoint() do
     %Ep{
       protocol_code: protocol_code(:udp),
-      ip_addr: KnxnetIpParameter.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)),
+      ip_addr: KnxnetIpParameter.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)) |> Ip.convert_number_to_ip(),
       port: 3671
     }
   end

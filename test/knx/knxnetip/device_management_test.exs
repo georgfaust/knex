@@ -6,6 +6,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
   alias Knx.KnxnetIp.IpInterface, as: Ip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
+  alias Knx.KnxnetIp.KnxnetIpParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -27,7 +28,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
   @list_1_255 Enum.to_list(1..255)
 
