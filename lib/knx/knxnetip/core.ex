@@ -74,9 +74,7 @@ defmodule Knx.KnxnetIp.Core do
         %IpState{con_tab: con_tab} = ip_state
       ) do
     control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
-
     data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
-
     con_knx_indv_addr = KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     ip_frame = %{
@@ -208,7 +206,7 @@ defmodule Knx.KnxnetIp.Core do
     if (ip_addr == 0 || port == 0) && ip_src_endpoint do
       ip_src_endpoint
     else
-      %Ep{protocol_code: protocol_code, ip_addr: ip_addr, port: port}
+      %Ep{protocol_code: protocol_code, ip_addr: Ip.convert_number_to_ip(ip_addr), port: port}
     end
   end
 
@@ -377,7 +375,9 @@ defmodule Knx.KnxnetIp.Core do
 
   defp hpai(protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
-    ip_addr = KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
+    ip_addr =
+      KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
+      |> Ip.convert_ip_to_number()
 
     <<
       structure_length(:hpai)::8,
@@ -406,7 +406,8 @@ defmodule Knx.KnxnetIp.Core do
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
       0x0000::16,
       Device.get_serial(device_props)::48,
-      KnxnetIpParameter.get_routing_multicast_addr(knxnet_ip_props)::32,
+      KnxnetIpParameter.get_routing_multicast_addr(knxnet_ip_props)
+      |> Ip.convert_ip_to_number()::32,
       KnxnetIpParameter.get_mac_addr(knxnet_ip_props)::48,
       KnxnetIpParameter.get_friendly_name(knxnet_ip_props)::8*30
     >>

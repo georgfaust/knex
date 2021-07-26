@@ -8,8 +8,8 @@ defmodule Knx.KnxnetIp.ConTabTest do
 
   @knx_indv_addr 0x11FF
 
-  @control_endpoint %Ep{ip_addr: 0xC0A8_B23E, port: 0x0E75}
-  @data_endpoint %Ep{ip_addr: 0xC0A8_B23E, port: 0x0E76}
+  @control_endpoint %Ep{ip_addr: {192, 168, 178, 62}, port: 3701}
+  @data_endpoint %Ep{ip_addr: {192, 168, 178, 62}, port: 3701}
 
   @list_0_255 Enum.to_list(0..255)
   @list_1_255 Enum.to_list(1..255)
@@ -76,16 +76,6 @@ defmodule Knx.KnxnetIp.ConTabTest do
     :tunnel_cons_left => 1,
     0 => %C{@con_mgmt | server_seq_counter: 255}
   }
-
-  # @knxnet_ip_parameter_object Helper.get_knxnetip_parameter_props()
-  # setup do
-  #   Cache.start_link(%{
-  #     objects: [knxnet_ip_parameter: @knxnet_ip_parameter_object]
-  #   })
-
-  #   :timer.sleep(5)
-  #   :ok
-  # end
 
   test "open: device management connection" do
     assert {:ok, @con_tab_0, 0} =

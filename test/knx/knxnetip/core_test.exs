@@ -10,10 +10,12 @@ defmodule Knx.KnxnetIp.CoreTest do
   require Knx.Defs
   import Knx.Defs
 
-  @ip_interface_ip Helper.convert_ip_to_number({192, 168, 178, 62})
+  @ip_interface_ip {192, 168, 178, 62}
+  @ip_interface_ip_num Helper.convert_ip_to_number(@ip_interface_ip)
   @ip_interface_port 3671
 
-  @ets_ip Helper.convert_ip_to_number({192, 168, 178, 21})
+  @ets_ip {192, 168, 178, 21}
+  @ets_ip_num Helper.convert_ip_to_number(@ets_ip)
   @ets_port_discovery 60427
   @ets_port_control 52250
   @ets_port_device_mgmt_data 52252
@@ -136,7 +138,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                      # HPAI ---------------
                      structure_length(:hpai)::8,
                      protocol_code(:udp)::8,
-                     @ip_interface_ip::32,
+                     @ip_interface_ip_num::32,
                      @ip_interface_port::16,
                      # DIB Device Info ---------------
                      structure_length(:dib_device_info)::8,
@@ -176,7 +178,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                       # HPAI ---------------
                       structure_length(:hpai)::8,
                       protocol_code(:udp)::8,
-                      @ets_ip::32,
+                      @ets_ip_num::32,
                       @ets_port_discovery::16
                     >>}
                  },
@@ -244,7 +246,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                       # HPAI ---------------
                       structure_length(:hpai)::8,
                       protocol_code(:udp)::8,
-                      @ets_ip::32,
+                      @ets_ip_num::32,
                       @ets_port_control::16
                     >>}
                  },
@@ -291,12 +293,12 @@ defmodule Knx.KnxnetIp.CoreTest do
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_control::16,
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_device_mgmt_data::16,
              # CRI ---------------
              structure_length(:crd_device_mgmt_con)::8,
@@ -332,12 +334,12 @@ defmodule Knx.KnxnetIp.CoreTest do
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_control::16,
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_tunnelling_data::16,
              # CRI ---------------
              structure_length(:cri_tunnel_con)::8,
@@ -369,7 +371,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                      # HPAI ---------------
                      structure_length(:hpai)::8,
                      protocol_code(:udp)::8,
-                     @ip_interface_ip::32,
+                     @ip_interface_ip_num::32,
                      @ip_interface_port::16,
                      # CRD ---------------
                      structure_length(:crd_device_mgmt_con)::8,
@@ -421,7 +423,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                      # HPAI ---------------
                      structure_length(:hpai)::8,
                      protocol_code(:udp)::8,
-                     @ip_interface_ip::32,
+                     @ip_interface_ip_num::32,
                      @ip_interface_port::16,
                      # CRD ---------------
                      structure_length(:crd_tunnel_con)::8,
@@ -541,7 +543,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_control::16
            >>}
         },
@@ -631,7 +633,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              # HPAI ---------------
              structure_length(:hpai)::8,
              protocol_code(:udp)::8,
-             @ets_ip::32,
+             @ets_ip_num::32,
              @ets_port_control::16
            >>}
         },

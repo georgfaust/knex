@@ -26,18 +26,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
   def get_queue_overflow_to_knx(props),
     do: P.read_prop_value(props, :queue_overflow_to_knx)
 
-  # def increment_queue_overflow_to_knx(props) do
-  #   num = P.read_prop_value(props, :queue_overflow_to_knx)
-
-  #   if num < 65535 do
-  #     new_props = P.write_prop_value(props, :queue_overflow_to_knx, <<num + 1::16>>)
-
-  #     {new_props, num + 1}
-  #   else
-  #     {props, num}
-  #   end
-  # end
-
   def increment_queue_overflow_to_ip(props) do
     num = P.read_prop_value(props, :queue_overflow_to_ip)
 
@@ -54,7 +42,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   def get_knxnetip_parameter_props() do
     # TODO ip_addr shall be 0.0.0.0 if no addr was assigned according to Core 8.5.1.4
-    current_ip_addr = 0xC0A802B5
+    current_ip_addr = {192, 168, 178, 62}
     current_subnet_mask = 0xFFFFFF00
     current_default_gateway = 0xC0A80001
     mac_addr = 0x2CF05D52FCE8
@@ -104,7 +92,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       # TODO r_lvl
       P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # TODO r_lvl
-      P.new(:system_setup_multicast_address, [0xE000170C],
+      P.new(:system_setup_multicast_address, [{224, 0, 23, 12}],
         max: 1,
         write: false,
         r_lvl: 3,
@@ -112,7 +100,12 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       ),
       # TODO change of value shall only become acitive after reset of device
       # TODO r_lvl, w_lvl
-      P.new(:routing_multicast_address, [0xE000170C], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:routing_multicast_address, [{224, 0, 23, 12}],
+        max: 1,
+        write: true,
+        r_lvl: 3,
+        w_lvl: 3
+      ),
       # TODO r_lvl, w_lvl
       P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # TODO r_lvl

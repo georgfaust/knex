@@ -120,7 +120,7 @@ defmodule Knx.KnxnetIp.Routing do
   end
 
   # ----------------------------------------------------------------------------
-  # helper function
+  # helper functions
 
   defp get_multicast_endpoint() do
     %Ep{

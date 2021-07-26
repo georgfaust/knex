@@ -15,7 +15,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   end
 
   test "get_current_ip_addr" do
-    assert 0xC0A8B23E = KnxnetIpParameter.get_current_ip_addr(@props)
+    assert {192, 168, 178, 62} = KnxnetIpParameter.get_current_ip_addr(@props)
   end
 
   test "get_knx_indv_addr" do
@@ -36,7 +36,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
   end
 
   test "get_routing_multicast_addr" do
-    assert 0xE000170C = KnxnetIpParameter.get_routing_multicast_addr(@props)
+    assert {224, 0, 23, 12} = KnxnetIpParameter.get_routing_multicast_addr(@props)
   end
 
   test "get_busy_waiting_time" do

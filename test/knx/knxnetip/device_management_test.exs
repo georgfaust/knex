@@ -10,7 +10,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
   require Knx.Defs
   import Knx.Defs
 
-  @ets_ip Helper.convert_ip_to_number({192, 168, 178, 21})
+  @ets_ip {192, 168, 178, 21}
   @ets_port_device_mgmt_data 52252
   @ets_port_control 52250
 

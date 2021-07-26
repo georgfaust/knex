@@ -131,6 +131,14 @@ defmodule Knx.KnxnetIp.IpInterface do
     Enum.reduce(structure_list, 0, fn structure, acc -> acc + structure_length(structure) end)
   end
 
+  def convert_ip_to_number({e3, e2, e1, e0}) do
+    (e3 <<< 24) + (e2 <<< 16) + (e1 <<< 8) + e0
+  end
+
+  def convert_number_to_ip(ip) do
+    {ip >>> 24 &&& 0xFF, ip >>> 16 &&& 0xFF, ip >>> 8 &&& 0xFF, ip &&& 0xFF}
+  end
+
   # ----------------------------------------------------------------------------
 
   defp get_service_family_id(service_type_id) do

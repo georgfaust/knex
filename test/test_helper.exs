@@ -95,7 +95,7 @@ defmodule Helper do
   end
 
   def get_knxnetip_parameter_props() do
-    current_ip_addr = 0xC0A8B23E
+    current_ip_addr = {192, 168, 178, 62}
     current_subnet_mask = 0xFFFFFF00
     current_default_gateway = 0xC0A80001
     mac_addr = 0x0
@@ -145,7 +145,7 @@ defmodule Helper do
       # TODO r_lvl
       P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       # TODO r_lvl
-      P.new(:system_setup_multicast_address, [0xE000170C],
+      P.new(:system_setup_multicast_address, [{224, 0, 23, 12}],
         max: 1,
         write: false,
         r_lvl: 3,
@@ -153,7 +153,7 @@ defmodule Helper do
       ),
       # TODO change of value shall only become acitive after reset of device
       # TODO r_lvl, w_lvl
-      P.new(:routing_multicast_address, [0xE000170C], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:routing_multicast_address, [{224, 0, 23, 12}], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # TODO r_lvl, w_lvl
       P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # TODO r_lvl

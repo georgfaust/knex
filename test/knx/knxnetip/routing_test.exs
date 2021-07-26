@@ -13,10 +13,10 @@ defmodule Knx.KnxnetIp.RoutingTest do
   require Knx.Defs
   import Knx.Defs
 
-  @multicast_ip Helper.convert_ip_to_number({224, 0, 23, 12})
+  @multicast_ip {224, 0, 23, 12}
   @multicast_port 3671
 
-  @ets_ip Helper.convert_ip_to_number({192, 168, 178, 21})
+  @ets_ip {192, 168, 178, 21}
   @ets_port_routing 52253
 
   @router_endpoint %Ep{
@@ -168,7 +168,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       assert {:ip, :transmit,
               {%Ep{
                  protocol_code: protocol_code(:udp),
-                 ip_addr: 0xE000170C,
+                 ip_addr: {224, 0, 23, 12},
                  port: 3671
                }, @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_struct)
     end
