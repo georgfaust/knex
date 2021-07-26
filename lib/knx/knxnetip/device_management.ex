@@ -36,8 +36,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         >>,
         %IpState{con_tab: con_tab} = ip_state
       ) do
-    if ConTab.is_open?(con_tab, channel_id) &&
-         ConTab.client_seq_counter_equal?(con_tab, channel_id, client_seq_counter) do
+    if ConTab.client_seq_counter_equal?(con_tab, channel_id, client_seq_counter) do
       con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
 
       mgmt_cemi_frame = %MgmtCemiFrame{
@@ -107,8 +106,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         >>,
         %IpState{con_tab: con_tab} = ip_state
       ) do
-    if ConTab.is_open?(con_tab, channel_id) &&
-         ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
+    if ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       con_tab = ConTab.increment_server_seq_counter(con_tab, channel_id)
 
       {%{ip_state | con_tab: con_tab},

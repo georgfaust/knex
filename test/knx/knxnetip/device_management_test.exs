@@ -105,7 +105,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
              Ip.get_structure_length([
                :header,
                :connection_header_device_management
-             ]) + 7::16,
+             ]) + 7 + byte_size(data)::16,
              # Connection header ---------------
              structure_length(:connection_header_device_management)::8,
              connection_id::8,

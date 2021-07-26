@@ -39,56 +39,52 @@ defmodule Knx.KnxnetIp.Tunnelling do
           tunnelling_queue_size: tunnelling_queue_size
         } = ip_state
       ) do
-    if ConTab.is_open?(con_tab, channel_id) do
-      case expd_tunnelling_con do
-        # we don't wait for another frame to be confirmed: send data_cemi_frame to knx if seq counter correct
-        :none ->
-          ip_frame = %{
-            ip_frame
-            | channel_id: channel_id,
-              client_seq_counter: client_seq_counter,
-              data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
-          }
+    case expd_tunnelling_con do
+      # don't wait for another frame to be confirmed: send data_cemi_frame to knx if seq counter correct
+      :none ->
+        ip_frame = %{
+          ip_frame
+          | channel_id: channel_id,
+            client_seq_counter: client_seq_counter,
+            data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
+        }
 
-          case ConTab.compare_client_seq_counter(con_tab, channel_id, client_seq_counter) do
-            :counter_equal ->
-              con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
+        case ConTab.compare_client_seq_counter(con_tab, channel_id, client_seq_counter) do
+          :counter_equal ->
+            con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
 
-              {%{
-                 ip_state
-                 | con_tab: con_tab,
-                   expd_tunnelling_con: DataCemiFrame.convert_to_cons(data_cemi_frame)
-               },
-               [
-                 tunnelling_ack(ip_frame),
-                 {:driver, :transmit, data_cemi_frame},
-                 {:timer, :restart, {:ip_connection, channel_id}}
-               ]}
+            {%{
+               ip_state
+               | con_tab: con_tab,
+                 expd_tunnelling_con: DataCemiFrame.convert_to_cons(data_cemi_frame)
+             },
+             [
+               tunnelling_ack(ip_frame),
+               {:driver, :transmit, data_cemi_frame},
+               {:timer, :restart, {:ip_connection, channel_id}}
+             ]}
 
-            # [XXXII]
-            :counter_off_by_minus_one ->
-              ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
+          # [XXXII]
+          :counter_off_by_minus_one ->
+            ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
 
-              {ip_state, [tunnelling_ack(ip_frame)]}
+            {ip_state, [tunnelling_ack(ip_frame)]}
 
-            # [XXXIII]
-            :any_other_case ->
-              {ip_state, []}
-          end
+          # [XXXIII]
+          :any_other_case ->
+            {ip_state, []}
+        end
 
-        # we wait for another frame to be confirmed: enqueue data_cemi_frame
-        [pos_con: <<_::bits>>, neg_con: <<_::bits>>] ->
-          frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
+      # wait for another frame to be confirmed: enqueue data_cemi_frame
+      [pos_con: <<_::bits>>, neg_con: <<_::bits>>] ->
+        frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
 
-          # TODO introduce max queue size? then: warn in case of overflow
-          {%{
-             ip_state
-             | tunnelling_queue: :queue.in({ip_src_endpoint, frame}, tunnelling_queue),
-               tunnelling_queue_size: tunnelling_queue_size + 1
-           }, []}
-      end
-    else
-      {ip_state, []}
+        # TODO introduce max queue size? then: warn in case of overflow
+        {%{
+           ip_state
+           | tunnelling_queue: :queue.in({ip_src_endpoint, frame}, tunnelling_queue),
+             tunnelling_queue_size: tunnelling_queue_size + 1
+         }, []}
     end
   end
 
@@ -128,8 +124,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
         >>,
         %IpState{con_tab: con_tab} = ip_state
       ) do
-    if ConTab.is_open?(con_tab, channel_id) &&
-         ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
+    if ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       con_tab = ConTab.increment_server_seq_counter(con_tab, channel_id)
 
       {%{ip_state | con_tab: con_tab},
@@ -250,7 +245,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
   Structure: 4.4.6
   '''
 
-  # Achtung! Leon, cemi_frame ist jetzt ein binary direkt vom driver!
   defp tunnelling_req(
          data_cemi_frame,
          con_tab

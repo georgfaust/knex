@@ -68,7 +68,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_ind)::8,
-            structure_length(:header) + 14::16
+            structure_length(:header) + byte_size(@cemi_frame_ind)::16
           >> <>
             @cemi_frame_ind}},
         state
@@ -121,6 +121,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
 
     # TODO is there a way to test this without increasing test time by 320 ms?
+    @tag :skip
     test("routing busy count, decrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 2}} = last_state, []} =
                receive_routing_busy(10, 0, %S{knxnetip: %IpState{routing_busy_count: 2}})
@@ -162,7 +163,10 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   # ---------------
   describe "routing indication" do
-    @routing_ind_header Ip.header(service_type_id(:routing_ind), structure_length(:header) + byte_size(@cemi_frame_req))
+    @routing_ind_header Ip.header(
+                          service_type_id(:routing_ind),
+                          structure_length(:header) + byte_size(@cemi_frame_req)
+                        )
 
     test("successful") do
       assert {:ip, :transmit,
@@ -170,7 +174,8 @@ defmodule Knx.KnxnetIp.RoutingTest do
                  protocol_code: protocol_code(:udp),
                  ip_addr: {224, 0, 23, 12},
                  port: 3671
-               }, @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_struct)
+               },
+               @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_struct)
     end
   end
 
