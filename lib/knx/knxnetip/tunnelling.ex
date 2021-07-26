@@ -192,7 +192,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
        ip_state
        | tunnelling_queue: tunnelling_queue,
          tunnelling_queue_size: tunnelling_queue_size - 1,
-         expd_tunnelling_con: DataCemiFrame.convert_to_cons(frame)
+         expd_tunnelling_con: DataCemiFrame.convert_to_cons(data_cemi_frame)
      },
      [
        tunnelling_req(data_cemi_frame, con_tab),

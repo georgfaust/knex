@@ -101,8 +101,8 @@ defmodule Knx.DataCemiFrame do
     neg_con: <<cemi_message_code(:l_data_con)::8, first_chunk::15, 1::1, rest::bits>>]
   end
 
-  def convert_to_req(<<_cemi_message_code::8, rest::bits>>) do
-    <<cemi_message_code(:l_data_req)::8, rest::bits>>
+  def convert_to_req(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
+    <<cemi_message_code(:l_data_req)::8, first_chunk::15, 0::1, rest::bits>>
   end
 
   # [XXX]

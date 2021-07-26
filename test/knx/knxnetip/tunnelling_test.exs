@@ -79,7 +79,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   # ---------------
   describe "tunnelling request" do
-    @cemi_frame_tunnelling_req_l_data %F{
+    @cemi_frame_struct %F{
       data: <<0x47D5_000B_1001::8*6>>,
       prio: 0,
       src: nil,
@@ -89,28 +89,38 @@ defmodule Knx.KnxnetIp.TunnellingTest do
       confirm: 0
     }
 
-    @cemi_frame_tunnelling_req_l_data_req DataCemiFrame.encode(
+    @cemi_frame_req DataCemiFrame.encode(
                                             :req,
                                             %{
-                                              @cemi_frame_tunnelling_req_l_data
+                                              @cemi_frame_struct
                                               | src: @knx_indv_addr,
                                                 dest: @knx_device_indv_addr
                                             }
                                           )
-    @cemi_frame_tunnelling_req_l_data_pos_con DataCemiFrame.encode(
+
+    @cemi_frame_ind DataCemiFrame.encode(
+                                            :ind,
+                                            %{
+                                              @cemi_frame_struct
+                                              | src: @knx_indv_addr,
+                                                dest: @knx_device_indv_addr
+                                            }
+                                          )
+
+    @cemi_frame_pos_con DataCemiFrame.encode(
                                                 :conf,
                                                 %{
-                                                  @cemi_frame_tunnelling_req_l_data
+                                                  @cemi_frame_struct
                                                   | src: @knx_indv_addr,
                                                     dest: @knx_device_indv_addr,
                                                     confirm: 0
                                                 }
                                               )
 
-    @cemi_frame_tunnelling_req_l_data_neg_con DataCemiFrame.encode(
+    @cemi_frame_neg_con DataCemiFrame.encode(
                                                 :conf,
                                                 %{
-                                                  @cemi_frame_tunnelling_req_l_data
+                                                  @cemi_frame_struct
                                                   | src: @knx_indv_addr,
                                                     dest: @knx_device_indv_addr,
                                                     confirm: 1
@@ -121,7 +131,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                                    :header,
                                    :connection_header_tunnelling
                                  ])
-    @total_length_tunnelling_req_l_data_con Ip.get_structure_length([
+    @total_length_tunnelling_req Ip.get_structure_length([
                                               :header,
                                               :connection_header_tunnelling
                                             ]) + 15
@@ -147,7 +157,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
              seq_counter::8,
              knxnetip_constant(:reserved)::8
            >> <>
-             @cemi_frame_tunnelling_req_l_data_req
+             @cemi_frame_req
          }},
         state
       )
@@ -158,8 +168,8 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 knxnetip: %IpState{
                   con_tab: @con_tab_0_client_seq_1,
                   expd_tunnelling_con: [
-                    pos_con: @cemi_frame_tunnelling_req_l_data_pos_con,
-                    neg_con: @cemi_frame_tunnelling_req_l_data_neg_con
+                    pos_con: @cemi_frame_pos_con,
+                    neg_con: @cemi_frame_neg_con
                   ]
                 }
               },
@@ -179,7 +189,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                     0::8,
                     common_error_code(:no_error)::8
                   >>}},
-                {:driver, :transmit, @cemi_frame_tunnelling_req_l_data_req},
+                {:driver, :transmit, @cemi_frame_req},
                 {:timer, :restart, {:ip_connection, 0}}
               ]} =
                receive_tunnelling_req(
@@ -244,10 +254,18 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   # ---------------
   describe "handle up frame" do
+    @tunnelling_req_l_data_req Ip.header(
+                                 service_type_id(:tunnelling_req),
+                                 structure_length(:header) +
+                                   byte_size(@cemi_frame_req)
+                               ) <> @cemi_frame_req
+
+    @tunnelling_queue :queue.new()
+
     test "positive confirmation, empty queue" do
       assert {%S{
                 knxnetip: %IpState{
-                  con_tab: @con_tab_0_client_seq_1,
+                  con_tab: @con_tab_0,
                   expd_tunnelling_con: :none
                 }
               },
@@ -260,73 +278,132 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                     protocol_version(:knxnetip)::8,
                     service_family_id(:tunnelling)::8,
                     service_type_id(:tunnelling_req)::8,
-                    @total_length_tunnelling_req_l_data_con::16,
+                    @total_length_tunnelling_req::16,
                     # Connection header ---------------
                     structure_length(:connection_header_tunnelling),
                     0::8,
                     0::8,
                     knxnetip_constant(:reserved)::8
-                  >> <> @cemi_frame_tunnelling_req_l_data_pos_con}},
+                  >> <> @cemi_frame_pos_con}},
                 {:timer, :start, {:tunnelling_req, 0}}
               ]} =
                Ip.handle(
-                 {:knip, :from_knx, @cemi_frame_tunnelling_req_l_data_pos_con},
+                 {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
                    knxnetip: %IpState{
-                     con_tab: @con_tab_0_client_seq_1,
+                     con_tab: @con_tab_0,
                      expd_tunnelling_con: [
-                       pos_con: @cemi_frame_tunnelling_req_l_data_pos_con,
-                       neg_con: @cemi_frame_tunnelling_req_l_data_neg_con
+                       pos_con: @cemi_frame_pos_con,
+                       neg_con: @cemi_frame_neg_con
                      ]
                    }
                  }
                )
     end
 
-    # test "positive confirmation, non-empty queue" do
-    #   @tunnelling_req_l_data_req Ip.header(service_type_id(:tunnelling_req), structure_length(:header) + byte_size(@cemi_frame_tunnelling_req_l_data_req)) <> @cemi_frame_tunnelling_req_l_data_req
+    test "positive confirmation, non-empty queue" do
+      assert {%S{
+                knxnetip: %IpState{
+                  con_tab: @con_tab_0,
+                  tunnelling_queue: @tunnelling_queue,
+                  tunnelling_queue_size: 0,
+                  expd_tunnelling_con: [
+                    pos_con: @cemi_frame_pos_con,
+                    neg_con: @cemi_frame_neg_con
+                  ]
+                }
+              },
+              [
+                {:ip, :transmit,
+                 {@ets_tunnelling_data_endpoint,
+                  <<
+                    # Header ---------------
+                    structure_length(:header)::8,
+                    protocol_version(:knxnetip)::8,
+                    service_family_id(:tunnelling)::8,
+                    service_type_id(:tunnelling_req)::8,
+                    @total_length_tunnelling_req::16,
+                    # Connection header ---------------
+                    structure_length(:connection_header_tunnelling),
+                    0::8,
+                    0::8,
+                    knxnetip_constant(:reserved)::8
+                  >> <> @cemi_frame_pos_con}},
+                {:timer, :start, {:tunnelling_req, 0}},
+                {:knip, :from_ip, {@ets_tunnelling_data_endpoint, @tunnelling_req_l_data_req}}
+              ]} =
+               Ip.handle(
+                 {:knip, :from_knx, @cemi_frame_pos_con},
+                 %S{
+                   knxnetip: %IpState{
+                     con_tab: @con_tab_0,
+                     tunnelling_queue:
+                       :queue.in(
+                         {@ets_tunnelling_data_endpoint, @tunnelling_req_l_data_req},
+                         @tunnelling_queue
+                       ),
+                     tunnelling_queue_size: 1,
+                     expd_tunnelling_con: [
+                       pos_con: @cemi_frame_pos_con,
+                       neg_con: @cemi_frame_neg_con
+                     ]
+                   }
+                 }
+               )
+    end
 
-    #   assert {%S{
-    #             knxnetip: %IpState{
-    #               con_tab: @con_tab_0_client_seq_1,
-    #               expd_tunnelling_con: [
-    #                 pos_con: @cemi_frame_tunnelling_req_l_data_pos_con,
-    #                 neg_con: @cemi_frame_tunnelling_req_l_data_neg_con
-    #               ]
-    #             }
-    #           },
-    #           [
-    #             {:ip, :transmit,
-    #              {@ets_tunnelling_data_endpoint,
-    #               <<
-    #                 # Header ---------------
-    #                 structure_length(:header)::8,
-    #                 protocol_version(:knxnetip)::8,
-    #                 service_family_id(:tunnelling)::8,
-    #                 service_type_id(:tunnelling_req)::8,
-    #                 @total_length_tunnelling_req_l_data_con::16,
-    #                 # Connection header ---------------
-    #                 structure_length(:connection_header_tunnelling),
-    #                 0::8,
-    #                 0::8,
-    #                 knxnetip_constant(:reserved)::8
-    #               >> <> @cemi_frame_tunnelling_req_l_data_pos_con}},
-    #             {:timer, :start, {:tunnelling_req, 0}}
-    #           ]} =
-    #            Ip.handle(
-    #              {:knip, :from_knx, @cemi_frame_tunnelling_req_l_data_pos_con},
-    #              %S{
-    #                knxnetip: %IpState{
-    #                  con_tab: @con_tab_0_client_seq_1,
-    #                  tunnelling_queue: :queue.in({@ets_tunnelling_data_endpoint, @tunnelling_req_l_data_req}, :queue.new()),
-    #                  expd_tunnelling_con: [
-    #                    pos_con: @cemi_frame_tunnelling_req_l_data_pos_con,
-    #                    neg_con: @cemi_frame_tunnelling_req_l_data_neg_con
-    #                  ]
-    #                }
-    #              }
-    #            )
-    # end
+    test "negative confirmation" do
+      assert {%S{
+                knxnetip: %IpState{
+                  con_tab: @con_tab_0,
+                  expd_tunnelling_con: [
+                    pos_con: @cemi_frame_pos_con,
+                    neg_con: @cemi_frame_neg_con
+                  ]
+                }
+              },
+              [
+                {:driver, :transmit, @cemi_frame_req}
+              ]} =
+               Ip.handle(
+                 {:knip, :from_knx, @cemi_frame_neg_con},
+                 %S{
+                   knxnetip: %IpState{
+                     con_tab: @con_tab_0,
+                     expd_tunnelling_con: [
+                       pos_con: @cemi_frame_pos_con,
+                       neg_con: @cemi_frame_neg_con
+                     ]
+                   }
+                 }
+               )
+    end
+
+    test "indication" do
+      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}},
+              [
+                {:ip, :transmit,
+                 {@ets_tunnelling_data_endpoint,
+                  <<
+                    # Header ---------------
+                    structure_length(:header)::8,
+                    protocol_version(:knxnetip)::8,
+                    service_family_id(:tunnelling)::8,
+                    service_type_id(:tunnelling_req)::8,
+                    @total_length_tunnelling_req::16,
+                    # Connection header ---------------
+                    structure_length(:connection_header_tunnelling),
+                    0::8,
+                    0::8,
+                    knxnetip_constant(:reserved)::8
+                  >> <> @cemi_frame_ind}},
+                {:timer, :start, {:tunnelling_req, 0}}
+              ]} =
+               Ip.handle(
+                 {:knip, :from_knx, @cemi_frame_ind},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
   end
 
   # ---------------
