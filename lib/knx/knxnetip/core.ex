@@ -350,18 +350,21 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   # TODO to be sent when timer of associated channel runs out
-  # TODO fix
   def disconnect_req(channel_id, con_tab) do
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
 
-    frame = <<
-      channel_id::8,
-      knxnetip_constant(:reserved)::8,
-      hpai(data_endpoint.protocol_code)::structure_length(:hpai)*8
-    >>
+    total_length = Ip.get_structure_length([:header, :connection_header_core])
+    header = Ip.header(service_type_id(:disconnect_req), total_length)
 
-    {:ip, :transmit, {control_endpoint, frame}}
+    body =
+      <<
+        channel_id::8,
+        knxnetip_constant(:reserved)::8
+      >> <>
+        hpai(data_endpoint.protocol_code)
+
+    {:ip, :transmit, {control_endpoint, header <> body}}
   end
 
   # ----------------------------------------------------------------------------
