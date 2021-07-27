@@ -67,12 +67,12 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   end
 
   @impl true
-  def handle_info({:pop}, %{queue_size: 0, queue_poll_rate: queue_poll_rate} = state) do
-    {:no_reply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
+  def handle_info(:pop, %{queue_size: 0, queue_poll_rate: queue_poll_rate} = state) do
+    {:noreply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
   end
 
   def handle_info(
-        {:pop},
+        :pop,
         %{
           queue_size: queue_size,
           queue_poll_rate: queue_poll_rate,
@@ -85,7 +85,7 @@ defmodule Knx.KnxnetIp.LeakyBucket do
     # Shell.Server.dispatch(nil, object)
     pop_fun.(object)
 
-    {:no_reply,
+    {:noreply,
      %{
        state
        | queue: new_queue,

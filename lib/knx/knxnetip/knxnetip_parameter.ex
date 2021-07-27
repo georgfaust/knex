@@ -45,6 +45,8 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   def get_knxnetip_parameter_props() do
     # TODO ip_addr shall be 0.0.0.0 if no addr was assigned according to Core 8.5.1.4
+    # TODO if DHCP: get address assigned from DHCP - if static: get static address
+    # TODO: wenn static IP per prop write oder parameter geaendert wird -> IP aendert
     current_ip_addr = Ip.convert_ip_to_number({192, 168, 178, 62})
     current_subnet_mask = 0xFFFFFF00
     current_default_gateway = 0xC0A80001

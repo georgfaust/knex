@@ -16,6 +16,7 @@ defmodule Shell.Server do
   #   GenServer.cast(name, :stop)
   # end
 
+  # TODO use registry or remove pid param
   def dispatch(_pid, impulse) do
     GenServer.cast(__MODULE__, impulse)
   end
