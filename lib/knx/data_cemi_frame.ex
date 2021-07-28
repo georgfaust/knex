@@ -58,6 +58,8 @@ defmodule Knx.DataCemiFrame do
     {primitive, frame}
   end
 
+  def decode(_), do: {nil, nil}
+
   def encode(primitive, %F{
         prio: prio,
         addr_t: addr_t,

@@ -54,6 +54,8 @@ defmodule Knx do
   def log_impulse({mod, _, _} = impulse) do
     if mod in [:auth, :io, :mem] do
       :logger.info("[D: #{Process.get(:cache_id)}] #{inspect(impulse)}")
+    else
+      :logger.debug("[D: #{Process.get(:cache_id)}] #{inspect(impulse)}")
     end
   end
 end

@@ -402,7 +402,8 @@ defmodule Knx.KnxnetIp.Core do
       structure_length(:dib_device_info)::8,
       description_type_code(:device_info)::8,
       # TODO alternatively knx ip has to be set as knx_medium
-      knx_medium_code(:tp1)::8,
+      # knx_medium_code(:tp1)::8,
+      knx_medium_code(:knx_ip)::8,
       Device.get_prog_mode(device_props)::8,
       KnxnetIpParameter.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?
