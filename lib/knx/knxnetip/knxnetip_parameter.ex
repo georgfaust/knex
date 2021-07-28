@@ -43,23 +43,34 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   # ----------------------------------------------------------------------------
 
-  def get_knxnetip_parameter_props() do
+  def get_knxnetip_parameter_props(ia) do
     # TODO ip_addr shall be 0.0.0.0 if no addr was assigned according to Core 8.5.1.4
     # TODO if DHCP: get address assigned from DHCP - if static: get static address
     # TODO: wenn static IP per prop write oder parameter geaendert wird -> IP aendert
-    current_ip_addr = Ip.convert_ip_to_number({192, 168, 178, 62})
-    current_subnet_mask = 0xFFFFFF00
-    current_default_gateway = 0xC0A80001
-    mac_addr = 0x2CF05D52FCE8
-    knx_addr = 0x11FF
+    current_ip_addr =
+      Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
+
+    current_subnet_mask =
+      Application.get_env(:knx, :subnet_mask, {255, 255, 255, 0}) |> Ip.convert_ip_to_number()
+
+    current_default_gateway =
+      Application.get_env(:knx, :default_gateway, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
+
+    mac_addr = Application.get_env(:knx, :mac_addr, 0x000000000000)
+
     # friendly_name: "KNXnet/IP Device"
     friendly_name = 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
 
     [
-      P.new(:object_type, [object_type(:knxnet_ip_parameter)], max: 1, write: false, r_lvl: 3, w_lvl: 0),
+      P.new(:object_type, [object_type(:knxnet_ip_parameter)],
+        max: 1,
+        write: false,
+        r_lvl: 3,
+        w_lvl: 0
+      ),
       P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
-      P.new(:knx_individual_address, [knx_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:knx_individual_address, [ia], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # first entry shall be length of list
       P.new(:additional_individual_addresses, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # current assignment method: DHCP;
