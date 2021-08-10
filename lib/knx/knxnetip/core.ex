@@ -378,8 +378,7 @@ defmodule Knx.KnxnetIp.Core do
 
   defp hpai(protocol_code) do
     # fyi: wir werden Cache von Agent in ETS aendern (erlang term storage)
-    ip_addr =
-      KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
+    ip_addr = KnxnetIpParameter.get_current_ip_addr(Cache.get_obj(:knxnet_ip_parameter))
 
     <<
       structure_length(:hpai)::8,
@@ -397,13 +396,12 @@ defmodule Knx.KnxnetIp.Core do
   defp dib_device_information() do
     device_props = Cache.get_obj(:device)
     knxnet_ip_props = Cache.get_obj(:knxnet_ip_parameter)
+    knx_medium = Application.get_env(:knx, :knx_medium, :tp1)
 
     <<
       structure_length(:dib_device_info)::8,
       description_type_code(:device_info)::8,
-      # TODO alternatively knx ip has to be set as knx_medium
-      knx_medium_code(:tp1)::8,
-      # knx_medium_code(:knx_ip)::8,
+      knx_medium_code(knx_medium)::8,
       Device.get_prog_mode(device_props)::8,
       KnxnetIpParameter.get_knx_indv_addr(knxnet_ip_props)::16,
       # TODO Project installation id; how is this supposed to be assigned? (core, 7.5.4.2) no associated property?

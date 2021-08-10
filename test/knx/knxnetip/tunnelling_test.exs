@@ -32,7 +32,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
-  @knx_indv_addr 0x11FF
+  @knx_indv_addr Application.get_env(:knx, :knx_addr, 0x1101)
   @knx_device_indv_addr 0x2102
 
   @list_1_255 Enum.to_list(1..255)

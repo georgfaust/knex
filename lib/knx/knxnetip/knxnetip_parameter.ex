@@ -43,7 +43,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   # ----------------------------------------------------------------------------
 
-  def get_knxnetip_parameter_props(ia) do
+  def get_knxnetip_parameter_props() do
     # TODO ip_addr shall be 0.0.0.0 if no addr was assigned according to Core 8.5.1.4
     # TODO if DHCP: get address assigned from DHCP - if static: get static address
     # TODO: wenn static IP per prop write oder parameter geaendert wird -> IP aendert
@@ -57,9 +57,11 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       Application.get_env(:knx, :default_gateway, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
 
     mac_addr = Application.get_env(:knx, :mac_addr, 0x000000000000)
+    knx_addr = Application.get_env(:knx, :knx_addr, 0x1101)
 
-    # friendly_name: "KNXnet/IP Device"
-    friendly_name = 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+    friendly_name =
+      Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
+      |> convert_friendly_name()
 
     [
       P.new(:object_type, [object_type(:knxnet_ip_parameter)],
@@ -70,7 +72,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       ),
       P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
-      P.new(:knx_individual_address, [ia], max: 1, write: true, r_lvl: 3, w_lvl: 3),
+      P.new(:knx_individual_address, [knx_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # first entry shall be length of list
       P.new(:additional_individual_addresses, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # current assignment method: DHCP;
@@ -117,5 +119,26 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       # valid value range: 20 - 100
       P.new(:routing_busy_wait_time, [100], max: 1, write: true, r_lvl: 3, w_lvl: 1)
     ]
+  end
+
+  # ----------------------------------------------------------------------------
+
+  def convert_friendly_name(string) do
+    hex_string_list =
+      :unicode.characters_to_binary(string, :utf8, :latin1)
+      |> :binary.bin_to_list()
+      |> Enum.map(fn x -> Integer.to_string(x, 16) end)
+
+    trailing_zeros = max(30 - length(hex_string_list), 0)
+
+    trailing_zeros_list =
+      if trailing_zeros > 0 do
+        for _i <- 1..trailing_zeros, do: "00"
+      else
+        []
+      end
+
+    {hex, _} = (hex_string_list ++ trailing_zeros_list) |> Enum.join("") |> Integer.parse(16)
+    hex
   end
 end
