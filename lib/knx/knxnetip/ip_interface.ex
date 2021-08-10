@@ -32,7 +32,6 @@ defmodule Knx.KnxnetIp.IpInterface do
     end
   end
 
-  # TODO is this correct? instead of %F{}, impulse includes binary
   def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: ip_state} = state) do
     {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
     {%{state | knxnetip: ip_state}, impulses}

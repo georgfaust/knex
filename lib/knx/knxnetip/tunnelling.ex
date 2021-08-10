@@ -152,6 +152,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
   Description & Structure: 03_06_03:4.1.5.3.4
   '''
 
+  # TODO server crasht, wenn er up_frame empfängt, ohne vorher connection aufgebaut zu haben
+  #  -- function nil.server_seq_counter/0 is undefined
   # handle positive confirmations received on knx
   # tunnelling_queue_size = 0 : queue is empty, therefore only con must be sent
   # TODO cleaner solution: driver also returns knx indv src address

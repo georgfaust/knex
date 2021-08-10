@@ -11,7 +11,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   require Knx.Defs
   import Knx.Defs
 
-  @ip_interface_ip {192, 168, 178, 62}
+  @ip_interface_ip Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
   @ip_interface_ip_num Helper.convert_ip_to_number(@ip_interface_ip)
   @ip_interface_port 3671
 
@@ -49,14 +49,15 @@ defmodule Knx.KnxnetIp.CoreTest do
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
-  @knx_medium 0x02
+  @knx_medium knx_medium_code(Application.get_env(:knx, :knx_medium, :tp1))
   @device_status 1
-  @knx_indv_addr 0x11FF
+  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
   @project_installation_id 0x0000
   @serial 0x112233445566
   @multicast_addr 0xE000170C
-  @mac_addr 0x2CF05D52FCE8
-  @friendly_name 0x4B4E_586E_6574_2F49_5020_4465_7669_6365_0000_0000_0000_0000_0000_0000_0000
+  @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
+  @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
+                 |> KnxnetIpParameter.convert_friendly_name()
 
   @list_0_255 Enum.to_list(0..255)
   @list_1_255 Enum.to_list(1..255)
