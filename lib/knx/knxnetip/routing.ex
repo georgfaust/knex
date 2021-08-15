@@ -4,6 +4,7 @@ defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.KnxnetIpParameter
   alias Knx.KnxnetIp.LeakyBucket
+  alias Knx.DataCemiFrame
   alias Knx.State.KnxnetIp, as: IpState
 
   require Knx.Defs
@@ -104,7 +105,7 @@ defmodule Knx.KnxnetIp.Routing do
   # queue interface
 
   def enqueue(cemi_frame) when is_binary(cemi_frame) do
-    queue_size = LeakyBucket.enqueue(routing_ind(cemi_frame))
+    queue_size = cemi_frame |> DataCemiFrame.convert_message_code(:l_data_ind) |> routing_ind() |> LeakyBucket.enqueue()
 
     if queue_size == :queue_overflow do
       {props, _} =

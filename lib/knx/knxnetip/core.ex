@@ -243,14 +243,17 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp search_resp(%IpFrame{discovery_endpoint: discovery_endpoint}) do
+    dib_supp_svc_families = dib_supp_svc_families()
+
     total_length =
-      Ip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
+      Ip.get_structure_length([:header, :hpai, :dib_supp_svc_families]) +
+        byte_size(dib_supp_svc_families) * 8
 
     header = Ip.header(service_type_id(:search_resp), total_length)
 
     body =
       hpai(discovery_endpoint.protocol_code) <>
-        dib_device_information() <> dib_supp_svc_families()
+        dib_device_information() <> dib_supp_svc_families
 
     {:ip, :transmit, {discovery_endpoint, header <> body}}
   end
@@ -262,9 +265,14 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp description_resp(%IpFrame{control_endpoint: control_endpoint}) do
-    total_length = Ip.get_structure_length([:header, :dib_device_info, :dib_supp_svc_families])
+    dib_supp_svc_families = dib_supp_svc_families()
+
+    total_length =
+      Ip.get_structure_length([:header, :dib_device_info]) +
+        byte_size(dib_supp_svc_families) * 8
+
     header = Ip.header(service_type_id(:description_resp), total_length)
-    body = dib_device_information() <> dib_supp_svc_families()
+    body = dib_device_information() <> dib_supp_svc_families
 
     {:ip, :transmit, {control_endpoint, header <> body}}
   end
@@ -420,16 +428,32 @@ defmodule Knx.KnxnetIp.Core do
   '''
 
   defp dib_supp_svc_families() do
+    knx_device_type = Application.get_env(:knx, :knx_device_type, :knx_ip_interface)
+
+    {structure_length, tail} =
+      case knx_device_type do
+        :knx_ip_interface ->
+          {8, <<service_family_id(:tunnelling)::8, protocol_version(:tunnelling)::8>>}
+
+        :knx_ip ->
+          {6, <<>>}
+
+        _ ->
+          :logger.warning(
+            ":knx_device_type should be either set to 'knx_ip_interface' or 'knx_ip'. (see config.exs in app)"
+          )
+
+          {6, <<>>}
+      end
+
     <<
-      structure_length(:dib_supp_svc_families)::8,
+      structure_length::8,
       description_type_code(:supp_svc_families)::8,
       service_family_id(:core)::8,
       protocol_version(:core)::8,
       service_family_id(:device_management)::8,
-      protocol_version(:device_management)::8,
-      service_family_id(:tunnelling)::8,
-      protocol_version(:tunnelling)::8
-    >>
+      protocol_version(:device_management)::8
+    >> <> tail
   end
 
   '''

@@ -5,7 +5,11 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   require Logger
 
-  def start_link(max_queue_size: max_queue_size, queue_poll_rate: queue_poll_rate, pop_fun: pop_fun) do
+  def start_link(
+        max_queue_size: max_queue_size,
+        queue_poll_rate: queue_poll_rate,
+        pop_fun: pop_fun
+      ) do
     GenServer.start_link(__MODULE__, {max_queue_size, queue_poll_rate, pop_fun}, name: __MODULE__)
   end
 
@@ -50,6 +54,10 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   end
 
   def handle_call({:enqueue, object}, _, %{queue: queue, queue_size: queue_size} = state) do
+    # :logger.debug(
+    #   "[D: #{Process.get(:cache_id)}] routing: enqueue cemi frame #{inspect(object)}"
+    # )
+
     queue = :queue.in(object, queue)
     queue_size = queue_size + 1
 
@@ -81,6 +89,8 @@ defmodule Knx.KnxnetIp.LeakyBucket do
         } = state
       ) do
     {{:value, object}, new_queue} = :queue.out(queue)
+
+    # :logger.debug("routing: pop frame from queue #{inspect(object)}")
 
     # Shell.Server.dispatch(nil, object)
     pop_fun.(object)

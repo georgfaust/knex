@@ -89,7 +89,7 @@ defmodule Knx.DataCemiFrame do
       hops::3,
       0::4,
       # TODO add check_src_addr
-      src::16,
+      check_src_addr(src)::16,
       dest::16,
       len::8,
       data::bits
@@ -98,13 +98,15 @@ defmodule Knx.DataCemiFrame do
 
   # ----------------------------------------------------------------------------
 
-  # def convert_to_cons(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
-  #   [pos_con: <<cemi_message_code(:l_data_con)::8, first_chunk::15, 0::1, rest::bits>>,
-  #   neg_con: <<cemi_message_code(:l_data_con)::8, first_chunk::15, 1::1, rest::bits>>]
+  # def convert_to_req(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
+  #   <<cemi_message_code(:l_data_req)::8, first_chunk::15, 0::1, rest::bits>>
   # end
 
-  def convert_to_req(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
-    <<cemi_message_code(:l_data_req)::8, first_chunk::15, 0::1, rest::bits>>
+  def convert_message_code(
+        <<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>,
+        cemi_message_code
+      ) do
+    <<cemi_message_code(cemi_message_code)::8, first_chunk::15, 0::1, rest::bits>>
   end
 
   # [XXX]
