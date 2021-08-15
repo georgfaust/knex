@@ -38,6 +38,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
           tunnelling_queue_size: tunnelling_queue_size
         } = ip_state
       ) do
+
     case last_data_cemi_frame do
       # no frame to be confirmed: send data_cemi_frame to knx if seq counter correct
       :none ->
@@ -55,6 +56,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
             :logger.debug(
               "[D: #{Process.get(:cache_id)}] tunnelling.req: received expected seq counter"
             )
+
+            data_cemi_frame = replace_src_addr(data_cemi_frame)
 
             {%{
                ip_state
@@ -359,5 +362,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
   defp check_control_1_field(_received_frame, _sent_frame) do
     :unexpected_conf
+  end
+
+  defp replace_src_addr(<<head::8*4, _src_addr::8*2, tail::bits>>) do
+    device_src_addr = KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+    <<head::8*4, device_src_addr::8*2, tail::bits>>
   end
 end
