@@ -300,6 +300,7 @@ defmodule Knx.KnxnetIp.Core do
         header <> body
       else
         header = Ip.header(service_type_id(:connect_resp), structure_length(:header) + 1)
+        # TODO wireshark says a byte is missing here: pseudo connection id?
         body = <<status_code::8>>
         header <> body
       end
