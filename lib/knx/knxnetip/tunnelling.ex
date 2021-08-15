@@ -52,6 +52,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
           :counter_equal ->
             con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
 
+            :logger.debug(
+              "[D: #{Process.get(:cache_id)}] tunnelling.req: received expected seq counter"
+            )
+
             {%{
                ip_state
                | con_tab: con_tab,
@@ -67,16 +71,26 @@ defmodule Knx.KnxnetIp.Tunnelling do
           :counter_off_by_minus_one ->
             ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
 
+            :logger.debug(
+              "[D: #{Process.get(:cache_id)}] tunnelling.req: seq counter is off by -1"
+            )
+
             {ip_state, [tunnelling_ack(ip_frame)]}
 
           # [XXXIII]
           :any_other_case ->
+            :logger.debug(
+              "[D: #{Process.get(:cache_id)}] tunnelling.req: received unexpected seq counter"
+            )
+
             {ip_state, []}
         end
 
       # wait for another frame to be confirmed: enqueue data_cemi_frame
       <<_::bits>> ->
         frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
+
+        :logger.debug("[D: #{Process.get(:cache_id)}] tunnelling.req: enqueue data cemi frame")
 
         # TODO introduce max queue size? then: warn in case of overflow
         {%{
@@ -174,6 +188,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
         data_cemi_frame,
         %IpState{con_tab: con_tab, tunnelling_queue_size: 0} = ip_state
       ) do
+    :logger.debug(
+      "[D: #{Process.get(:cache_id)}] received positive conf (tunnelling queue is empty)"
+    )
+
     server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
 
     {%{ip_state | last_data_cemi_frame: :none},
@@ -193,6 +211,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
           tunnelling_queue_size: tunnelling_queue_size
         } = ip_state
       ) do
+    :logger.debug(
+      "[D: #{Process.get(:cache_id)}] received positive conf (tunnelling queue is non-empty)"
+    )
+
     server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
     {{:value, {ip_src_endpoint, frame}}, tunnelling_queue} = :queue.out(tunnelling_queue)
 
@@ -216,12 +238,16 @@ defmodule Knx.KnxnetIp.Tunnelling do
           # last_data_cemi_frame: last_data_cemi_frame
         } = ip_state
       ) do
+    :logger.debug("[D: #{Process.get(:cache_id)}] received negative conf")
+
     # TODO could this be problematic? could driver be repeatedly unable to send frame?
     # {ip_state, [{:driver, :transmit, last_data_cemi_frame}]}
     {ip_state, []}
   end
 
   def handle_conf(:unexpected_conf, _data_cemi_frame, %IpState{} = ip_state) do
+    :logger.debug("[D: #{Process.get(:cache_id)}] received unexpected conf")
+
     {ip_state, []}
   end
 
@@ -229,6 +255,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
         data_cemi_frame,
         %IpState{con_tab: con_tab} = ip_state
       ) do
+    :logger.debug("[D: #{Process.get(:cache_id)}] received ind")
+
     server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
 
     {ip_state,

@@ -16,7 +16,7 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   def handle(
         {:knip, :from_ip,
-         {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>>}},
+         {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>> = frame}},
         %S{knxnetip: ip_state} = state
       ) do
     ip_frame = %IpFrame{ip_src_endpoint: ip_src_endpoint}
@@ -28,7 +28,8 @@ defmodule Knx.KnxnetIp.IpInterface do
       {%{state | knxnetip: ip_state}, impulses}
     else
       {:error, error_reason} ->
-        warning({:error, error_reason})
+        # warning({:error, error_reason})
+        :logger.error("[D: #{Process.get(:cache_id)}] #{error_reason}: #{frame}")
         {state, []}
     end
   end
@@ -55,13 +56,16 @@ defmodule Knx.KnxnetIp.IpInterface do
            total_length::16
          >>
        ) do
-    {:ok,
-     %IpFrame{
-       ip_frame
-       | service_family_id: service_family_id,
-         service_type_id: service_type_id,
-         total_length: total_length
-     }}
+    ip_frame = %IpFrame{
+      ip_frame
+      | service_family_id: service_family_id,
+        service_type_id: service_type_id,
+        total_length: total_length
+    }
+
+    # TODO add when ip_frame includes atoms instead of numbers
+    # :logger.debug("[D: #{Process.get(:cache_id)}] #{ip_frame}")
+    {:ok, ip_frame}
   end
 
   # -- Core, 6.2: "If a server receives a data packet with an unsupported version field,
