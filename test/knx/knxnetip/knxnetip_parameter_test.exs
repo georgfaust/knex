@@ -8,7 +8,7 @@ defmodule Knx.KnxnetIp.KnxnetIpParameterTest do
 
   @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
                  |> KnxnetIpParameter.convert_friendly_name()
-  @knx_indv_addr Application.get_env(:knx, :knx_addr, 0x1101)
+  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
   @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
   @current_ip_addr Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
 

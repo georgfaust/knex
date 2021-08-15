@@ -51,7 +51,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   @knx_medium knx_medium_code(Application.get_env(:knx, :knx_medium, :tp1))
   @device_status 1
-  @knx_indv_addr Application.get_env(:knx, :knx_addr, 0x1101)
+  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
   @project_installation_id 0x0000
   @serial 0x112233445566
   @multicast_addr 0xE000170C

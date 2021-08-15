@@ -5,6 +5,7 @@ defmodule Knx.KnxnetIp.IpInterface do
   alias Knx.KnxnetIp.Routing
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
+  alias Knx.KnxnetIp.KnxnetIpParameter
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
 
@@ -33,8 +34,13 @@ defmodule Knx.KnxnetIp.IpInterface do
   end
 
   def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: ip_state} = state) do
-    {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
-    {%{state | knxnetip: ip_state}, impulses}
+    with :ok <- check_connection(ip_state) do
+      {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
+      {%{state | knxnetip: ip_state}, impulses}
+    else
+      :no_tunnelling_connection ->
+        {state, []}
+    end
   end
 
   # ----------------------------------------------------------------------------
@@ -81,6 +87,17 @@ defmodule Knx.KnxnetIp.IpInterface do
 
       true ->
         :ok
+    end
+  end
+
+  defp check_connection(%IpState{con_tab: con_tab}) do
+    # TODO if knx indv src address available via driver: look up channel id
+    props = Cache.get_obj(:knxnet_ip_parameter)
+
+    if Map.has_key?(con_tab[:tunnel_cons], KnxnetIpParameter.get_knx_indv_addr(props)) do
+      :ok
+    else
+      :no_tunnelling_connection
     end
   end
 

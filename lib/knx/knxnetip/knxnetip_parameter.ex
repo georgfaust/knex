@@ -57,7 +57,8 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       Application.get_env(:knx, :default_gateway, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
 
     mac_addr = Application.get_env(:knx, :mac_addr, 0x000000000000)
-    knx_addr = Application.get_env(:knx, :knx_addr, 0x1101)
+
+    knx_addr = Application.get_env(:knx, :knx_indv_addr, 0x1101)
 
     friendly_name =
       Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
