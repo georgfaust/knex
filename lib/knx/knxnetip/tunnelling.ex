@@ -242,7 +242,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
     # TODO could this be problematic? could driver be repeatedly unable to send frame?
     # {ip_state, [{:driver, :transmit, last_data_cemi_frame}]}
-    {ip_state, []}
+    {%{ip_state | last_data_cemi_frame: :none}, []}
   end
 
   def handle_conf(:unexpected_conf, _data_cemi_frame, %IpState{} = ip_state) do
