@@ -28,8 +28,7 @@ defmodule Knx.KnxnetIp.IpInterface do
       {%{state | knxnetip: ip_state}, impulses}
     else
       {:error, error_reason} ->
-        # warning({:error, error_reason})
-        :logger.error("[D: #{Process.get(:cache_id)}] #{error_reason}: #{frame}")
+        :logger.warning("[D: #{Process.get(:cache_id)}] #{error_reason}: #{frame}")
         {state, []}
     end
   end

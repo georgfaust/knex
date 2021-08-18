@@ -22,11 +22,24 @@ defmodule Knx.KnxnetIp.Routing do
 
   def handle_body(
         %IpFrame{
-          service_type_id: service_type_id(:routing_ind)
+          service_type_id: service_type_id(:routing_ind),
+          ip_src_endpoint: ip_src_endpoint
         },
         cemi_frame,
         %IpState{} = ip_state
       ) do
+    current_ip_addr =
+      Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.get_current_ip_addr()
+
+    cemi_frame =
+      # own ip signals echo from sending routing indication via multicast
+      #  -> create local conf for go-server
+      if current_ip_addr == ip_src_endpoint.ip_addr do
+        DataCemiFrame.convert_message_code(cemi_frame, :l_data_con)
+      else
+        cemi_frame
+      end
+
     {ip_state, [{:dl, :up, cemi_frame}]}
   end
 
@@ -109,7 +122,7 @@ defmodule Knx.KnxnetIp.Routing do
 
     if queue_size == :queue_overflow do
       {props, _} =
-        KnxnetIpParameter.increment_queue_overflow_to_ip(Cache.get_obj(:knxnet_ip_parameter))
+        Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.increment_queue_overflow_to_ip()
 
       Cache.put_obj(:knxnet_ip_parameter, props)
     end
@@ -123,7 +136,10 @@ defmodule Knx.KnxnetIp.Routing do
   defp get_multicast_endpoint() do
     %Ep{
       protocol_code: protocol_code(:udp),
-      ip_addr: KnxnetIpParameter.get_routing_multicast_addr(Cache.get_obj(:knxnet_ip_parameter)) |> Ip.convert_number_to_ip(),
+      ip_addr:
+        Cache.get_obj(:knxnet_ip_parameter)
+        |> KnxnetIpParameter.get_routing_multicast_addr()
+        |> Ip.convert_number_to_ip(),
       port: 3671
     }
   end

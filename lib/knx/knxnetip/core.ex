@@ -246,8 +246,8 @@ defmodule Knx.KnxnetIp.Core do
     dib_supp_svc_families = dib_supp_svc_families()
 
     total_length =
-      Ip.get_structure_length([:header, :hpai, :dib_supp_svc_families]) +
-        byte_size(dib_supp_svc_families) * 8
+      Ip.get_structure_length([:header, :hpai, :dib_device_info]) +
+        byte_size(dib_supp_svc_families)
 
     header = Ip.header(service_type_id(:search_resp), total_length)
 
@@ -269,7 +269,7 @@ defmodule Knx.KnxnetIp.Core do
 
     total_length =
       Ip.get_structure_length([:header, :dib_device_info]) +
-        byte_size(dib_supp_svc_families) * 8
+        byte_size(dib_supp_svc_families) 
 
     header = Ip.header(service_type_id(:description_resp), total_length)
     body = dib_device_information() <> dib_supp_svc_families
