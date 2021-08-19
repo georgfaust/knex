@@ -21,27 +21,10 @@ defmodule Knx.KnxnetIp.Routing do
   '''
 
   def handle_body(
-        %IpFrame{
-          service_type_id: service_type_id(:routing_ind),
-          ip_src_endpoint: ip_src_endpoint
-        },
+        %IpFrame{service_type_id: service_type_id(:routing_ind)},
         cemi_frame,
         %IpState{} = ip_state
       ) do
-    current_ip_addr =
-      Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.get_current_ip_addr()
-
-    src_ip_addr = ip_src_endpoint.ip_addr |> Ip.convert_ip_to_number()
-
-    # own ip signals echo from sending routing indication via multicast
-    #  -> create local conf for go-server
-    cemi_frame =
-      if current_ip_addr == src_ip_addr do
-        DataCemiFrame.convert_message_code(cemi_frame, :l_data_con)
-      else
-        cemi_frame
-      end
-
     {ip_state, [{:dl, :up, cemi_frame}]}
   end
 

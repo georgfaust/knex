@@ -2,7 +2,10 @@ defmodule Shell.KnipServer do
   use GenServer
 
   alias Shell.Server
+  alias Knx.DataCemiFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
+  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.IpInterface, as: Ip
   require Knx.Defs
   import Knx.Defs
 
@@ -44,6 +47,14 @@ defmodule Shell.KnipServer do
       port: port
     }
 
+    own_ip_address =
+      Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.get_current_ip_addr()
+       |> Ip.convert_number_to_ip()
+
+    # own ip signals echo from sending routing indication via multicast
+    #  -> create local conf for go-server
+    data = if own_ip_address == address, do: convert_to_conf(data), else: data
+
     Server.dispatch(nil, {:knip, :from_ip, {ep, data}})
 
     {:noreply, state}
@@ -67,5 +78,10 @@ defmodule Shell.KnipServer do
     :logger.info("[KS:] [>> eff] TX #{inspect({ip, port, data})}")
     :gen_udp.send(socket, ip, port, data)
     state
+  end
+
+  defp convert_to_conf(<<header::structure_length(:header)*8, cemi_frame::bits>>) do
+    cemi_frame = DataCemiFrame.convert_message_code(cemi_frame, :l_data_con)
+    <<header::structure_length(:header)*8, cemi_frame::bits>>
   end
 end
