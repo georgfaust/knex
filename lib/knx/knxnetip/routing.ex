@@ -31,10 +31,12 @@ defmodule Knx.KnxnetIp.Routing do
     current_ip_addr =
       Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.get_current_ip_addr()
 
+    src_ip_addr = ip_src_endpoint.ip_addr |> Ip.convert_ip_to_number()
+
+    # own ip signals echo from sending routing indication via multicast
+    #  -> create local conf for go-server
     cemi_frame =
-      # own ip signals echo from sending routing indication via multicast
-      #  -> create local conf for go-server
-      if current_ip_addr == ip_src_endpoint.ip_addr do
+      if current_ip_addr == src_ip_addr do
         DataCemiFrame.convert_message_code(cemi_frame, :l_data_con)
       else
         cemi_frame
@@ -118,7 +120,11 @@ defmodule Knx.KnxnetIp.Routing do
   # queue interface
 
   def enqueue(cemi_frame) when is_binary(cemi_frame) do
-    queue_size = cemi_frame |> DataCemiFrame.convert_message_code(:l_data_ind) |> routing_ind() |> LeakyBucket.enqueue()
+    queue_size =
+      cemi_frame
+      |> DataCemiFrame.convert_message_code(:l_data_ind)
+      |> routing_ind()
+      |> LeakyBucket.enqueue()
 
     if queue_size == :queue_overflow do
       {props, _} =
