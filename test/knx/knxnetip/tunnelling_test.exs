@@ -344,7 +344,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
       assert {%S{
                 knxnetip: %IpState{
                   con_tab: @con_tab_0,
-                  last_data_cemi_frame: @cemi_frame_req
+                  last_data_cemi_frame: :none
                 }
               },
               []} =

@@ -89,8 +89,7 @@ defmodule Knx.DataCemiFrame do
       addr_t::1,
       hops::3,
       0::4,
-      # TODO add check_src_addr
-      check_src_addr(src)::16,
+      src::16,
       dest::16,
       len::8,
       data::bits
@@ -99,10 +98,7 @@ defmodule Knx.DataCemiFrame do
 
   # ----------------------------------------------------------------------------
 
-  # def convert_to_req(<<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>) do
-  #   <<cemi_message_code(:l_data_req)::8, first_chunk::15, 0::1, rest::bits>>
-  # end
-
+  # TODO why is confirm ignored here?
   def convert_message_code(
         <<_cemi_message_code::8, first_chunk::15, _confirm::1, rest::bits>>,
         cemi_message_code
