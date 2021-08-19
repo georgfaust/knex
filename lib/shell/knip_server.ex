@@ -36,7 +36,7 @@ defmodule Shell.KnipServer do
 
   @impl GenServer
   def handle_info({:udp, _socket, address, port, data}, %{} = state) do
-    IO.inspect({address, port, data}, label: :knipserver_rx)
+    IO.inspect({address, port, inspect(data, base: :hex)}, label: :knipserver_rx)
 
     ep = %Ep{
       protocol_code: protocol_code(:udp),

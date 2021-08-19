@@ -71,7 +71,8 @@ defmodule Knx.DataCemiFrame do
       }) do
     # TODO stimmt das so?
     # repeat, system_broadcast and ack bits are not interpreted by client and therefore set to 0
-    repeat = system_broadcast = ack = 0
+    repeat = ack = 0
+    system_broadcast = 1 # TODO ???
     len = byte_size(data) - 1
     frame_type = if(len <= 15, do: 1, else: 0)
 

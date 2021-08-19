@@ -1,5 +1,5 @@
 defmodule Knx.Frame do
-  @derive {Inspect, only: [:dest, :seq, :service, :apci, :data]}
+  @derive {Inspect, only: [:dest, :seq, :service, :apci, :data, :confirm]}
   defstruct message_code: nil,
             frame_type: nil,
             # TODO
