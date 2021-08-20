@@ -71,21 +71,32 @@ defmodule Knx.DataCemiFrame do
       }) do
     # TODO stimmt das so?
     # repeat, system_broadcast and ack bits are not interpreted by client and therefore set to 0
-    repeat = ack = 0
-    system_broadcast = 1 # TODO ???
+
+    # TODO ???
     len = byte_size(data) - 1
     frame_type = if(len <= 15, do: 1, else: 0)
 
-    <<
-      cemi_message_code2(primitive)::8,
-      0::8,
+    additional_info = 0
+    repeat_on_error = 1 # no
+    system_broadcast = 1 # broadcast type: domain
+    prio = 3 # TODO -- warum ist prio == 0 in frame?
+    ack_wanted = 0 # no
+    confirm_error = 0 # no
+
+    ctrl_1 = <<
       frame_type::1,
-      0::1,
-      repeat::1,
+      0:: 1,
+      repeat_on_error::1,
       system_broadcast::1,
       prio::2,
-      ack::1,
-      confirm::1,
+      ack_wanted::1,
+      confirm_error::1
+    >>
+
+    <<
+      cemi_message_code2(primitive)::8,
+      additional_info::8,
+      ctrl_1::bits,
       addr_t::1,
       hops::3,
       0::4,
