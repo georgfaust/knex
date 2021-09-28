@@ -2,8 +2,6 @@ defmodule Knx.KnxnetIp.RoutingTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.Frame, as: F
-  alias Knx.DataCemiFrame
   alias Knx.State.KnxnetIp, as: IpState
   alias Knx.KnxnetIp.IpInterface, as: Ip
   alias Knx.KnxnetIp.Endpoint, as: Ep
@@ -35,15 +33,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
-  @cemi_frame_struct %F{
-    data: <<0x47D5_000B_1001::8*6>>,
-    prio: 0,
-    src: 0x0000,
-    dest: 0x2102,
-    addr_t: 0,
-    hops: 7,
-    confirm: 0
-  }
+  @knx_device_indv_addr 0x2102
 
   setup do
     Cache.start_link(%{
@@ -56,32 +46,32 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   # ---------------
   describe "routing ind" do
-    @cemi_frame_ind DataCemiFrame.encode(:ind, @cemi_frame_struct)
+    @data <<0x47D5_000B_1001::8*6>>
+    @cemi_frame_ind Telegram.data_cemi_frame(
+                      :l_data_ind,
+                      0,
+                      0x0000,
+                      @knx_device_indv_addr,
+                      @data
+                    )
 
-    def receive_routing_ind(%S{} = state) do
-      Ip.handle(
-        {:knip, :from_ip,
-         {@router_endpoint,
-          <<
-            # Header ---------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:routing)::8,
-            service_type_id(:routing_ind)::8,
-            structure_length(:header) + byte_size(@cemi_frame_ind)::16
-          >> <>
-            @cemi_frame_ind}},
-        state
-      )
-    end
+    @routing_ind Telegram.routing_ind(@cemi_frame_ind)
 
     test("successful") do
-      assert {%S{}, [{:dl, :up, @cemi_frame_ind}]} = receive_routing_ind(%S{})
+      assert {%S{}, [{:dl, :up, @cemi_frame_ind}]} =
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_ind}},
+                 %S{}
+               )
     end
   end
 
   # ---------------
   describe "routing busy" do
+    @routing_busy_wait_100_control_0 Telegram.routing_busy(100, 0)
+
+    @routing_busy_wait_10_control_0 Telegram.routing_busy(10, 0)
+
     def receive_routing_busy(routing_busy_wait_time, routing_busy_control_field, %S{} = state) do
       Ip.handle(
         {:knip, :from_ip,
@@ -105,70 +95,80 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
     test("routing busy count, incrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 0}} = last_state, []} =
-               receive_routing_busy(100, 0, %S{knxnetip: %IpState{routing_busy_count: 0}})
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
+                 %S{knxnetip: %IpState{routing_busy_count: 0}}
+               )
 
       # if the next routing busy arrives after 10 ms, routing busy count is incremented
       :timer.sleep(15)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}} = last_state, []} =
-               receive_routing_busy(100, 0, last_state)
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
+                 last_state
+               )
 
       # if the next routing busy arrives within 10 ms, routing busy count is NOT incremented
       :timer.sleep(5)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
-               receive_routing_busy(100, 0, last_state)
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
+                 last_state
+               )
     end
 
     # TODO is there a way to test this without increasing test time by 320 ms?
     @tag :skip
     test("routing busy count, decrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 2}} = last_state, []} =
-               receive_routing_busy(10, 0, %S{knxnetip: %IpState{routing_busy_count: 2}})
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
+                 %S{knxnetip: %IpState{routing_busy_count: 2}}
+               )
 
       # reset_time_routing_busy_count <= now + 10 + 50 * 2 + 2 * 100
       :timer.sleep(310 + 2 * 5)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
-               receive_routing_busy(50, 0, last_state)
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
+                 last_state
+               )
     end
   end
 
   # ---------------
   describe "routing lost message" do
-    def receive_routing_lost_message() do
-      Ip.handle(
-        {:knip, :from_ip,
-         {@multicast_endpoint,
-          <<
-            # Header ---------------
-            structure_length(:header)::8,
-            protocol_version(:knxnetip)::8,
-            service_family_id(:routing)::8,
-            service_type_id(:routing_lost_message)::8,
-            Ip.get_structure_length([:header, :lost_message_info])::16,
-            # Lost Message Info ---------------
-            structure_length(:lost_message_info)::8,
-            0::8,
-            0::16
-          >>}},
-        %S{}
-      )
-    end
+    @routing_lost_message Telegram.routing_lost_message()
 
     test("successful") do
-      assert {%S{}, []} = receive_routing_lost_message()
+      assert {%S{}, []} =
+               Ip.handle(
+                 {:knip, :from_ip, {@router_endpoint, @routing_lost_message}},
+                 %S{}
+               )
     end
   end
 
   # ---------------
   describe "routing indication" do
-    @cemi_frame_req DataCemiFrame.encode(:req, @cemi_frame_struct)
+    @cemi_frame_req Telegram.data_cemi_frame(
+                      :l_data_req,
+                      0,
+                      0x0000,
+                      @knx_device_indv_addr,
+                      @data
+                    )
 
-    @routing_ind_header Ip.header(
-                          service_type_id(:routing_ind),
-                          structure_length(:header) + byte_size(@cemi_frame_req)
-                        )
+    @routing_ind_header <<
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
+      service_family_id(:routing)::8,
+      service_type_id(:routing_ind)::8,
+      structure_length(:header) + byte_size(@cemi_frame_req)::16
+    >>
 
     test("successful") do
       assert {:ip, :transmit,
@@ -176,8 +176,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
                  protocol_code: protocol_code(:udp),
                  ip_addr: {224, 0, 23, 12},
                  port: 3671
-               },
-               @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_req)
+               }, @routing_ind_header <> @cemi_frame_req}} = Routing.routing_ind(@cemi_frame_req)
     end
   end
 

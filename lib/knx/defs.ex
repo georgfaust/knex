@@ -353,28 +353,28 @@ defmodule Knx.Defs do
 
   enum(structure_length,
     do: [
-      header: 0x06,
-      hpai: 0x08,
-      dib_device_info: 0x36,
-      dib_supp_svc_families: 0x08,
-      connection_header: 0x04,
-      connection_header_core: 0x02,
-      connection_header_device_management: 0x04,
-      connection_header_tunnelling: 0x04,
-      cri_device_mgmt_con: 0x02,
-      cri_tunnel_con: 0x04,
-      crd_device_mgmt_con: 0x02,
-      crd_tunnel_con: 0x04,
-      cemi_l_data_without_data: 0x09,
-      busy_info: 0x06,
-      lost_message_info: 0x04
+      header: 6,
+      hpai: 8,
+      dib_device_info: 54,
+      dib_supp_svc_families: 8,
+      connection_header: 4,
+      connection_header_core: 2,
+      connection_header_device_management: 4,
+      connection_header_tunnelling: 4,
+      cri_device_mgmt_con: 2,
+      cri_tunnel_con: 4,
+      crd_device_mgmt_con: 2,
+      crd_tunnel_con: 4,
+      cemi_l_data_without_data: 9,
+      busy_info: 6,
+      lost_message_info: 4
     ]
   )
 
   enum(crd_structure_length,
     do: [
-      device_mgmt_con: 0x02,
-      tunnel_con: 0x04
+      device_mgmt_con: 2,
+      tunnel_con: 4
     ]
   )
 

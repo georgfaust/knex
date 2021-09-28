@@ -70,61 +70,91 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
   # ---------------
   describe "device configuration request" do
-    @total_length_device_config_ack Ip.get_structure_length([
-                                      :header,
-                                      :connection_header_device_management
-                                    ])
+    @device_configuration_req_propread_req_successful Telegram.device_configuration_req(
+                                                        0,
+                                                        0,
+                                                        :m_propread_req,
+                                                        0x53,
+                                                        1,
+                                                        1,
+                                                        <<>>
+                                                      )
 
-    @total_length_device_config_req Ip.get_structure_length([
-                                      :header,
-                                      :connection_header_device_management
-                                    ]) + 9
-    @total_length_device_config_req_error_prop_read Ip.get_structure_length([
-                                                      :header,
-                                                      :connection_header_device_management
-                                                    ]) + 8
+    @device_configuration_req_propread_req_successful_con Telegram.device_configuration_req(
+                                                            0,
+                                                            0,
+                                                            :m_propread_con,
+                                                            0x53,
+                                                            1,
+                                                            1,
+                                                            <<0x07B0::16>>
+                                                          )
 
-    def receive_device_configuration_req_m_propread(
-          %S{} = state,
-          connection_id: connection_id,
-          cemi_message_type: cemi_message_type,
-          pid: pid,
-          start: start,
-          data: data
-        ) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_device_mgmt_data_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:device_management)::8,
-             service_type_id(:device_configuration_req)::8,
-             Ip.get_structure_length([
-               :header,
-               :connection_header_device_management
-             ]) + 7 + byte_size(data)::16,
-             # Connection header ---------------
-             structure_length(:connection_header_device_management)::8,
-             connection_id::8,
-             0::8,
-             knxnetip_constant(:reserved)::8,
-             # cEMI ---------------
-             cemi_message_code(cemi_message_type)::8,
-             0::16,
-             1::8,
-             pid::8,
-             1::4,
-             start::12
-           >> <>
-             <<data::bits>>}
-        },
-        state
-      )
-    end
+    @device_configuration_req_propread_req_invalid_pid Telegram.device_configuration_req(
+                                                         0,
+                                                         0,
+                                                         :m_propread_req,
+                                                         0x99,
+                                                         1,
+                                                         1,
+                                                         <<>>
+                                                       )
+
+    @device_configuration_req_propread_req_invalid_pid_con Telegram.device_configuration_req(
+                                                             0,
+                                                             0,
+                                                             :m_propread_con,
+                                                             0x99,
+                                                             0,
+                                                             1,
+                                                             <<cemi_error_code(:unspecific)>>
+                                                           )
+
+    @device_configuration_req_propread_req_invalid_start Telegram.device_configuration_req(
+                                                           0,
+                                                           0,
+                                                           :m_propread_req,
+                                                           0x53,
+                                                           1,
+                                                           100,
+                                                           <<>>
+                                                         )
+
+    @device_configuration_req_propread_req_invalid_start_con Telegram.device_configuration_req(
+                                                               0,
+                                                               0,
+                                                               :m_propread_con,
+                                                               0x53,
+                                                               0,
+                                                               100,
+                                                               <<cemi_error_code(:unspecific)>>
+                                                             )
+
+    @device_configuration_req_propread_req_connection_inexistent Telegram.device_configuration_req(
+                                                                   87,
+                                                                   0,
+                                                                   :m_propread_req,
+                                                                   0x53,
+                                                                   1,
+                                                                   1,
+                                                                   <<>>
+                                                                 )
+
+    @device_configuration_req_propread_con_successful Telegram.device_configuration_req(
+                                                        0,
+                                                        0,
+                                                        :m_propread_con,
+                                                        0x53,
+                                                        1,
+                                                        1,
+                                                        <<0>>
+                                                      )
+
+    @device_configuration_ack_channel_0_seq_0_no_error Telegram.device_configuration_ack(
+                                                         0,
+                                                         0,
+                                                         :no_error
+                                                       )
 
     test "m_propread.req, successful" do
       assert {
@@ -133,52 +163,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_ack)::8,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>}},
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_req)::8,
-                     @total_length_device_config_req::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ---------------
-                     cemi_message_code(:m_propread_con)::8,
-                     0::16,
-                     1::8,
-                     0x53::8,
-                     1::4,
-                     1::12,
-                     0x07B0::16
-                   >>}},
+                   @device_configuration_req_propread_req_successful_con}},
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               receive_device_configuration_req_m_propread(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 cemi_message_type: :m_propread_req,
-                 pid: 0x53,
-                 start: 1,
-                 data: <<>>
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_req_successful}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -189,52 +185,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_ack)::8,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>}},
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_req)::8,
-                     @total_length_device_config_req_error_prop_read::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ---------------
-                     cemi_message_code(:m_propread_con)::8,
-                     0::16,
-                     1::8,
-                     0x99::8,
-                     0::4,
-                     1::12,
-                     cemi_error_code(:unspecific)
-                   >>}},
+                   @device_configuration_req_propread_req_invalid_pid_con}},
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               receive_device_configuration_req_m_propread(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 cemi_message_type: :m_propread_req,
-                 pid: 0x99,
-                 start: 1,
-                 data: <<>>
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_req_invalid_pid}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -245,52 +207,18 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_ack)::8,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>}},
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_req)::8,
-                     @total_length_device_config_req_error_prop_read::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     knxnetip_constant(:reserved)::8,
-                     # cEMI ---------------
-                     cemi_message_code(:m_propread_con)::8,
-                     0::16,
-                     1::8,
-                     0x53::8,
-                     0::4,
-                     100::12,
-                     cemi_error_code(:unspecific)
-                   >>}},
+                   @device_configuration_req_propread_req_invalid_start_con}},
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               receive_device_configuration_req_m_propread(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 cemi_message_type: :m_propread_req,
-                 pid: 0x53,
-                 start: 100,
-                 data: <<>>
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_req_invalid_start}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -301,28 +229,14 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
                   {@ets_device_mgmt_data_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:device_management)::8,
-                     service_type_id(:device_configuration_ack)::8,
-                     @total_length_device_config_ack::16,
-                     # Connection header ---------------
-                     structure_length(:connection_header_device_management)::8,
-                     0::8,
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>}}
+                   @device_configuration_ack_channel_0_seq_0_no_error}}
                ]
              } =
-               receive_device_configuration_req_m_propread(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 cemi_message_type: :m_propread_con,
-                 pid: 0x53,
-                 start: 1,
-                 data: <<0>>
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_con_successful}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -331,52 +245,28 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               receive_device_configuration_req_m_propread(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 87,
-                 cemi_message_type: :m_propread_req,
-                 pid: 0x53,
-                 start: 1,
-                 data: <<>>
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_req_connection_inexistent}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
   end
 
   # ---------------
   describe "device configuration ack" do
-    @total_length_device_config_ack Ip.get_structure_length([
-                                      :header,
-                                      :connection_header_device_management
-                                    ])
+    @device_configuration_ack_channel_45_seq_0_no_error Telegram.device_configuration_ack(
+                                                          45,
+                                                          0,
+                                                          :no_error
+                                                        )
 
-    def receive_device_configuration_ack(
-          %S{} = status,
-          connection_id: connection_id,
-          seq_counter: seq_counter
-        ) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_device_mgmt_data_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:device_management)::8,
-             service_type_id(:device_configuration_ack)::8,
-             @total_length_device_config_ack::16,
-             # Connection header ---------------
-             structure_length(:connection_header_device_management)::8,
-             connection_id::8,
-             seq_counter::8,
-             common_error_code(:no_error)::8
-           >>}
-        },
-        status
-      )
-    end
-
+    @device_configuration_ack_channel_0_seq_21_no_error Telegram.device_configuration_ack(
+                                                          0,
+                                                          21,
+                                                          :no_error
+                                                        )
     test "successful" do
       assert {
                %S{knxnetip: %IpState{con_tab: @con_tab_0_server_seq_1}},
@@ -385,10 +275,11 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :stop, {:device_management_req, 0}}
                ]
              } =
-               receive_device_configuration_ack(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 seq_counter: 0
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -397,10 +288,11 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               receive_device_configuration_ack(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 45,
-                 seq_counter: 0
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_ack_channel_45_seq_0_no_error}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -409,10 +301,11 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               receive_device_configuration_ack(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0,
-                 seq_counter: 21
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_ack_channel_0_seq_21_no_error}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
   end

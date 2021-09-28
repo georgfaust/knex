@@ -11,12 +11,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   require Knx.Defs
   import Knx.Defs
 
-  @ip_interface_ip Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
-  @ip_interface_ip_num Helper.convert_ip_to_number(@ip_interface_ip)
-  @ip_interface_port 3671
-
   @ets_ip {192, 168, 178, 21}
-  @ets_ip_num Helper.convert_ip_to_number(@ets_ip)
   @ets_port_discovery 60427
   @ets_port_control 52250
   @ets_port_device_mgmt_data 52252
@@ -49,15 +44,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
 
-  @knx_medium knx_medium_code(Application.get_env(:knx, :knx_medium, :tp1))
-  @device_status 1
   @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
-  @project_installation_id 0x0000
-  @serial 0x112233445566
-  @multicast_addr 0xE000170C
-  @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
-  @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
-                 |> KnxnetIpParameter.convert_friendly_name()
 
   @list_0_255 Enum.to_list(0..255)
   @list_1_255 Enum.to_list(1..255)
@@ -118,72 +105,32 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   # ---------------
   describe "search request" do
-    @total_length_search_resp Ip.get_structure_length([
-                                :header,
-                                :hpai,
-                                :dib_device_info,
-                                :dib_supp_svc_families
-                              ])
-    test "successful" do
+    @search_req Telegram.search_req()
+    @search_resp_interface Telegram.search_resp(:knx_ip_interface)
+    @search_resp Telegram.search_resp(:knx_ip)
+
+    test "successful, knx_ip_interface" do
+      Application.put_env(:knx, :knx_device_type, :knx_ip_interface)
+
       assert {
                %S{},
-               [
-                 {:ip, :transmit,
-                  {@ets_discovery_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:search_resp)::8,
-                     @total_length_search_resp::16,
-                     # HPAI ---------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ip_interface_ip_num::32,
-                     @ip_interface_port::16,
-                     # DIB Device Info ---------------
-                     structure_length(:dib_device_info)::8,
-                     description_type_code(:device_info)::8,
-                     @knx_medium::8,
-                     @device_status::8,
-                     @knx_indv_addr::16,
-                     @project_installation_id::16,
-                     @serial::48,
-                     @multicast_addr::32,
-                     @mac_addr::48,
-                     @friendly_name::8*30,
-                     # DIB Supported Service Families ---------------
-                     structure_length(:dib_supp_svc_families)::8,
-                     description_type_code(:supp_svc_families)::8,
-                     service_family_id(:core)::8,
-                     protocol_version(:core)::8,
-                     service_family_id(:device_management)::8,
-                     protocol_version(:device_management)::8,
-                     service_family_id(:tunnelling)::8,
-                     protocol_version(:tunnelling)::8
-                   >>}}
-               ]
+               [{:ip, :transmit, {@ets_discovery_endpoint, @search_resp_interface}}]
              } =
                Ip.handle(
-                 {
-                   :knip,
-                   :from_ip,
-                   {@ets_discovery_endpoint,
-                    <<
-                      # Header ---------------
-                      structure_length(:header)::8,
-                      protocol_version(:knxnetip)::8,
-                      service_family_id(:core)::8,
-                      service_type_id(:search_req)::8,
-                      Ip.get_structure_length([:header, :hpai])::16,
-                      # HPAI ---------------
-                      structure_length(:hpai)::8,
-                      protocol_code(:udp)::8,
-                      @ets_ip_num::32,
-                      @ets_port_discovery::16
-                    >>}
-                 },
+                 {:knip, :from_ip, {@ets_discovery_endpoint, @search_req}},
+                 %S{}
+               )
+    end
+
+    test "successful, knx_ip" do
+      Application.put_env(:knx, :knx_device_type, :knx_ip)
+
+      assert {
+               %S{},
+               [{:ip, :transmit, {@ets_discovery_endpoint, @search_resp}}]
+             } =
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_discovery_endpoint, @search_req}},
                  %S{}
                )
     end
@@ -191,67 +138,32 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   # ---------------
   describe "description request" do
-    @total_length_description_resp Ip.get_structure_length([
-                                     :header,
-                                     :dib_device_info,
-                                     :dib_supp_svc_families
-                                   ])
+    @description_req Telegram.description_req()
+    @description_resp_interface Telegram.description_resp(:knx_ip_interface)
+    @description_resp Telegram.description_resp(:knx_ip)
 
-    test "successful" do
+    test "successful, knx_ip_interface" do
+      Application.put_env(:knx, :knx_device_type, :knx_ip_interface)
+
       assert {
                %S{},
-               [
-                 {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:description_resp)::8,
-                     @total_length_description_resp::16,
-                     # DIB Device Info ---------------
-                     structure_length(:dib_device_info)::8,
-                     description_type_code(:device_info)::8,
-                     @knx_medium::8,
-                     @device_status::8,
-                     @knx_indv_addr::16,
-                     @project_installation_id::16,
-                     @serial::48,
-                     @multicast_addr::32,
-                     @mac_addr::48,
-                     @friendly_name::8*30,
-                     # DIB Supported Service Families ---------------
-                     structure_length(:dib_supp_svc_families)::8,
-                     description_type_code(:supp_svc_families)::8,
-                     service_family_id(:core)::8,
-                     protocol_version(:core)::8,
-                     service_family_id(:device_management)::8,
-                     protocol_version(:device_management)::8,
-                     service_family_id(:tunnelling)::8,
-                     protocol_version(:tunnelling)::8
-                   >>}}
-               ]
+               [{:ip, :transmit, {@ets_control_endpoint, @description_resp_interface}}]
              } =
                Ip.handle(
-                 {
-                   :knip,
-                   :from_ip,
-                   {@ets_control_endpoint,
-                    <<
-                      # Header ---------------
-                      structure_length(:header)::8,
-                      protocol_version(:knxnetip)::8,
-                      service_family_id(:core)::8,
-                      service_type_id(:description_req)::8,
-                      Ip.get_structure_length([:header, :hpai])::16,
-                      # HPAI ---------------
-                      structure_length(:hpai)::8,
-                      protocol_code(:udp)::8,
-                      @ets_ip_num::32,
-                      @ets_port_control::16
-                    >>}
-                 },
+                 {:knip, :from_ip, {@ets_control_endpoint, @description_req}},
+                 %S{}
+               )
+    end
+
+    test "successful, knx_ip" do
+      Application.put_env(:knx, :knx_device_type, :knx_ip)
+
+      assert {
+               %S{},
+               [{:ip, :transmit, {@ets_control_endpoint, @description_resp}}]
+             } =
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @description_req}},
                  %S{}
                )
     end
@@ -259,129 +171,71 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   # ---------------
   describe "connect request" do
-    @total_length_connect_resp_management Ip.get_structure_length([
-                                            :header,
-                                            :connection_header_core,
-                                            :hpai,
-                                            :crd_device_mgmt_con
-                                          ])
+    @connect_req_device_management Telegram.connect_req(:device_management)
 
-    @total_length_connect_resp_tunnelling Ip.get_structure_length([
-                                            :header,
-                                            :connection_header_core,
-                                            :hpai,
-                                            :crd_tunnel_con
-                                          ])
-    @total_length_connect_resp_error structure_length(:header) + 1
+    @connect_req_tunnelling_tunnel_con_linklayer Telegram.connect_req(
+                                                   :tunnelling,
+                                                   con_type: :tunnel_con,
+                                                   tunnelling_knx_layer: :tunnel_linklayer
+                                                 )
 
-    def receive_connect_req_device_management(%S{} = state) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_control_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:core)::8,
-             service_type_id(:connect_req)::8,
-             Ip.get_structure_length([
-               :header,
-               :hpai,
-               :hpai,
-               :crd_device_mgmt_con
-             ])::16,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_control::16,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_device_mgmt_data::16,
-             # CRI ---------------
-             structure_length(:crd_device_mgmt_con)::8,
-             con_type_code(:device_mgmt_con)::8
-           >>}
-        },
-        state
-      )
-    end
+    @connect_req_tunnelling_tunnel_con_raw Telegram.connect_req(
+                                             :tunnelling,
+                                             con_type: :tunnel_con,
+                                             tunnelling_knx_layer: :tunnel_raw
+                                           )
 
-    def receive_connect_req_tunnelling(
-          %S{} = state,
-          con_type: con_type,
-          tunnelling_knx_layer: tunnelling_knx_layer
-        ) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_control_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:core)::8,
-             service_type_id(:connect_req)::8,
-             Ip.get_structure_length([
-               :header,
-               :hpai,
-               :hpai,
-               :crd_tunnel_con
-             ])::16,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_control::16,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_tunnelling_data::16,
-             # CRI ---------------
-             structure_length(:cri_tunnel_con)::8,
-             con_type_code(con_type)::8,
-             tunnelling_knx_layer_code(tunnelling_knx_layer)::8,
-             knxnetip_constant(:reserved)::8
-           >>}
-        },
-        state
-      )
-    end
+    @connect_req_tunnelling_remlog_con_linklayer Telegram.connect_req(
+                                                   :tunnelling,
+                                                   con_type: :remlog_con,
+                                                   tunnelling_knx_layer: :tunnel_linklayer
+                                                 )
+
+    @connect_resp_device_management_no_error_channel_0 Telegram.connect_resp(
+                                                         :no_error,
+                                                         :device_management,
+                                                         0
+                                                       )
+
+    @connect_resp_device_management_error_no_more_cons Telegram.connect_resp(
+                                                         :error,
+                                                         :no_more_connections
+                                                       )
+
+    @connect_resp_tunnelling_no_error_channel_1 Telegram.connect_resp(
+                                                  :no_error,
+                                                  :tunnelling,
+                                                  1
+                                                )
+
+    @connect_resp_tunnelling_error_no_more_cons Telegram.connect_resp(
+                                                  :error,
+                                                  :no_more_connections
+                                                )
+
+    @connect_resp_tunnelling_error_con_option Telegram.connect_resp(
+                                                :error,
+                                                :connection_option
+                                              )
+
+    @connect_resp_tunnelling_error_con_type Telegram.connect_resp(
+                                              :error,
+                                              :connection_type
+                                            )
 
     test "device management, successful" do
       assert {
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_management::16,
-                     # Connection Header ---------------
-                     0::8,
-                     connect_response_status_code(:no_error)::8,
-                     # HPAI ---------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ip_interface_ip_num::32,
-                     @ip_interface_port::16,
-                     # CRD ---------------
-                     structure_length(:crd_device_mgmt_con)::8,
-                     con_type_code(:device_mgmt_con)::8
-                   >>}},
+                  {@ets_control_endpoint, @connect_resp_device_management_no_error_channel_0}},
                  {:timer, :start, {:ip_connection, 0}}
                ]
-             } = receive_connect_req_device_management(%S{knxnetip: %IpState{con_tab: %{}}})
+             } =
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
+                 %S{knxnetip: %IpState{con_tab: %{}}}
+               )
     end
 
     test "device management, error: no_more_connections" do
@@ -389,21 +243,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_full}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_error::16,
-                     connect_response_status_code(:no_more_connections)::8
-                   >>}}
+                  {@ets_control_endpoint, @connect_resp_device_management_error_no_more_cons}}
                ]
              } =
-               receive_connect_req_device_management(%S{
-                 knxnetip: %IpState{con_tab: @con_tab_full}
-               })
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_full}}
+               )
     end
 
     test "tunnelling, successful" do
@@ -411,34 +257,14 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_1}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_tunnelling::16,
-                     # Connection Header ---------------
-                     1::8,
-                     connect_response_status_code(:no_error)::8,
-                     # HPAI ---------------
-                     structure_length(:hpai)::8,
-                     protocol_code(:udp)::8,
-                     @ip_interface_ip_num::32,
-                     @ip_interface_port::16,
-                     # CRD ---------------
-                     structure_length(:crd_tunnel_con)::8,
-                     con_type_code(:tunnel_con)::8,
-                     @knx_indv_addr::16
-                   >>}},
+                  {@ets_control_endpoint, @connect_resp_tunnelling_no_error_channel_1}},
                  {:timer, :start, {:ip_connection, 1}}
                ]
              } =
-               receive_connect_req_tunnelling(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 con_type: :tunnel_con,
-                 tunnelling_knx_layer: :tunnel_linklayer
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -447,22 +273,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_1}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_error::16,
-                     connect_response_status_code(:no_more_connections)::8
-                   >>}}
+                  {@ets_control_endpoint, @connect_resp_tunnelling_error_no_more_cons}}
                ]
              } =
-               receive_connect_req_tunnelling(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_1}},
-                 con_type: :tunnel_con,
-                 tunnelling_knx_layer: :tunnel_linklayer
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_1}}
                )
     end
 
@@ -471,22 +288,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_error::16,
-                     connect_response_status_code(:connection_option)::8
-                   >>}}
+                  {@ets_control_endpoint, @connect_resp_tunnelling_error_con_option}}
                ]
              } =
-               receive_connect_req_tunnelling(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 con_type: :tunnel_con,
-                 tunnelling_knx_layer: :tunnel_raw
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_raw}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -495,87 +303,40 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connect_resp)::8,
-                     @total_length_connect_resp_error::16,
-                     connect_response_status_code(:connection_type)::8
-                   >>}}
+                  {@ets_control_endpoint, @connect_resp_tunnelling_error_con_type}}
                ]
              } =
-               receive_connect_req_tunnelling(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 con_type: :remlog_con,
-                 tunnelling_knx_layer: :tunnel_linklayer
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_control_endpoint, @connect_req_tunnelling_remlog_con_linklayer}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
   end
 
   # ---------------
   describe "connectionstate request" do
-    @total_length_connectionstate_resp Ip.get_structure_length([
-                                         :header,
-                                         :connection_header_core
-                                       ])
+    @connectionstate_req_channel_0 Telegram.connectionstate_req(0)
+    @connectionstate_req_channel_27 Telegram.connectionstate_req(27)
 
-    def receive_connectionstate_req(%S{} = state, connection_id: connection_id) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_control_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:core)::8,
-             service_type_id(:connectionstate_req)::8,
-             Ip.get_structure_length([
-               :header,
-               :connection_header_core,
-               :hpai
-             ])::16,
-             # Connection Header ---------------
-             connection_id::8,
-             knxnetip_constant(:reserved)::8,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_control::16
-           >>}
-        },
-        state
-      )
-    end
+    @connectionstate_resp_channel_0_no_error Telegram.connectionstate_resp(0, :no_error)
+    @connectionstate_resp_channel_27_error_con_id Telegram.connectionstate_resp(
+                                                    27,
+                                                    :connection_id
+                                                  )
 
     test "successful" do
       assert {
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connectionstate_resp)::8,
-                     @total_length_connectionstate_resp::16,
-                     # Connection Header ---------------
-                     0::8,
-                     connectionstate_response_status_code(:no_error)::8
-                   >>}},
+                  {@ets_control_endpoint, @connectionstate_resp_channel_0_no_error}},
                  {:timer, :restart, {:ip_connection, 0}}
                ]
              } =
-               receive_connectionstate_req(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_0}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -584,88 +345,34 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:connectionstate_resp)::8,
-                     @total_length_connectionstate_resp::16,
-                     # Connection Header ---------------
-                     27::8,
-                     connectionstate_response_status_code(:connection_id)::8
-                   >>}}
+                  {@ets_control_endpoint, @connectionstate_resp_channel_27_error_con_id}}
                ]
              } =
-               receive_connectionstate_req(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 27
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_27}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
   end
 
   # ---------------
   describe "disconnect request" do
-    @total_length_disconnect_resp Ip.get_structure_length([
-                                    :header,
-                                    :connection_header_core
-                                  ])
+    @disconnect_req_channel_0 Telegram.disconnect_req(0)
+    @disconnect_req_channel_1 Telegram.disconnect_req(1)
 
-    def receive_disconnect_req(%S{} = state, connection_id: connection_id) do
-      Ip.handle(
-        {
-          :knip,
-          :from_ip,
-          {@ets_control_endpoint,
-           <<
-             # Header ---------------
-             structure_length(:header)::8,
-             protocol_version(:knxnetip)::8,
-             service_family_id(:core)::8,
-             service_type_id(:disconnect_req)::8,
-             Ip.get_structure_length([
-               :header,
-               :connection_header_core,
-               :hpai
-             ])::16,
-             # Connection Header ---------------
-             connection_id::8,
-             knxnetip_constant(:reserved)::8,
-             # HPAI ---------------
-             structure_length(:hpai)::8,
-             protocol_code(:udp)::8,
-             @ets_ip_num::32,
-             @ets_port_control::16
-           >>}
-        },
-        state
-      )
-    end
+    @disconnect_resp_channel_0 Telegram.disconnect_resp(0)
 
     test "successful" do
       assert {
                %S{knxnetip: %IpState{con_tab: @con_tab}},
                [
-                 {:ip, :transmit,
-                  {@ets_control_endpoint,
-                   <<
-                     # Header ---------------
-                     structure_length(:header)::8,
-                     protocol_version(:knxnetip)::8,
-                     service_family_id(:core)::8,
-                     service_type_id(:disconnect_resp)::8,
-                     @total_length_disconnect_resp::16,
-                     # Connection Header ---------------
-                     0::8,
-                     common_error_code(:no_error)::8
-                   >>}},
+                 {:ip, :transmit, {@ets_control_endpoint, @disconnect_resp_channel_0}},
                  {:timer, :stop, {:ip_connection, 0}}
                ]
              } =
-               receive_disconnect_req(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 0
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_0}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
 
@@ -674,9 +381,9 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               receive_disconnect_req(
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}},
-                 connection_id: 1
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_1}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
   end
