@@ -3,10 +3,10 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -28,7 +28,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnipParameter.get_knxnetip_parameter_props()
 
   @list_1_255 Enum.to_list(1..255)
 
@@ -156,6 +156,58 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                                                          :no_error
                                                        )
 
+    @device_configuration_req_propwrite_req_successful Telegram.device_configuration_req(
+                                                         0,
+                                                         0,
+                                                         :m_propwrite_req,
+                                                         0x53,
+                                                         1,
+                                                         1,
+                                                         <<0x07B0::16>>
+                                                       )
+
+    @device_configuration_req_propwrite_req_successful_con Telegram.device_configuration_req(
+                                                             0,
+                                                             0,
+                                                             :m_propwrite_con,
+                                                             0x53,
+                                                             1,
+                                                             1,
+                                                             <<>>
+                                                           )
+
+    @device_configuration_req_propwrite_req_invalid_pid Telegram.device_configuration_req(
+                                                          0,
+                                                          0,
+                                                          :m_propwrite_req,
+                                                          0x99,
+                                                          1,
+                                                          1,
+                                                          <<0x07B0::16>>
+                                                        )
+
+    @device_configuration_req_propwrite_req_invalid_pid_con Telegram.device_configuration_req(
+                                                              0,
+                                                              0,
+                                                              :m_propwrite_con,
+                                                              0x99,
+                                                              0,
+                                                              1,
+                                                              <<cemi_error_code(:unspecific)>>
+                                                            )
+
+    @device_configuration_req_propread_req_wrong_seq Telegram.device_configuration_req(
+                                                       0,
+                                                       17,
+                                                       :m_propread_req,
+                                                       0x53,
+                                                       1,
+                                                       1,
+                                                       <<>>
+                                                     )
+
+    @device_configuration_req_reset_req Telegram.device_configuration_req(0, 0, :m_reset_req)
+
     test "m_propread.req, successful" do
       assert {
                %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
@@ -252,6 +304,69 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
+
+    test "m_propwrite.req, successful" do
+      assert {
+               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               [
+                 {:timer, :restart, {:ip_connection, 0}},
+                 {:ip, :transmit,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
+                 {:ip, :transmit,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propwrite_req_successful_con}},
+                 {:timer, :start, {:device_management_req, 0}}
+               ]
+             } =
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propwrite_req_successful}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
+
+    test "m_propwrite.req, error: property read, invalid pid" do
+      assert {
+               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               [
+                 {:timer, :restart, {:ip_connection, 0}},
+                 {:ip, :transmit,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_ack_channel_0_seq_0_no_error}},
+                 {:ip, :transmit,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propwrite_req_invalid_pid_con}},
+                 {:timer, :start, {:device_management_req, 0}}
+               ]
+             } =
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propwrite_req_invalid_pid}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
+
+    test "m_propread.req, wrong seq number" do
+      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint,
+                   @device_configuration_req_propread_req_wrong_seq}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
+
+    test "m_reset.req" do
+      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
+               Ip.handle(
+                 {:knip, :from_ip,
+                  {@ets_device_mgmt_data_endpoint, @device_configuration_req_reset_req}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
   end
 
   # ---------------
@@ -314,7 +429,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
   test("no matching handler") do
     assert {
-             %S{},
+             %S{knxnetip: %IpState{con_tab: @con_tab_0}},
              []
            } =
              Ip.handle(
@@ -326,9 +441,11 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    protocol_version(:knxnetip)::8,
                    service_family_id(:device_management)::8,
                    5::8,
-                   structure_length(:header)::16
+                   structure_length(:header) + 2::16,
+                   0::8,
+                   0::8
                  >>}},
-               %S{}
+               %S{knxnetip: %IpState{con_tab: @con_tab_0}}
              )
   end
 end

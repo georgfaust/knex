@@ -3,10 +3,10 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -28,7 +28,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnipParameter.get_knxnetip_parameter_props()
 
   @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
   @knx_device_indv_addr 0x2102
@@ -78,6 +78,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
   # ---------------
   describe "tunnelling request" do
     @data <<0x47D5_000B_1001::8*6>>
+    @unexpected_data <<0x47D5_000C_1001::8*6>>
 
     @cemi_frame_req Telegram.data_cemi_frame(
                       :l_data_req,
@@ -111,6 +112,16 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                           @data
                         )
 
+    @cemi_frame_unexpected_con Telegram.data_cemi_frame(
+                                 :l_data_con,
+                                 1,
+                                 @knx_indv_addr,
+                                 @knx_device_indv_addr,
+                                 @unexpected_data
+                               )
+
+    @cemi_frame_reset_req <<cemi_message_code(:m_reset_req)::8>>
+
     @tunnelling_req_data_req_channel_0_seq_0 Telegram.tunnelling_req(
                                                0,
                                                0,
@@ -133,6 +144,12 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                                                  0,
                                                  @cemi_frame_req
                                                )
+
+    @tunnelling_req_reset_req Telegram.tunnelling_req(
+                                0,
+                                0,
+                                @cemi_frame_reset_req
+                              )
 
     @tunnelling_ack_channel_0_seq_0 Telegram.tunnelling_ack(0, 0)
 
@@ -193,6 +210,14 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Ip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_244_seq_0}},
+                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
+
+    test "m_reset.req" do
+      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
+               Ip.handle(
+                 {:knip, :from_ip, {@ets_tunnelling_data_endpoint, @tunnelling_req_reset_req}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
     end
@@ -296,6 +321,25 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                )
     end
 
+    test "unexpected confirmation" do
+      assert {%S{
+                knxnetip: %IpState{
+                  con_tab: @con_tab_0,
+                  last_data_cemi_frame: @cemi_frame_req
+                }
+              },
+              []} =
+               Ip.handle(
+                 {:knip, :from_knx, @cemi_frame_unexpected_con},
+                 %S{
+                   knxnetip: %IpState{
+                     con_tab: @con_tab_0,
+                     last_data_cemi_frame: @cemi_frame_req
+                   }
+                 }
+               )
+    end
+
     test "indication" do
       assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}},
               [
@@ -306,6 +350,26 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Ip.handle(
                  {:knip, :from_knx, @cemi_frame_ind},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               )
+    end
+
+    test "wrong primitive" do
+      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
+               Ip.handle({:knip, :from_knx, @cemi_frame_req}, %S{
+                 knxnetip: %IpState{con_tab: @con_tab_0}
+               })
+    end
+
+    test "no tunnelling connection" do
+      assert {%S{}, []} =
+               Ip.handle(
+                 {:knip, :from_knx, @cemi_frame_pos_con},
+                 %S{
+                   knxnetip: %IpState{
+                     con_tab: %{tunnel_cons: %{}},
+                     last_data_cemi_frame: @cemi_frame_req
+                   }
+                 }
                )
     end
   end
@@ -384,7 +448,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   test("no matching handler") do
     assert {
-             %S{},
+             %S{knxnetip: %IpState{con_tab: @con_tab_0}},
              []
            } =
              Ip.handle(
@@ -396,9 +460,11 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                    protocol_version(:knxnetip)::8,
                    service_family_id(:tunnelling)::8,
                    5::8,
-                   structure_length(:header)::16
+                   structure_length(:header) + 2::16,
+                   0::8,
+                   0::8
                  >>}},
-               %S{}
+               %S{knxnetip: %IpState{con_tab: @con_tab_0}}
              )
   end
 end

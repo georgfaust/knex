@@ -3,10 +3,11 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Core
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -42,7 +43,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnipParameter.get_knxnetip_parameter_props()
 
   @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
 
@@ -389,6 +390,16 @@ defmodule Knx.KnxnetIp.CoreTest do
   end
 
   # ---------------
+  describe "disconnect request creation" do
+    @disconnect_req_channel_0 Telegram.disconnect_req(0, {0, 0, 0, 0}, 3671)
+
+    test "successful" do
+      assert {:ip, :transmit, {_ep, @disconnect_req_channel_0}} =
+               Core.disconnect_req(0, @con_tab_0)
+    end
+  end
+
+  # ---------------
   test("no matching handler") do
     assert {
              %S{},
@@ -403,7 +414,29 @@ defmodule Knx.KnxnetIp.CoreTest do
                    protocol_version(:knxnetip)::8,
                    service_family_id(:core)::8,
                    11::8,
-                   structure_length(:header)::16
+                   structure_length(:header) + 1::16,
+                   0::8
+                 >>}},
+               %S{}
+             )
+  end
+
+  test("invalid service familiy") do
+    assert {
+             %S{},
+             []
+           } =
+             Ip.handle(
+               {:knip, :from_ip,
+                {@ets_control_endpoint,
+                 <<
+                   # Header ---------------
+                   structure_length(:header)::8,
+                   protocol_version(:knxnetip)::8,
+                   0x06::8,
+                   11::8,
+                   structure_length(:header) + 1::16,
+                   0::8
                  >>}},
                %S{}
              )

@@ -61,7 +61,6 @@ defmodule Helper do
   def get_addr_tab(), do: @addr_tab
   def get_go_values(), do: @go_values
 
-
   def get_device_props(prog_mode, verify \\ false) do
     device_ctrl = %{@device_ctrl | verify_mode: verify}
 
@@ -97,12 +96,11 @@ defmodule Helper do
   def convert_ip_to_number({e3, e2, e1, e0}) do
     (e3 <<< 24) + (e2 <<< 16) + (e1 <<< 8) + e0
   end
-
 end
 
 defmodule Telegram do
-  alias Knx.KnxnetIp.IpInterface, as: Ip
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -126,7 +124,7 @@ defmodule Telegram do
   @multicast_addr 0xE000170C
   @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
   @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
-                 |> KnxnetIpParameter.convert_friendly_name()
+                 |> KnipParameter.convert_friendly_name()
 
   # ----------------------------------------------------------------------------
   # core
@@ -368,7 +366,7 @@ defmodule Telegram do
     >>
   end
 
-  def disconnect_req(channel_id) do
+  def disconnect_req(channel_id, ip \\ nil, port \\ nil) do
     <<
       # Header ---------------
       structure_length(:header)::8,
@@ -383,8 +381,8 @@ defmodule Telegram do
       # HPAI ---------------
       structure_length(:hpai)::8,
       protocol_code(:udp)::8,
-      @ets_ip_num::32,
-      @ets_port_control::16
+      if(ip, do: Ip.convert_ip_to_number(ip), else: @ets_ip_num)::32,
+      if(port, do: port, else: @ets_port_control)::16
     >>
   end
 
@@ -436,6 +434,24 @@ defmodule Telegram do
       start::12
     >> <>
       <<data::bits>>
+  end
+
+  def device_configuration_req(channel_id, seq_counter, :m_reset_req) do
+    <<
+      # Header ---------------
+      structure_length(:header)::8,
+      protocol_version(:knxnetip)::8,
+      service_family_id(:device_management)::8,
+      service_type_id(:device_configuration_req)::8,
+      structure_length(:header) + structure_length(:connection_header_device_management) + 1::16,
+      # Connection header ---------------
+      structure_length(:connection_header_device_management)::8,
+      channel_id::8,
+      seq_counter::8,
+      knxnetip_constant(:reserved)::8,
+      # cEMI ---------------
+      cemi_message_code(:m_reset_req)::8
+    >>
   end
 
   def device_configuration_ack(channel_id, seq_counter, error_code) do

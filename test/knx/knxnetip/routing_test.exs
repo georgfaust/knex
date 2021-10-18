@@ -3,11 +3,11 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.LeakyBucket
   alias Knx.KnxnetIp.Routing
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
@@ -31,7 +31,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
   }
 
   @device_object Helper.get_device_props(1)
-  @knxnet_ip_parameter_object KnxnetIpParameter.get_knxnetip_parameter_props()
+  @knxnet_ip_parameter_object KnipParameter.get_knxnetip_parameter_props()
 
   @knx_device_indv_addr 0x2102
 
@@ -82,7 +82,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
             protocol_version(:knxnetip)::8,
             service_family_id(:routing)::8,
             service_type_id(:routing_busy)::8,
-            Ip.get_structure_length([:header, :busy_info])::16,
+            structure_length(:header) + structure_length(:busy_info)::16,
             # Busy Info ---------------
             structure_length(:busy_info)::8,
             0::8,
@@ -119,8 +119,6 @@ defmodule Knx.KnxnetIp.RoutingTest do
                )
     end
 
-    # TODO is there a way to test this without increasing test time by 320 ms?
-    @tag :skip
     test("routing busy count, decrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 2}} = last_state, []} =
                Ip.handle(
@@ -181,8 +179,8 @@ defmodule Knx.KnxnetIp.RoutingTest do
   end
 
   # ---------------
-  describe "enqueue" do
-    test("successful") do
+  describe "Leaky Bucket" do
+    test("enqueue - successful") do
       LeakyBucket.start_link(
         max_queue_size: 1000,
         queue_poll_rate: 20,
@@ -192,7 +190,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       assert 1 = Routing.enqueue(@cemi_frame_req)
     end
 
-    test("queue overflow") do
+    test("enqueue - queue overflow") do
       LeakyBucket.start_link(
         max_queue_size: 1,
         queue_poll_rate: 20,
@@ -202,6 +200,42 @@ defmodule Knx.KnxnetIp.RoutingTest do
       assert 1 = Routing.enqueue(@cemi_frame_req)
       assert :queue_overflow = Routing.enqueue(@cemi_frame_req)
     end
+
+    test("pop object") do
+      pid = self()
+
+      LeakyBucket.start_link(
+        max_queue_size: 100,
+        queue_poll_rate: 5,
+        pop_fun: fn object -> send(pid, object) end
+      )
+
+      Routing.enqueue(@cemi_frame_req)
+      :timer.sleep(5)
+
+      assert :ok = receive_frame()
+      :timer.sleep(5)
+      assert :nothing = receive_frame()
+    end
+
+    test("successful delay") do
+      pid = self()
+
+      LeakyBucket.start_link(
+        max_queue_size: 100,
+        queue_poll_rate: 5,
+        pop_fun: fn object -> send(pid, object) end
+      )
+
+      Routing.enqueue(@cemi_frame_req)
+      LeakyBucket.delay(15)
+      :timer.sleep(5)
+
+      assert :nothing = receive_frame()
+      :timer.sleep(10)
+      assert :ok = receive_frame()
+    end
+
   end
 
   # ---------------
@@ -216,9 +250,20 @@ defmodule Knx.KnxnetIp.RoutingTest do
                    protocol_version(:knxnetip)::8,
                    service_family_id(:routing)::8,
                    5::8,
-                   structure_length(:header)::16
+                   structure_length(:header) + 1::16,
+                   0::8
                  >>}},
                %S{}
              )
+  end
+
+  # ---------------
+
+  defp receive_frame() do
+    receive do
+      _frame -> :ok
+    after
+      5 -> :nothing
+    end
   end
 end
