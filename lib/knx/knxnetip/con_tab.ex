@@ -2,6 +2,16 @@ defmodule Knx.KnxnetIp.ConTab do
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.IpFrame
 
+  @moduledoc """
+  The ConTab module is used to manage connections with KNXnet/IP clients.
+
+  Generally, the server may accept up to 255 device management connections,
+  but only 1 tunnelling connection at the same time.
+  """
+
+  @doc """
+  Open connection of type 'con_type'.
+  """
   def open(%{tunnel_cons_left: 0}, :tunnel_con, _ip_frame) do
     {:error, :no_more_connections}
   end
@@ -51,6 +61,9 @@ defmodule Knx.KnxnetIp.ConTab do
     open(con_tab, con_type, ip_frame)
   end
 
+  @doc """
+  Close connection with given 'id'.
+  """
   def close(con_tab, id) do
     case Map.pop(con_tab, id) do
       {nil, _} ->
@@ -75,22 +88,34 @@ defmodule Knx.KnxnetIp.ConTab do
     end
   end
 
+  @doc """
+  Returns true if connection exists, false otherwise.
+  """
   def is_open?(con_tab, id) do
     Map.has_key?(con_tab, id)
   end
 
+  @doc """
+  Increments client sequence counter by 1.
+  """
   def increment_client_seq_counter(con_tab, id) do
     cur_count = con_tab[id].client_seq_counter
     <<new_count>> = <<cur_count + 1::8>>
     put_in(con_tab[id].client_seq_counter, new_count)
   end
 
+  @doc """
+  Increments server sequence counter by 1.
+  """
   def increment_server_seq_counter(con_tab, id) do
     cur_count = con_tab[id].server_seq_counter
     <<new_count>> = <<cur_count + 1::8>>
     put_in(con_tab[id].server_seq_counter, new_count)
   end
 
+  @doc """
+  Compares 'counter' to client sequence counter of connection with given 'id'.
+  """
   def compare_client_seq_counter(con_tab, id, counter) do
     # seq_counter is 8-bit unsigned value
     <<incremented_counter>> = <<counter + 1>>
@@ -107,26 +132,44 @@ defmodule Knx.KnxnetIp.ConTab do
     end
   end
 
+  @doc """
+  Returns true if client sequence counter is equal to 'counter', false otherwise.
+  """
   def client_seq_counter_equal?(con_tab, id, counter) do
     counter == con_tab[id].client_seq_counter
   end
 
+  @doc """
+  Returns true if server sequence counter is equal to 'counter', false otherwise.
+  """
   def server_seq_counter_equal?(con_tab, id, counter) do
     counter == con_tab[id].server_seq_counter
   end
 
+  @doc """
+  Returns server sequence counter of connection with given 'id'.
+  """
   def get_server_seq_counter(con_tab, id) do
     con_tab[id].server_seq_counter
   end
 
+  @doc """
+  Returns client sequence counter of connection with given 'id'.
+  """
   def get_client_seq_counter(con_tab, id) do
     con_tab[id].client_seq_counter
   end
 
+  @doc """
+  Returns control endpoint of connection with given 'id'.
+  """
   def get_control_endpoint(con_tab, id) do
     con_tab[id].dest_control_endpoint
   end
 
+  @doc """
+  Returns data endpoint of connection with given 'id'.
+  """
   def get_data_endpoint(con_tab, id) do
     con_tab[id].dest_data_endpoint
   end

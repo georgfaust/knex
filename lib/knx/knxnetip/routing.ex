@@ -1,8 +1,8 @@
 defmodule Knx.KnxnetIp.Routing do
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
   alias Knx.KnxnetIp.LeakyBucket
   alias Knx.DataCemiFrame
   alias Knx.State.KnxnetIp, as: IpState
@@ -11,15 +11,32 @@ defmodule Knx.KnxnetIp.Routing do
   import Knx.Defs
   import PureLogger
 
+  @moduledoc """
+  The Routing module handles the body of KNXnet/IP-frames of the identically named
+  service family.
+
+  As a result, the updated ip_state and a list of impulses/effects are returned.
+  Impulses include the respective response frames.
+  """
+
   # ----------------------------------------------------------------------------
   # body handlers
 
-  '''
-  ROUTING INDICATION
-  Description: 5.1, (2.3.5)
-  Structure: 5.2
-  '''
+  @doc """
+  Handles body of KNXnet/IP frames.
 
+  For every service type, there is one function clause.
+
+  ## KNX specification
+
+  For further information on the request services, refer to the
+  following sections in document 03_08_05 (KNXnet/IP Routing):
+
+    ROUTING_INDICATION: sections 2.3.2 (description) & 4.2.6 (structure)
+    ROUTING_BUSY: sections 2.3.5 (description) & 5.4 (structure)
+    ROUTING_LOST_MESSAGE: sections 2.3.4, 5.1 (description) & 5.3 (structure)
+
+  """
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:routing_ind)},
         cemi_frame,
@@ -27,12 +44,6 @@ defmodule Knx.KnxnetIp.Routing do
       ) do
     {ip_state, [{:dl, :up, cemi_frame}]}
   end
-
-  '''
-  ROUTING BUSY
-  Description: 2.3.5
-  Structure: 5.4
-  '''
 
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:routing_busy)},
@@ -44,9 +55,6 @@ defmodule Knx.KnxnetIp.Routing do
         >>,
         %IpState{} = ip_state
       ) do
-    # TODO a device state different from 0 indicates problems with access
-    # to either KNX or IP network. Not explicitly stated, but use this info somehow?
-
     now = :os.system_time(:milli_seconds)
     routing_busy_count = recalculate_routing_busy_count(now, ip_state)
 
@@ -63,12 +71,6 @@ defmodule Knx.KnxnetIp.Routing do
          reset_time_routing_busy_count: reset_time_routing_busy_count
      }, []}
   end
-
-  '''
-  ROUTING LOST MESSAGE
-  Description: 2.3.4, 5.1
-  Structure: 5.3
-  '''
 
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:routing_lost_message)},
@@ -87,12 +89,11 @@ defmodule Knx.KnxnetIp.Routing do
   # ----------------------------------------------------------------------------
   # impulse creators
 
-  '''
-  ROUTING INDICATION
-  Description: 5.1, (2.3.5)
-  Structure: 5.2
-  '''
-
+  ### [private doc]
+  # Produces impulse for ROUTING_INDICATION frame.
+  #
+  # KNX specification:
+  #   Document 03_08_05, sections 5.1 (description) & 5.2 (structure)
   def routing_ind(cemi_frame) do
     total_len = structure_length(:header) + byte_size(cemi_frame)
     frame = Ip.header(service_type_id(:routing_ind), total_len) <> cemi_frame
@@ -102,6 +103,14 @@ defmodule Knx.KnxnetIp.Routing do
   # ----------------------------------------------------------------------------
   # queue interface
 
+  @doc """
+  Enqueues cemi frame in leaky bucket queue.
+
+  Allows sending of cemi frames to be deferred in order to avoid cache overload
+  of KNXnet/IP routers.
+
+  Called by driver.
+  """
   def enqueue(cemi_frame) when is_binary(cemi_frame) do
     queue_size =
       cemi_frame
@@ -111,7 +120,7 @@ defmodule Knx.KnxnetIp.Routing do
 
     if queue_size == :queue_overflow do
       {props, _} =
-        Cache.get_obj(:knxnet_ip_parameter) |> KnxnetIpParameter.increment_queue_overflow_to_ip()
+        Cache.get_obj(:knxnet_ip_parameter) |> KnipParameter.increment_queue_overflow_to_ip()
 
       Cache.put_obj(:knxnet_ip_parameter, props)
     end
@@ -122,18 +131,26 @@ defmodule Knx.KnxnetIp.Routing do
   # ----------------------------------------------------------------------------
   # helper functions
 
+  ### [private doc]
+  # Returns endpoint containing standard multicast ip address and port.
   defp get_multicast_endpoint() do
     %Ep{
       protocol_code: protocol_code(:udp),
       ip_addr:
         Cache.get_obj(:knxnet_ip_parameter)
-        |> KnxnetIpParameter.get_routing_multicast_addr()
+        |> KnipParameter.get_routing_multicast_addr()
         |> Ip.convert_number_to_ip(),
       port: 3671
     }
   end
 
   # [XXXIV]
+  ### [private doc]
+  # Determines routing busy count.
+  #
+  # Routing busy count is defined as the number of ROUTING_BUSY frames received in a moving period.
+  #
+  # See KNX Specification for more details: 03_08_05 2.3.5
   defp recalculate_routing_busy_count(
          now,
          %IpState{
@@ -157,11 +174,11 @@ defmodule Knx.KnxnetIp.Routing do
     end
   end
 
+  ### [private doc]
+  # Returns delay time for sending of ROUTING_INDICATION frames.
+  #
+  # See KNX Specification for more details: 03_08_05 2.3.5
   defp get_delay_time(control_field, wait_time, routing_busy_count) do
-    # TODO What is this supposed to mean?:
-    # "If the ROUTING_BUSY Frame contains a routing busy control field value not equal to 0000h
-    # then >>>any device that does not interpret this routing busy control field<<< SHALL stop sending
-    # for the time tw."
     if control_field == 0 do
       # get random number between 0 and 1
       random_number = :rand.uniform()

@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.DeviceManagement do
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.MgmtCemiFrame
   alias Knx.KnxnetIp.ConTab
@@ -10,15 +10,29 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   import Knx.Defs
   import PureLogger
 
+  @moduledoc """
+  The DeviceManagement module handles the body of KNXnet/IP-frames of the identically named
+  service family.
+
+  As a result, the updated ip_state and a list of impulses/effects are returned.
+  Impulses include the respective response frames.
+  """
+
   # ----------------------------------------------------------------------------
   # body handlers
 
-  '''
-  DEVICE CONFIGURATION REQUEST
-  Description: 2.3.2
-  Structure: 4.2.6
-  '''
+  @doc """
+  Handles body of KNXnet/IP frames.
 
+  ## KNX specification
+
+  For further information on the request services, refer to the
+  following sections in document 03_08_03 (KNXnet/IP Device Management):
+
+    DEVICE_CONFIGURATION_REQUEST: section 2.3.2 (description) & 4.2.6 (structure)
+    DEVICE_CONFIGURATION_ACK: section 2.3.2 (description) & 4.2.7 (structure)
+
+  """
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
@@ -70,11 +84,6 @@ defmodule Knx.KnxnetIp.DeviceManagement do
     end
   end
 
-  '''
-  M_RESET_REQ
-  Description & Structure: 03_06_03:4.1.7.5.1
-  '''
-
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_req)},
         <<
@@ -86,15 +95,8 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         >>,
         %IpState{} = ip_state
       ) do
-    # TODO trigger device restart
-    {ip_state, []}
+    {ip_state, [{:restart, :ind, :knip}]}
   end
-
-  '''
-  DEVICE CONFIGURATION ACK
-  Description: 2.3.2
-  Structure: 4.2.7
-  '''
 
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:device_configuration_ack)},
@@ -127,12 +129,11 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   # ----------------------------------------------------------------------------
   # impulse creators
 
-  '''
-  DEVICE CONFIGURATION REQUEST
-  Description: 2.3.2
-  Structure: 4.2.6
-  '''
-
+  ### [private doc]
+  # Produces impulse for DEVICE_CONFIGURATION_REQUEST frame.
+  #
+  # KNX specification:
+  #   Document 03_08_02, section 2.3.2 (description) & 4.2.6 (structure)
   defp device_configuration_req(
          %IpFrame{
            channel_id: channel_id,
@@ -163,19 +164,17 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
         [
           {:ip, :transmit, {data_endpoint, header <> body}},
-          # TODO set device_configuration_request_timeout = 10s
           {:timer, :start,
            {:device_management_req, ConTab.get_server_seq_counter(con_tab, channel_id)}}
         ]
     end
   end
 
-  '''
-  DEVICE CONFIGURATION ACK
-  Description: 2.3.2
-  Structure: 4.2.7
-  '''
-
+  ### [private doc]
+  # Produces impulse for DEVICE_CONFIGURATION_ACK frame.
+  #
+  # KNX specification:
+  #   Document 03_08_02, section 2.3.2 (description) & 4.2.7 (structure)
   defp device_configuration_ack(%IpFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
@@ -192,12 +191,11 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   # ----------------------------------------------------------------------------
   # management cemi frame creators
 
-  '''
-  M_PROPREAD_X
-  Description & Structure: 03_06_03:4.1.7.3.2 ff.
-  '''
-
-  # TODO implement funcpropcommand, funcpropstateread
+  ### [private doc]
+  # Produces management cemi frame for M_PROPREAD_X services.
+  #
+  # KNX specification:
+  #   Document 03_06_03, section 4.1.7.3.2 ff.
   defp mgmt_cemi_frame(%MgmtCemiFrame{
          message_code: cemi_message_code(:m_propread_req),
          object_type: object_type,
@@ -206,7 +204,6 @@ defmodule Knx.KnxnetIp.DeviceManagement do
          elems: elems,
          start: start
        }) do
-    # !info: alternatively, use a wrapper function for P.read_prop in Device and KnxnetIp_parameter?
     case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
       {:ok, _, new_data} ->
         <<
@@ -237,11 +234,11 @@ defmodule Knx.KnxnetIp.DeviceManagement do
     :no_reply
   end
 
-  '''
-  M_PROPWRITE_X
-  Description & Structure: 03_06_03:4.1.7.3.4 ff.
-  '''
-
+  ### [private doc]
+  # Produces management cemi frame for M_PROPWRITE_X services.
+  #
+  # KNX specification:
+  #   Document 03_06_03, section 4.1.7.3.4 ff.
   defp mgmt_cemi_frame(%MgmtCemiFrame{
          message_code: cemi_message_code(:m_propwrite_req),
          object_type: object_type,
@@ -257,7 +254,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
            start: start,
            data: data
          ) do
-      {:ok, props, _} ->
+      {:ok, props, _, _} ->
         Cache.put_obj(decode_object_type(object_type), props)
 
         <<
@@ -287,44 +284,47 @@ defmodule Knx.KnxnetIp.DeviceManagement do
     :no_reply
   end
 
-  '''
-  M_PROPINFO_IND
-  Description & Structure: 03_06_03:4.1.7.3.6
-  '''
+  @doc """
+  Produces management cemi frame for M_PROPWRITE_X services.
 
-  # TODO M_PropInfo.ind shall be sent to inform client about changed property value
-  #  (change not triggered by client via PropWrite) 03_06_03: 4.1.7.3.6
+  M_PropInfo.ind shall be sent to inform client about changed property value
+   (change not triggered by client via PropWrite)
 
-  # defp mgmt_cemi_frame(
-  #        object_type,
-  #        object_instance,
-  #        pid,
-  #        elems,
-  #        start
-  #      ) do
-  #   # !info: instead of atom, use object_type(atom) as key in Cache?
+  KNX specification:
+    Document 03_06_03, section 4.1.7.3.6
+  """
+  def mgmt_cemi_frame(
+        object_type,
+        object_instance,
+        pid,
+        elems,
+        start
+      ) do
+    case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
+      {:ok, _, new_data} ->
+        <<
+          cemi_message_code(:m_propinfo_ind)::8,
+          object_type::16,
+          object_instance::8,
+          pid::8,
+          elems::4,
+          start::12
+        >> <>
+          new_data
 
-  #   # !info: alternatively, use a wrapper function for P.read_prop in Device and KnxnetIp_parameter?
-  #   case P.read_prop(get_object(object_type), 0, pid: pid, elems: elems, start: start) do
-  #     {:ok, _, new_data} ->
-  #       <<
-  #         cemi_message_code(:m_propinfo_ind)::8,
-  #         object_type::16,
-  #         object_instance::8,
-  #         pid::8,
-  #         elems::4,
-  #         start::12
-  #       >> <>
-  #         new_data
-
-  #     {:error, _} ->
-  #       :no_reply
-  #   end
-  # end
+      {:error, _} ->
+        :no_reply
+    end
+  end
 
   # ----------------------------------------------------------------------------
   # placeholder creators
 
+  ### [private doc]
+  # Produces Connection Header.
+  #
+  # KNX specification:
+  #   Document 03_08_02, section 5.3.1 (description/structure)
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
       structure_length(:connection_header_device_management),
@@ -337,6 +337,8 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   # ----------------------------------------------------------------------------
   # helper functions
 
+  ### [private doc]
+  # Translates object type index to associated tuple.
   defp decode_object_type(object_type) do
     case object_type do
       0 -> :device
@@ -344,8 +346,9 @@ defmodule Knx.KnxnetIp.DeviceManagement do
     end
   end
 
+  ### [private doc]
+  # Loads object from Cache.
   defp get_object(object_type) do
-    # !info: instead of atom, use object_type(atom) as key in Cache?
     case object_type do
       object_type(:device) -> Cache.get_obj(:device)
       object_type(:knxnet_ip_parameter) -> Cache.get_obj(:knxnet_ip_parameter)

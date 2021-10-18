@@ -1,22 +1,50 @@
 defmodule Knx.KnxnetIp.Tunnelling do
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
   alias Knx.State.KnxnetIp, as: IpState
 
   require Knx.Defs
   import Knx.Defs
   import PureLogger
 
+  @moduledoc """
+  The Tunnelling module handles the body of KNXnet/IP-frames of the identically named
+  service family.
+  
+  As a result, the updated ip_state and a list of impulses/effects are returned.
+  Impulses include the respective response frames.
+  """
+
   # ----------------------------------------------------------------------------
   # body handlers
 
-  '''
-  TUNNELLING REQUEST
-  Description: 2.2, 2.6
-  Structure: 4.4.6
-  '''
+  @doc """
+  Handles body of KNXnet/IP frames.
+  
+  ## KNX specification
+  
+  For further information on the request services, refer to the
+  following sections in document 03_08_04 (KNXnet/IP TUNNELLING):
+  
+    TUNNELLING_REQUEST: sections 2.2, 2.6 (description) & 4.4.6 (structure)
+    TUNNELLING ACK: sections 2.2, 2.6 (description) & 4.4.7 (structure)
+  
+  """
+  def handle_body(
+        %IpFrame{service_type_id: service_type_id(:tunnelling_req)},
+        <<
+          structure_length(:connection_header_tunnelling)::8,
+          _channel_id::8,
+          _client_seq_counter::8,
+          knxnetip_constant(:reserved)::8,
+          cemi_message_code(:m_reset_req)::8
+        >>,
+        %IpState{} = ip_state
+      ) do
+    {ip_state, [{:restart, :ind, :knip}]}
+  end
 
   def handle_body(
         %IpFrame{
@@ -38,7 +66,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
           tunnelling_queue_size: tunnelling_queue_size
         } = ip_state
       ) do
-
     case last_data_cemi_frame do
       # no frame to be confirmed: send data_cemi_frame to knx if seq counter correct
       :none ->
@@ -95,7 +122,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
         :logger.debug("[D: #{Process.get(:cache_id)}] tunnelling.req: enqueue data cemi frame")
 
-        # TODO introduce max queue size? then: warn in case of overflow
         {%{
            ip_state
            | tunnelling_queue: :queue.in({ip_src_endpoint, frame}, tunnelling_queue),
@@ -103,32 +129,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
          }, []}
     end
   end
-
-  '''
-  M_RESET_REQ
-  Description & Structure: 03_06_03:4.1.7.5.1
-  '''
-
-  def handle_body(
-        %IpFrame{service_type_id: service_type_id(:tunnelling_req)},
-        <<
-          structure_length(:connection_header_tunnelling)::8,
-          _channel_id::8,
-          _client_seq_counter::8,
-          knxnetip_constant(:reserved)::8,
-          cemi_message_code(:m_reset_req)::8
-        >>,
-        %IpState{} = ip_state
-      ) do
-    # TODO trigger device restart
-    {ip_state, []}
-  end
-
-  '''
-  TUNNELLING ACK
-  Description: 2.2, 2.6
-  Structure: 4.4.7
-  '''
 
   def handle_body(
         %IpFrame{service_type_id: service_type_id(:tunnelling_ack)},
@@ -161,13 +161,18 @@ defmodule Knx.KnxnetIp.Tunnelling do
   # ----------------------------------------------------------------------------
   # frame handler
 
-  '''
-  L_DATA.IND
-  Description & Structure: 03_06_03:4.1.5.3.5
-  L_DATA.CON(F)
-  Description & Structure: 03_06_03:4.1.5.3.4
-  '''
-
+  @doc """
+  Handles body of up frames (knx frames from bus).
+  
+  ## KNX specification
+  
+  For further information on the cemi frame definitions, refer to the
+  following sections in document 03_06_03:
+  
+    L_DATA.IND: section 4.1.5.3.5 (description/structure)
+    L_DATA.CON(F): section 4.1.5.3.4 (description/structure)
+  
+  """
   def handle_up_frame(
         <<cemi_message_code::8, _rest::bits>> = data_cemi_frame,
         %IpState{last_data_cemi_frame: last_data_cemi_frame} = ip_state
@@ -185,7 +190,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
     end
   end
 
-  # TODO cleaner solution: driver also returns knx indv src address
   def handle_conf(
         :pos_conf,
         data_cemi_frame,
@@ -200,7 +204,6 @@ defmodule Knx.KnxnetIp.Tunnelling do
     {%{ip_state | last_data_cemi_frame: :none},
      [
        tunnelling_req(data_cemi_frame, con_tab),
-       # TODO set tunneling_request_timeout = 1s
        {:timer, :start, {:tunnelling_req, server_seq_counter}}
      ]}
   end
@@ -272,12 +275,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
   # ----------------------------------------------------------------------------
   # impulse creators
 
-  '''
-  TUNNELLING REQUEST
-  Description: 2.2, 2.6
-  Structure: 4.4.6
-  '''
-
+  ### [private doc]
+  # Produces impulse for TUNNELLING_REQUEST frame.
+  #
+  # KNX specification:
+  #   Document 03_08_04, sections 2.2, 2.6 (description) & 4.4.6 (structure)
   defp tunnelling_req(
          data_cemi_frame,
          con_tab
@@ -303,12 +305,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
     {:ip, :transmit, {data_endpoint, header <> body}}
   end
 
-  '''
-  TUNNELLING ACK
-  Description: 2.2, 2.6
-  Structure: 4.4.7
-  '''
-
+  ### [private doc]
+  # Produces impulse for TUNNELLING_ACK frame.
+  #
+  # KNX specification:
+  #   Document 03_08_04, sections 2.2, 2.6 (description) & 4.4.7 (structure)
   defp tunnelling_ack(%IpFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
@@ -324,6 +325,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
   # ----------------------------------------------------------------------------
   # placeholder creators
 
+  ### [private doc]
+  # Produces Connection Header.
+  #
+  # KNX specification:
+  #   Document 03_08_02, section 5.3.1 (description/structure)
   defp connection_header(channel_id, seq_counter, last_octet) do
     <<
       structure_length(:connection_header_tunnelling),
@@ -336,12 +342,15 @@ defmodule Knx.KnxnetIp.Tunnelling do
   # ----------------------------------------------------------------------------
   # helper function
 
+  ### [private doc]
+  # Gets channel id from Cache.
   defp get_channel_id(con_tab) do
-    # TODO if knx indv src address available via driver: look up channel id
     props = Cache.get_obj(:knxnet_ip_parameter)
-    con_tab[:tunnel_cons][KnxnetIpParameter.get_knx_indv_addr(props)]
+    con_tab[:tunnel_cons][KnipParameter.get_knx_indv_addr(props)]
   end
 
+  ### [private doc]
+  # Checks if L_Data confirmation matches request.
   defp check_conf(
          <<cemi_message_code(:l_data_con)::8, 0::8, r_control_1::8, tail::bits>>,
          <<cemi_message_code(:l_data_req)::8, 0::8, s_control_1::8, tail::bits>>
@@ -353,6 +362,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
     :unexpected_conf
   end
 
+  ### [private doc]
+  # Checks if control field of L_Data confirmation matches request.
   defp check_control_1_field(
          <<frame_type::1, 0::1, _r_dont_care::2, prio::2, ack::1, r_confirm::1>>,
          <<frame_type::1, 0::1, _s_dont_care::2, prio::2, ack::1, _s_confirm::1>>
@@ -364,8 +375,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
     :unexpected_conf
   end
 
+  ### [private doc]
+  # Replaces source address of data cemi frame with knx indv address of device.
   defp replace_src_addr(<<head::8*4, _src_addr::8*2, tail::bits>>) do
-    device_src_addr = KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+    device_src_addr = KnipParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
     <<head::8*4, device_src_addr::8*2, tail::bits>>
   end
 end

@@ -488,7 +488,7 @@ defmodule Knx.Defs do
     ]
   )
 
-  # TODO why are there 2 identical codes?
+  # two identical codes in KNX spec
   enum(cemi_message_code,
     do: [
       l_data_req: 0x11,

@@ -1,34 +1,62 @@
-defmodule Knx.KnxnetIp.KnxnetIpParameter do
+defmodule Knx.KnxnetIp.Parameter do
   alias Knx.Ail.Property, as: P
-  alias Knx.KnxnetIp.IpInterface, as: Ip
+  alias Knx.KnxnetIp.Ip
   use Bitwise
   require Knx.Defs
   import Knx.Defs
 
+  @doc """
+  Returns value of property current_ip_address.
+  """
   def get_current_ip_addr(props),
     do: P.read_prop_value(props, :current_ip_address)
 
+  @doc """
+  Returns value of property knx_individual_address.
+  """
   def get_knx_indv_addr(props),
     do: P.read_prop_value(props, :knx_individual_address)
 
+  @doc """
+  Returns value of property knxnetip_device_state.
+  """
   def get_device_state(props),
     do: P.read_prop_value(props, :knxnetip_device_state)
 
+  @doc """
+  Returns value of property mac_address.
+  """
   def get_mac_addr(props),
     do: P.read_prop_value(props, :mac_address)
 
+  @doc """
+  Returns value of property friendly_name.
+  """
   def get_friendly_name(props),
     do: P.read_prop_value(props, :friendly_name)
 
+  @doc """
+  Returns value of property friendly_name.
+  """
   def get_routing_multicast_addr(props),
     do: P.read_prop_value(props, :routing_multicast_address)
 
+  @doc """
+  Returns value of property routing_busy_wait_time.
+  """
   def get_busy_wait_time(props),
     do: P.read_prop_value(props, :routing_busy_wait_time)
 
+  @doc """
+  Returns value of property queue_overflow_to_knx.
+  """
   def get_queue_overflow_to_knx(props),
     do: P.read_prop_value(props, :queue_overflow_to_knx)
 
+  @doc """
+  Increments value of property queue_overflow_to_ip by one.
+  Max. value: 65535
+  """
   def increment_queue_overflow_to_ip(props) do
     num = P.read_prop_value(props, :queue_overflow_to_ip)
 
@@ -43,10 +71,13 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   # ----------------------------------------------------------------------------
 
+  @doc """
+  Returns KNXnet/IP parameter object with sensible default values.
+
+  Read from the environment: current_ip_address, current_subnet_mask, current_default_gateway,
+    mac_addr, knx_indv_addr
+  """
   def get_knxnetip_parameter_props() do
-    # TODO ip_addr shall be 0.0.0.0 if no addr was assigned according to Core 8.5.1.4
-    # TODO if DHCP: get address assigned from DHCP - if static: get static address
-    # TODO: wenn static IP per prop write oder parameter geaendert wird -> IP aendert
     current_ip_addr =
       Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
 
@@ -72,7 +103,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
         w_lvl: 0
       ),
       P.new(:project_installation_id, [0x0000], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      # TODO has to be in sync with properties :subnet_addr and :device_addr of device object
       P.new(:knx_individual_address, [knx_addr], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       # first entry shall be length of list
       P.new(:additional_individual_addresses, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
@@ -80,11 +110,8 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       P.new(:current_ip_assignment_method, [0x4], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:ip_assignment_method, [0x4], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:ip_capabilities, [0x1], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      # TODO shall be set according to Core, 8.5; linked to ip_address?
       P.new(:current_ip_address, [current_ip_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      # linked to subnet_mask?
       P.new(:current_subnet_mask, [current_subnet_mask], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      # linked to default_gateway?
       P.new(:current_default_gateway, [current_default_gateway],
         max: 1,
         write: false,
@@ -94,7 +121,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       P.new(:ip_address, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:subnet_mask, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:default_gateway, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
-      # TODO shall contain the IP address of the DHCP/BootP server
       P.new(:dhcp_bootp_server, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:system_setup_multicast_address, [Ip.convert_ip_to_number({224, 0, 23, 12})],
@@ -103,7 +129,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
         r_lvl: 3,
         w_lvl: 0
       ),
-      # TODO change of value shall only become acitive after reset of device
       P.new(:routing_multicast_address, [Ip.convert_ip_to_number({224, 0, 23, 12})],
         max: 1,
         write: true,
@@ -112,7 +137,6 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
       ),
       P.new(:ttl, [0x10], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:knxnetip_device_capabilities, [0x3], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      # TODO if the value of the Property changes the current value shall be sent using M_PropInfo.ind
       P.new(:knxnetip_device_state, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:queue_overflow_to_ip, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:queue_overflow_to_knx, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
@@ -124,6 +148,9 @@ defmodule Knx.KnxnetIp.KnxnetIpParameter do
 
   # ----------------------------------------------------------------------------
 
+  @doc """
+  Converts string from unicode to LATIN-1 and adds trailing zeros for friendly_name property.
+  """
   def convert_friendly_name(string) do
     hex_string_list =
       :unicode.characters_to_binary(string, :utf8, :latin1)

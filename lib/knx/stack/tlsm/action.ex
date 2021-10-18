@@ -4,20 +4,22 @@ defmodule Knx.Stack.Tlsm.Action do
 
   @prio_system 0
 
+  @spec action(atom, State.t(), Frame.t()) ::
+          { State.t(),
+           [
+             {:al, :conf | :ind, Frame.t()}
+             | {:timer, :restart | :start | :stop, {atom, atom}}
+             | {:tl, :req, Frame.t()}
+             | {:tlsm, :req, Frame.t()}
+           ]}
   def action(:a00, %S{} = state, _) do
-    {
-      state,
-      []
-    }
+    {state, []}
   end
 
   def action(:a01, %S{} = state, %F{src: src}) do
     {
       %S{state | c_addr: src, s_seq: 0, r_seq: 0},
-      [
-        {:timer, :start, {:tlsm, :connection}},
-        {:al, :ind, %F{src: src, service: :t_connect}}
-      ]
+      [{:timer, :start, {:tlsm, :connection}}, {:al, :ind, %F{src: src, service: :t_connect}}]
     }
   end
 

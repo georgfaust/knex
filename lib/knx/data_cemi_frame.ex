@@ -3,7 +3,7 @@ defmodule Knx.DataCemiFrame do
   import Knx.Defs
 
   alias Knx.Frame, as: F
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   def decode(<<
         mc::8,
@@ -61,13 +61,13 @@ defmodule Knx.DataCemiFrame do
   def decode(_), do: {nil, nil}
 
   def encode(primitive, %F{
-        prio: prio,
+        prio: _prio,
         addr_t: addr_t,
         src: src,
         dest: dest,
         data: data,
         hops: hops,
-        confirm: confirm
+        confirm: _confirm
       }) do
     # TODO stimmt das so?
     # repeat, system_broadcast and ack bits are not interpreted by client and therefore set to 0
@@ -77,15 +77,20 @@ defmodule Knx.DataCemiFrame do
     frame_type = if(len <= 15, do: 1, else: 0)
 
     additional_info = 0
-    repeat_on_error = 1 # no
-    system_broadcast = 1 # broadcast type: domain
-    prio = 3 # TODO -- warum ist prio == 0 in frame?
-    ack_wanted = 0 # no
-    confirm_error = 0 # no
+    # no
+    repeat_on_error = 1
+    # broadcast type: domain
+    system_broadcast = 1
+    # TODO -- warum ist prio == 0 in frame?
+    prio = 3
+    # no
+    ack_wanted = 0
+    # no
+    confirm_error = 0
 
     ctrl_1 = <<
       frame_type::1,
-      0:: 1,
+      0::1,
       repeat_on_error::1,
       system_broadcast::1,
       prio::2,
@@ -121,7 +126,7 @@ defmodule Knx.DataCemiFrame do
   def check_src_addr(src) do
     # TODO if multiple individual addresses will be supported, src might not be replaced
     if src == 0 do
-      KnxnetIpParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
+      KnipParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
     else
       src
     end

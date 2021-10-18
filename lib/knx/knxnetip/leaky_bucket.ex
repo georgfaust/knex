@@ -1,9 +1,15 @@
 defmodule Knx.KnxnetIp.LeakyBucket do
-  # TODO ? credit https://akoutmos.com/post/rate-limiting-with-genservers/
-
   use GenServer
-
   require Logger
+
+  @moduledoc """
+  The LeakyBucket module provides a GenServer that implements the leaky bucket algorithm.
+
+  Since KNXnet/Ip frames cannot be sent on the network with an arbitrary rate (routers could overflow),
+  the leaky bucket algorithm is used to restrict the sending rate.
+
+  Credit: inspired by https://akoutmos.com/post/rate-limiting-with-genservers/
+  """
 
   def start_link(
         max_queue_size: max_queue_size,
@@ -39,11 +45,19 @@ defmodule Knx.KnxnetIp.LeakyBucket do
 
   # Server Callback Functions --------------------------------------------------
 
+  @doc """
+  Initially schedules the timer to the queue poll rate.
+  """
   @impl true
   def handle_continue(:initial_timer, %{queue_poll_rate: queue_poll_rate} = state) do
     {:noreply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
   end
 
+  @doc """
+  Enqueues the object.
+
+  If max queue size is reached, the caller is informed about the overflow.
+  """
   @impl true
   def handle_call(
         {:enqueue, _object},
@@ -54,10 +68,6 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   end
 
   def handle_call({:enqueue, object}, _, %{queue: queue, queue_size: queue_size} = state) do
-    # :logger.debug(
-    #   "[D: #{Process.get(:cache_id)}] routing: enqueue cemi frame #{inspect(object)}"
-    # )
-
     queue = :queue.in(object, queue)
     queue_size = queue_size + 1
 
@@ -65,6 +75,9 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   end
 
   @impl true
+  @doc """
+  Delays the timer as long as the timeout of the current timer is closer than the delay.
+  """
   def handle_cast({:delay, delay_time}, %{send_after_ref: send_after_ref} = state) do
     if Process.read_timer(send_after_ref) > delay_time do
       {:noreply, state}
@@ -75,6 +88,9 @@ defmodule Knx.KnxnetIp.LeakyBucket do
   end
 
   @impl true
+  @doc """
+  Pops one element from the queue (FIFO).
+  """
   def handle_info(:pop, %{queue_size: 0, queue_poll_rate: queue_poll_rate} = state) do
     {:noreply, %{state | send_after_ref: schedule_timer(queue_poll_rate)}}
   end
@@ -90,9 +106,6 @@ defmodule Knx.KnxnetIp.LeakyBucket do
       ) do
     {{:value, object}, new_queue} = :queue.out(queue)
 
-    # :logger.debug("routing: pop frame from queue #{inspect(object)}")
-
-    # Shell.Server.dispatch(nil, object)
     pop_fun.(object)
 
     {:noreply,
@@ -102,16 +115,6 @@ defmodule Knx.KnxnetIp.LeakyBucket do
          queue_size: queue_size - 1,
          send_after_ref: schedule_timer(queue_poll_rate)
      }}
-  end
-
-  def handle_info({ref, _result}, state) do
-    Process.demonitor(ref, [:flush])
-
-    {:noreply, state}
-  end
-
-  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
-    {:noreply, state}
   end
 
   defp schedule_timer(queue_poll_rate) do

@@ -1,11 +1,11 @@
-defmodule Knx.KnxnetIp.IpInterface do
+defmodule Knx.KnxnetIp.Ip do
   alias Knx.KnxnetIp.Core
   alias Knx.KnxnetIp.DeviceManagement
   alias Knx.KnxnetIp.Tunnelling
   alias Knx.KnxnetIp.Routing
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
-  alias Knx.KnxnetIp.KnxnetIpParameter
+  alias Knx.KnxnetIp.Parameter, as: KnipParameter
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
 
@@ -14,6 +14,24 @@ defmodule Knx.KnxnetIp.IpInterface do
   import Knx.Defs
   use Bitwise
 
+  @moduledoc """
+  The Ip module acts as the interface for handling of KNXnet/IP frames.
+  This is also true for knx frames when a tunnelling connection is open.
+  """
+
+  @doc """
+  Handles KNXnet/IP frames and knx frames (when a tunnelling connection is open).
+
+  KNXnet/IP frames:
+    1. the header of the frame is handled.
+    2. the validity of the length field is checked.
+    3. the existence of the connection is checked (only for Device Management and Tunnelling frames).
+    4. handle_body of the respective module is called.
+
+  KNX frames:
+    1. the existence of the connection is checked.
+    2. handle_up_frame of the Tunnelling module is called.
+  """
   def handle(
         {:knip, :from_ip,
          {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>> = frame}},
@@ -45,6 +63,11 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
+  ### [private doc]
+  # Handles the header of any KNXnet/IP frame.
+  #
+  # A data packet with an unsupported version field or wrong structure length
+  # is not accepted.
   defp handle_header(
          ip_frame,
          <<
@@ -62,24 +85,19 @@ defmodule Knx.KnxnetIp.IpInterface do
         total_length: total_length
     }
 
-    # TODO add when ip_frame includes atoms instead of numbers
-    # :logger.debug("[D: #{Process.get(:cache_id)}] #{ip_frame}")
     {:ok, ip_frame}
   end
 
-  # -- Core, 6.2: "If a server receives a data packet with an unsupported version field,
-  # it shall reply with a negative confirmation frame indicating in the status
-  # field E_VERSION_NOT_SUPPORTED."
-  # Was ist ein NACK für KNXnet/IP? ACK mit Error im Status? Wenn ja, welches ACK?
-  # Aktuell gibt es nur die Version 1.0 für alle Frames (auch in ANs in KNX 2.1.4)
-  # Hier erstmal: Frames mit falscher Version ignorieren (Der Regel folgend,
-  # dass invalide Frames ignoriert werden sollen.)
   defp handle_header(_ip_frame, _frame) do
     {:error, :invalid_header}
   end
 
   # ----------------------------------------------------------------------------
 
+  ### [private doc]
+  # Checks if total length field is equal to actual length of frame.
+  #
+  # Also fails for empty body.
   defp check_length(%IpFrame{total_length: total_length}, body) do
     cond do
       total_length != structure_length(:header) + byte_size(body) ->
@@ -93,11 +111,12 @@ defmodule Knx.KnxnetIp.IpInterface do
     end
   end
 
+  ### [private doc]
+  # Checks if connection actually exists (only for device management and tunnelling).
   defp check_connection(%IpState{con_tab: con_tab}) do
-    # TODO if knx indv src address available via driver: look up channel id
     props = Cache.get_obj(:knxnet_ip_parameter)
 
-    if Map.has_key?(con_tab[:tunnel_cons], KnxnetIpParameter.get_knx_indv_addr(props)) do
+    if Map.has_key?(con_tab[:tunnel_cons], KnipParameter.get_knx_indv_addr(props)) do
       :ok
     else
       :no_tunnelling_connection
@@ -128,6 +147,8 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
+  ### [private doc]
+  # Calls handle_body of respective module.
   defp handle_body(
          %IpFrame{service_family_id: service_family_id(:core)} = ip_frame,
          body,
@@ -167,6 +188,9 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
+  @doc """
+  Produces header of KNXnet/IP frame.
+  """
   def header(service_type_id, total_length) do
     <<
       structure_length(:header)::8,
@@ -179,20 +203,33 @@ defmodule Knx.KnxnetIp.IpInterface do
 
   # ----------------------------------------------------------------------------
 
+  @doc """
+  Returns structure length of atom list 'structure_list'.
+
+  Atoms must be included in structure_length enum of defs.ex.
+  """
   def get_structure_length(structure_list) do
     Enum.reduce(structure_list, 0, fn structure, acc -> acc + structure_length(structure) end)
   end
 
+  @doc """
+  Converts IP address 4-tuple to number.
+  """
   def convert_ip_to_number({e3, e2, e1, e0}) do
     (e3 <<< 24) + (e2 <<< 16) + (e1 <<< 8) + e0
   end
 
+  @doc """
+  Converts IP address number to 4-tuple.
+  """
   def convert_number_to_ip(ip) do
     {ip >>> 24 &&& 0xFF, ip >>> 16 &&& 0xFF, ip >>> 8 &&& 0xFF, ip &&& 0xFF}
   end
 
   # ----------------------------------------------------------------------------
 
+  ### [private doc]
+  # Determines service family id from service type id.
   defp get_service_family_id(service_type_id) do
     # service families have non-overlapping service type number ranges
     cond do
@@ -203,6 +240,8 @@ defmodule Knx.KnxnetIp.IpInterface do
     end
   end
 
+  ### [private doc]
+  # Returns channel id from KNXnet/IP frame body (that has connection header).
   defp extract_channel_id(<<_connection_header_length::8, channel_id::8, _tail::bits>>) do
     channel_id
   end
