@@ -10,10 +10,6 @@ defmodule Knx.Stack.Dl do
   def handle({:dl, :up, frame}, %S{}) do
     {primitive, frame} = Knx.DataCemiFrame.decode(frame)
     # :logger.debug("DL_CEMI UP #{inspect {prim, frame}}")
-    if primitive do
-      [{:nl, primitive, frame}]
-    else
-      []
-    end
+    if primitive, do: [{:nl, primitive, frame}], else: []
   end
 end

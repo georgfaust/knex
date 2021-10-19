@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
@@ -168,7 +168,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 {:driver, :transmit, @cemi_frame_req},
                 {:timer, :restart, {:ip_connection, 0}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_0}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -183,7 +183,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 {:ip, :transmit,
                  {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_0_seq_255}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_255}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -195,7 +195,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 knxnetip: %IpState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_22}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -207,7 +207,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 knxnetip: %IpState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_244_seq_0}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -216,7 +216,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "m_reset.req" do
       assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_tunnelling_data_endpoint, @tunnelling_req_reset_req}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -259,7 +259,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                  {@ets_tunnelling_data_endpoint, @tunnelling_req_data_pos_con_channel_0_seq_0}},
                 {:timer, :start, {:tunnelling_req, 0}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
                    knxnetip: %IpState{
@@ -285,7 +285,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 {:timer, :start, {:tunnelling_req, 0}},
                 {:knip, :from_ip, {@ets_tunnelling_data_endpoint, @tunnelling_req_l_data_req}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
                    knxnetip: %IpState{
@@ -310,7 +310,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 }
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_neg_con},
                  %S{
                    knxnetip: %IpState{
@@ -329,7 +329,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 }
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_unexpected_con},
                  %S{
                    knxnetip: %IpState{
@@ -347,7 +347,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                  {@ets_tunnelling_data_endpoint, @tunnelling_req_data_ind_channel_0_seq_0}},
                 {:timer, :start, {:tunnelling_req, 0}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_ind},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -355,14 +355,14 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "wrong primitive" do
       assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
-               Ip.handle({:knip, :from_knx, @cemi_frame_req}, %S{
+               Knip.handle({:knip, :from_knx, @cemi_frame_req}, %S{
                  knxnetip: %IpState{con_tab: @con_tab_0}
                })
     end
 
     test "no tunnelling connection" do
       assert {%S{}, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
                    knxnetip: %IpState{
@@ -391,7 +391,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 {:timer, :restart, {:ip_connection, 0}},
                 {:timer, :stop, {:tunnelling_req, 0}}
               ]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_0_seq_0}},
                  %S{
@@ -411,7 +411,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 }
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_0_seq_23}},
                  %S{
@@ -431,7 +431,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                 }
               },
               []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_3_seq_0}},
                  %S{
@@ -451,7 +451,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
              %S{knxnetip: %IpState{con_tab: @con_tab_0}},
              []
            } =
-             Ip.handle(
+             Knip.handle(
                {:knip, :from_ip,
                 {@ets_tunnelling_data_endpoint,
                  <<

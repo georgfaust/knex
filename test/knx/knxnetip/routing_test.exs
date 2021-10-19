@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.LeakyBucket
   alias Knx.KnxnetIp.Routing
@@ -59,7 +59,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
     test("successful") do
       assert {%S{}, [{:dl, :up, @cemi_frame_ind}]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_ind}},
                  %S{}
                )
@@ -73,7 +73,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
     @routing_busy_wait_10_control_0 Telegram.routing_busy(10, 0)
 
     def receive_routing_busy(routing_busy_wait_time, routing_busy_control_field, %S{} = state) do
-      Ip.handle(
+      Knip.handle(
         {:knip, :from_ip,
          {@router_endpoint,
           <<
@@ -95,7 +95,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
     test("routing busy count, incrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 0}} = last_state, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
                  %S{knxnetip: %IpState{routing_busy_count: 0}}
                )
@@ -104,7 +104,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       :timer.sleep(15)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}} = last_state, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
                  last_state
                )
@@ -113,7 +113,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       :timer.sleep(5)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
                  last_state
                )
@@ -121,7 +121,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
     test("routing busy count, decrementation") do
       assert {%S{knxnetip: %IpState{routing_busy_count: 2}} = last_state, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
                  %S{knxnetip: %IpState{routing_busy_count: 2}}
                )
@@ -130,7 +130,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       :timer.sleep(310 + 2 * 5)
 
       assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
                  last_state
                )
@@ -143,7 +143,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
 
     test("successful") do
       assert {%S{}, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_lost_message}},
                  %S{}
                )
@@ -235,13 +235,12 @@ defmodule Knx.KnxnetIp.RoutingTest do
       :timer.sleep(10)
       assert :ok = receive_frame()
     end
-
   end
 
   # ---------------
   test("no matching handler") do
     assert {%S{}, []} =
-             Ip.handle(
+             Knip.handle(
                {:knip, :from_ip,
                 {@multicast_endpoint,
                  <<

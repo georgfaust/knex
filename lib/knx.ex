@@ -23,7 +23,7 @@ defmodule Knx do
           restart: &Restart.handle/2,
           mem: &Mem.handle/2,
           auth: &Knx.Auth.handle/2,
-          knip: &Knx.KnxnetIp.Ip.handle/2,
+          knip: &Knx.KnxnetIp.Knip.handle/2,
           ip: &append_effect/2,
           timer: &append_effect/2,
           driver: &append_effect/2,

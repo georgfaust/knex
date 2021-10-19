@@ -1,7 +1,7 @@
-defmodule Knx.KnxnetIp.IpTest do
+defmodule Knx.KnxnetIp.KnipTest do
   use ExUnit.Case
 
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
 
   require Knx.Defs
   import Knx.Defs
@@ -15,15 +15,15 @@ defmodule Knx.KnxnetIp.IpTest do
   >>
 
   test "header" do
-    assert @header = Ip.header(service_type_id(:search_req), 6)
+    assert @header = Knip.header(service_type_id(:search_req), 6)
   end
 
   test "get_structure_length" do
     assert 76 =
-             Ip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
+             Knip.get_structure_length([:header, :hpai, :dib_device_info, :dib_supp_svc_families])
 
     assert 31 =
-             Ip.get_structure_length([
+             Knip.get_structure_length([
                :cri_device_mgmt_con,
                :cri_tunnel_con,
                :crd_device_mgmt_con,
@@ -35,12 +35,12 @@ defmodule Knx.KnxnetIp.IpTest do
   end
 
   test "convert_ip_to_number" do
-    assert 0xC0A80201 = Ip.convert_ip_to_number({192, 168, 2, 1})
-    assert 0xE000170C = Ip.convert_ip_to_number({224, 0, 23, 12})
+    assert 0xC0A80201 = Knip.convert_ip_to_number({192, 168, 2, 1})
+    assert 0xE000170C = Knip.convert_ip_to_number({224, 0, 23, 12})
   end
 
   test "convert_number_to_ip" do
-    assert {192, 168, 2, 1} = Ip.convert_number_to_ip(0xC0A80201)
-    assert {224, 0, 23, 12} = Ip.convert_number_to_ip(0xE000170C)
+    assert {192, 168, 2, 1} = Knip.convert_number_to_ip(0xC0A80201)
+    assert {224, 0, 23, 12} = Knip.convert_number_to_ip(0xE000170C)
   end
 end

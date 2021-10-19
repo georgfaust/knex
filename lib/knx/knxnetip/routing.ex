@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.Routing do
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
@@ -96,7 +96,7 @@ defmodule Knx.KnxnetIp.Routing do
   #   Document 03_08_05, sections 5.1 (description) & 5.2 (structure)
   def routing_ind(cemi_frame) do
     total_len = structure_length(:header) + byte_size(cemi_frame)
-    frame = Ip.header(service_type_id(:routing_ind), total_len) <> cemi_frame
+    frame = Knip.header(service_type_id(:routing_ind), total_len) <> cemi_frame
     {:ip, :transmit, {get_multicast_endpoint(), frame}}
   end
 
@@ -139,7 +139,7 @@ defmodule Knx.KnxnetIp.Routing do
       ip_addr:
         Cache.get_obj(:knxnet_ip_parameter)
         |> KnipParameter.get_routing_multicast_addr()
-        |> Ip.convert_number_to_ip(),
+        |> Knip.convert_number_to_ip(),
       port: 3671
     }
   end

@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.Core do
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Endpoint, as: Ep
@@ -201,7 +201,7 @@ defmodule Knx.KnxnetIp.Core do
     if (ip_addr == 0 || port == 0) && ip_src_endpoint do
       ip_src_endpoint
     else
-      %Ep{protocol_code: protocol_code, ip_addr: Ip.convert_number_to_ip(ip_addr), port: port}
+      %Ep{protocol_code: protocol_code, ip_addr: Knip.convert_number_to_ip(ip_addr), port: port}
     end
   end
 
@@ -246,10 +246,10 @@ defmodule Knx.KnxnetIp.Core do
     dib_supp_svc_families = dib_supp_svc_families()
 
     total_length =
-      Ip.get_structure_length([:header, :hpai, :dib_device_info]) +
+      Knip.get_structure_length([:header, :hpai, :dib_device_info]) +
         byte_size(dib_supp_svc_families)
 
-    header = Ip.header(service_type_id(:search_resp), total_length)
+    header = Knip.header(service_type_id(:search_resp), total_length)
 
     body =
       hpai(discovery_endpoint.protocol_code) <>
@@ -267,10 +267,10 @@ defmodule Knx.KnxnetIp.Core do
     dib_supp_svc_families = dib_supp_svc_families()
 
     total_length =
-      Ip.get_structure_length([:header, :dib_device_info]) +
+      Knip.get_structure_length([:header, :dib_device_info]) +
         byte_size(dib_supp_svc_families)
 
-    header = Ip.header(service_type_id(:description_resp), total_length)
+    header = Knip.header(service_type_id(:description_resp), total_length)
     body = dib_device_information() <> dib_supp_svc_families
 
     {:ip, :transmit, {control_endpoint, header <> body}}
@@ -293,10 +293,10 @@ defmodule Knx.KnxnetIp.Core do
     frame =
       if status_code == common_error_code(:no_error) do
         total_length =
-          Ip.get_structure_length([:header, :connection_header_core, :hpai]) +
+          Knip.get_structure_length([:header, :connection_header_core, :hpai]) +
             crd_structure_length(con_type)
 
-        header = Ip.header(service_type_id(:connect_resp), total_length)
+        header = Knip.header(service_type_id(:connect_resp), total_length)
 
         body =
           connection_header(channel_id, status_code) <>
@@ -305,7 +305,7 @@ defmodule Knx.KnxnetIp.Core do
 
         header <> body
       else
-        header = Ip.header(service_type_id(:connect_resp), structure_length(:header) + 1)
+        header = Knip.header(service_type_id(:connect_resp), structure_length(:header) + 1)
         # TODO wireshark says a byte is missing here: pseudo connection id?
         body = <<status_code::8>>
         header <> body
@@ -324,8 +324,8 @@ defmodule Knx.KnxnetIp.Core do
          channel_id: channel_id,
          status_code: status_code
        }) do
-    total_length = Ip.get_structure_length([:header, :connection_header_core])
-    header = Ip.header(service_type_id(:connectionstate_resp), total_length)
+    total_length = Knip.get_structure_length([:header, :connection_header_core])
+    header = Knip.header(service_type_id(:connectionstate_resp), total_length)
     body = connection_header(channel_id, status_code)
 
     {:ip, :transmit, {control_endpoint, header <> body}}
@@ -341,8 +341,8 @@ defmodule Knx.KnxnetIp.Core do
          channel_id: channel_id,
          status_code: status_code
        }) do
-    total_length = Ip.get_structure_length([:header, :connection_header_core])
-    header = Ip.header(service_type_id(:disconnect_resp), total_length)
+    total_length = Knip.get_structure_length([:header, :connection_header_core])
+    header = Knip.header(service_type_id(:disconnect_resp), total_length)
     body = connection_header(channel_id, status_code)
 
     {:ip, :transmit, {control_endpoint, header <> body}}
@@ -360,8 +360,8 @@ defmodule Knx.KnxnetIp.Core do
     control_endpoint = ConTab.get_control_endpoint(con_tab, channel_id)
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
 
-    total_length = Ip.get_structure_length([:header, :connection_header_core, :hpai])
-    header = Ip.header(service_type_id(:disconnect_req), total_length)
+    total_length = Knip.get_structure_length([:header, :connection_header_core, :hpai])
+    header = Knip.header(service_type_id(:disconnect_req), total_length)
 
     body =
       <<

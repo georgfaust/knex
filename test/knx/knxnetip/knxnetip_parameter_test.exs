@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.ParameterTest do
 
   alias Knx.Ail.Property, as: P
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
 
   @props KnipParameter.get_knxnetip_parameter_props()
 
@@ -11,9 +11,10 @@ defmodule Knx.KnxnetIp.ParameterTest do
                  |> KnipParameter.convert_friendly_name()
   @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
   @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
-  @current_ip_addr Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
+  @current_ip_addr Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
+                   |> Knip.convert_ip_to_number()
 
-  @ip_multicast_addr Ip.convert_ip_to_number({224, 0, 23, 12})
+  @ip_multicast_addr Knip.convert_ip_to_number({224, 0, 23, 12})
 
   setup do
     Cache.start_link(%{

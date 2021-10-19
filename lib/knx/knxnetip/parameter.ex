@@ -1,6 +1,6 @@
 defmodule Knx.KnxnetIp.Parameter do
   alias Knx.Ail.Property, as: P
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   use Bitwise
   require Knx.Defs
   import Knx.Defs
@@ -79,13 +79,13 @@ defmodule Knx.KnxnetIp.Parameter do
   """
   def get_knxnetip_parameter_props() do
     current_ip_addr =
-      Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
+      Application.get_env(:knx, :ip_addr, {0, 0, 0, 0}) |> Knip.convert_ip_to_number()
 
     current_subnet_mask =
-      Application.get_env(:knx, :subnet_mask, {255, 255, 255, 0}) |> Ip.convert_ip_to_number()
+      Application.get_env(:knx, :subnet_mask, {255, 255, 255, 0}) |> Knip.convert_ip_to_number()
 
     current_default_gateway =
-      Application.get_env(:knx, :default_gateway, {0, 0, 0, 0}) |> Ip.convert_ip_to_number()
+      Application.get_env(:knx, :default_gateway, {0, 0, 0, 0}) |> Knip.convert_ip_to_number()
 
     mac_addr = Application.get_env(:knx, :mac_addr, 0x000000000000)
 
@@ -123,13 +123,13 @@ defmodule Knx.KnxnetIp.Parameter do
       P.new(:default_gateway, [0], max: 1, write: true, r_lvl: 3, w_lvl: 3),
       P.new(:dhcp_bootp_server, [0], max: 1, write: false, r_lvl: 3, w_lvl: 0),
       P.new(:mac_address, [mac_addr], max: 1, write: false, r_lvl: 3, w_lvl: 0),
-      P.new(:system_setup_multicast_address, [Ip.convert_ip_to_number({224, 0, 23, 12})],
+      P.new(:system_setup_multicast_address, [Knip.convert_ip_to_number({224, 0, 23, 12})],
         max: 1,
         write: false,
         r_lvl: 3,
         w_lvl: 0
       ),
-      P.new(:routing_multicast_address, [Ip.convert_ip_to_number({224, 0, 23, 12})],
+      P.new(:routing_multicast_address, [Knip.convert_ip_to_number({224, 0, 23, 12})],
         max: 1,
         write: true,
         r_lvl: 3,

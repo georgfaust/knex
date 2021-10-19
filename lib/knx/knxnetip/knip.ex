@@ -1,4 +1,4 @@
-defmodule Knx.KnxnetIp.Ip do
+defmodule Knx.KnxnetIp.Knip do
   alias Knx.KnxnetIp.Core
   alias Knx.KnxnetIp.DeviceManagement
   alias Knx.KnxnetIp.Tunnelling
@@ -15,7 +15,7 @@ defmodule Knx.KnxnetIp.Ip do
   use Bitwise
 
   @moduledoc """
-  The Ip module acts as the interface for handling of KNXnet/IP frames.
+  The Knip module acts as the interface for handling of KNXnet/IP frames.
   This is also true for knx frames when a tunnelling connection is open.
   """
 

@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.DeviceManagement do
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.MgmtCemiFrame
   alias Knx.KnxnetIp.ConTab
@@ -148,10 +148,10 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
       conf_cemi_frame ->
         total_length =
-          Ip.get_structure_length([:header, :connection_header_device_management]) +
+          Knip.get_structure_length([:header, :connection_header_device_management]) +
             byte_size(conf_cemi_frame)
 
-        header = Ip.header(service_type_id(:device_configuration_req), total_length)
+        header = Knip.header(service_type_id(:device_configuration_req), total_length)
 
         connection_header =
           connection_header(
@@ -181,8 +181,8 @@ defmodule Knx.KnxnetIp.DeviceManagement do
          status_code: status_code,
          data_endpoint: data_endpoint
        }) do
-    total_length = Ip.get_structure_length([:header, :connection_header_device_management])
-    header = Ip.header(service_type_id(:device_configuration_ack), total_length)
+    total_length = Knip.get_structure_length([:header, :connection_header_device_management])
+    header = Knip.header(service_type_id(:device_configuration_ack), total_length)
     body = connection_header(channel_id, client_seq_counter, status_code)
 
     {:ip, :transmit, {data_endpoint, header <> body}}

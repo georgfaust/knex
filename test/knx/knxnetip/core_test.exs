@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Core
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
@@ -117,7 +117,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{},
                [{:ip, :transmit, {@ets_discovery_endpoint, @search_resp_interface}}]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_discovery_endpoint, @search_req}},
                  %S{}
                )
@@ -130,7 +130,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{},
                [{:ip, :transmit, {@ets_discovery_endpoint, @search_resp}}]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_discovery_endpoint, @search_req}},
                  %S{}
                )
@@ -150,7 +150,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{},
                [{:ip, :transmit, {@ets_control_endpoint, @description_resp_interface}}]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @description_req}},
                  %S{}
                )
@@ -163,7 +163,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{},
                [{:ip, :transmit, {@ets_control_endpoint, @description_resp}}]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @description_req}},
                  %S{}
                )
@@ -233,7 +233,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                  {:timer, :start, {:ip_connection, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
                  %S{knxnetip: %IpState{con_tab: %{}}}
                )
@@ -247,7 +247,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                   {@ets_control_endpoint, @connect_resp_device_management_error_no_more_cons}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_full}}
                )
@@ -262,7 +262,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                  {:timer, :start, {:ip_connection, 1}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -277,7 +277,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_no_more_cons}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_1}}
@@ -292,7 +292,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_con_option}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_raw}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -307,7 +307,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_con_type}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_remlog_con_linklayer}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -335,7 +335,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                  {:timer, :restart, {:ip_connection, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_0}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -349,7 +349,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                   {@ets_control_endpoint, @connectionstate_resp_channel_27_error_con_id}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_27}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -371,7 +371,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                  {:timer, :stop, {:ip_connection, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_0}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -382,7 +382,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_1}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
                )
@@ -405,7 +405,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              %S{},
              []
            } =
-             Ip.handle(
+             Knip.handle(
                {:knip, :from_ip,
                 {@ets_control_endpoint,
                  <<
@@ -426,7 +426,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              %S{},
              []
            } =
-             Ip.handle(
+             Knip.handle(
                {:knip, :from_ip,
                 {@ets_control_endpoint,
                  <<

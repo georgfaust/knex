@@ -99,18 +99,18 @@ defmodule Helper do
 end
 
 defmodule Telegram do
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
 
   require Knx.Defs
   import Knx.Defs
 
   @ip_interface_ip Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
-  @ip_interface_ip_num Ip.convert_ip_to_number(@ip_interface_ip)
+  @ip_interface_ip_num Knip.convert_ip_to_number(@ip_interface_ip)
   @ip_interface_port 3671
 
   @ets_ip {192, 168, 178, 21}
-  @ets_ip_num Ip.convert_ip_to_number(@ets_ip)
+  @ets_ip_num Knip.convert_ip_to_number(@ets_ip)
   @ets_port_discovery 60427
   @ets_port_control 52250
   @ets_port_device_mgmt_data 52252
@@ -269,7 +269,7 @@ defmodule Telegram do
       protocol_version(:knxnetip)::8,
       service_family_id(:core)::8,
       service_type_id(:connect_req)::8,
-      Ip.get_structure_length([
+      Knip.get_structure_length([
         :header,
         :hpai,
         :hpai,
@@ -381,7 +381,7 @@ defmodule Telegram do
       # HPAI ---------------
       structure_length(:hpai)::8,
       protocol_code(:udp)::8,
-      if(ip, do: Ip.convert_ip_to_number(ip), else: @ets_ip_num)::32,
+      if(ip, do: Knip.convert_ip_to_number(ip), else: @ets_ip_num)::32,
       if(port, do: port, else: @ets_port_control)::16
     >>
   end

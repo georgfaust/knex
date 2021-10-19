@@ -1,5 +1,5 @@
 defmodule Knx.KnxnetIp.Tunnelling do
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.IpFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
@@ -118,7 +118,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
       # wait for another frame to be confirmed: enqueue data_cemi_frame
       <<_::bits>> ->
-        frame = Ip.header(service_type_id(:tunnelling_req), total_length) <> body
+        frame = Knip.header(service_type_id(:tunnelling_req), total_length) <> body
 
         :logger.debug("[D: #{Process.get(:cache_id)}] tunnelling.req: enqueue data cemi frame")
 
@@ -288,10 +288,10 @@ defmodule Knx.KnxnetIp.Tunnelling do
     data_endpoint = ConTab.get_data_endpoint(con_tab, channel_id)
 
     total_length =
-      Ip.get_structure_length([:header, :connection_header_tunnelling]) +
+      Knip.get_structure_length([:header, :connection_header_tunnelling]) +
         byte_size(data_cemi_frame)
 
-    header = Ip.header(service_type_id(:tunnelling_req), total_length)
+    header = Knip.header(service_type_id(:tunnelling_req), total_length)
 
     connection_header =
       connection_header(
@@ -315,8 +315,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
          client_seq_counter: client_seq_counter,
          data_endpoint: data_endpoint
        }) do
-    total_length = Ip.get_structure_length([:header, :connection_header_tunnelling])
-    header = Ip.header(service_type_id(:tunnelling_ack), total_length)
+    total_length = Knip.get_structure_length([:header, :connection_header_tunnelling])
+    header = Knip.header(service_type_id(:tunnelling_ack), total_length)
     body = connection_header(channel_id, client_seq_counter, common_error_code(:no_error))
 
     {:ip, :transmit, {data_endpoint, header <> body}}

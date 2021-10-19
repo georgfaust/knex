@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
   alias Knx.State, as: S
   alias Knx.State.KnxnetIp, as: IpState
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
@@ -222,7 +222,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_successful}},
@@ -244,7 +244,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_invalid_pid}},
@@ -266,7 +266,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_invalid_start}},
@@ -284,7 +284,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    @device_configuration_ack_channel_0_seq_0_no_error}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_con_successful}},
@@ -297,7 +297,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_connection_inexistent}},
@@ -319,7 +319,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propwrite_req_successful}},
@@ -341,7 +341,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :start, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propwrite_req_invalid_pid}},
@@ -351,7 +351,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
     test "m_propread.req, wrong seq number" do
       assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_wrong_seq}},
@@ -361,7 +361,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
     test "m_reset.req" do
       assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint, @device_configuration_req_reset_req}},
                  %S{knxnetip: %IpState{con_tab: @con_tab_0}}
@@ -390,7 +390,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:timer, :stop, {:device_management_req, 0}}
                ]
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_0_seq_0_no_error}},
@@ -403,7 +403,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_45_seq_0_no_error}},
@@ -416,7 +416,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                %S{knxnetip: %IpState{con_tab: @con_tab_0}},
                []
              } =
-               Ip.handle(
+               Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_0_seq_21_no_error}},
@@ -432,7 +432,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
              %S{knxnetip: %IpState{con_tab: @con_tab_0}},
              []
            } =
-             Ip.handle(
+             Knip.handle(
                {:knip, :from_ip,
                 {@ets_device_mgmt_data_endpoint,
                  <<

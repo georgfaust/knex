@@ -5,7 +5,7 @@ defmodule Shell.KnipServer do
   alias Knx.DataCemiFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
-  alias Knx.KnxnetIp.Ip
+  alias Knx.KnxnetIp.Knip
   require Knx.Defs
   import Knx.Defs
 
@@ -48,8 +48,9 @@ defmodule Shell.KnipServer do
     }
 
     own_ip_address =
-      Cache.get_obj(:knxnet_ip_parameter) |> KnipParameter.get_current_ip_addr()
-       |> Ip.convert_number_to_ip()
+      Cache.get_obj(:knxnet_ip_parameter)
+      |> KnipParameter.get_current_ip_addr()
+      |> Knip.convert_number_to_ip()
 
     # own ip signals echo from sending routing indication via multicast
     #  -> create local conf for go-server
