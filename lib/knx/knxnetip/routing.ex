@@ -1,11 +1,11 @@
 defmodule Knx.KnxnetIp.Routing do
   alias Knx.KnxnetIp.Knip
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
   alias Knx.KnxnetIp.LeakyBucket
   alias Knx.DataCemiFrame
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
 
   require Knx.Defs
   import Knx.Defs
@@ -15,7 +15,7 @@ defmodule Knx.KnxnetIp.Routing do
   The Routing module handles the body of KNXnet/IP-frames of the identically named
   service family.
 
-  As a result, the updated ip_state and a list of impulses/effects are returned.
+  As a result, the updated knip_state and a list of impulses/effects are returned.
   Impulses include the respective response frames.
   """
 
@@ -38,25 +38,25 @@ defmodule Knx.KnxnetIp.Routing do
 
   """
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:routing_ind)},
+        %KnipFrame{service_type_id: service_type_id(:routing_ind)},
         cemi_frame,
-        %IpState{} = ip_state
+        %KnipState{} = knip_state
       ) do
-    {ip_state, [{:dl, :up, cemi_frame}]}
+    {knip_state, [{:dl, :up, cemi_frame}]}
   end
 
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:routing_busy)},
+        %KnipFrame{service_type_id: service_type_id(:routing_busy)},
         <<
           structure_length(:busy_info)::8,
           _device_state::8,
           routing_busy_wait_time::16,
           routing_busy_control_field::16
         >>,
-        %IpState{} = ip_state
+        %KnipState{} = knip_state
       ) do
     now = :os.system_time(:milli_seconds)
-    routing_busy_count = recalculate_routing_busy_count(now, ip_state)
+    routing_busy_count = recalculate_routing_busy_count(now, knip_state)
 
     delay_time =
       get_delay_time(routing_busy_control_field, routing_busy_wait_time, routing_busy_count)
@@ -65,7 +65,7 @@ defmodule Knx.KnxnetIp.Routing do
     reset_time_routing_busy_count = now + delay_time + routing_busy_count * 100
 
     {%{
-       ip_state
+       knip_state
        | last_routing_busy: now,
          routing_busy_count: routing_busy_count,
          reset_time_routing_busy_count: reset_time_routing_busy_count
@@ -73,17 +73,17 @@ defmodule Knx.KnxnetIp.Routing do
   end
 
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:routing_lost_message)},
+        %KnipFrame{service_type_id: service_type_id(:routing_lost_message)},
         _body,
-        %IpState{} = ip_state
+        %KnipState{} = knip_state
       ) do
     # no action required by regular KNX IP device
-    {ip_state, []}
+    {knip_state, []}
   end
 
-  def handle_body(_ip_frame, _frame, %IpState{} = ip_state) do
+  def handle_body(_ip_frame, _frame, %KnipState{} = knip_state) do
     warning(:no_matching_handler)
-    {ip_state, []}
+    {knip_state, []}
   end
 
   # ----------------------------------------------------------------------------
@@ -153,7 +153,7 @@ defmodule Knx.KnxnetIp.Routing do
   # See KNX Specification for more details: 03_08_05 2.3.5
   defp recalculate_routing_busy_count(
          now,
-         %IpState{
+         %KnipState{
            last_routing_busy: last_routing_busy,
            routing_busy_count: routing_busy_count,
            reset_time_routing_busy_count: reset_time_routing_busy_count

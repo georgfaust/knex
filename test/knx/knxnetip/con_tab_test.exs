@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.ConTabTest do
 
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Connection, as: C
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
   alias Knx.KnxnetIp.Endpoint, as: Ep
 
   @knx_indv_addr 0x11FF
@@ -82,7 +82,7 @@ defmodule Knx.KnxnetIp.ConTabTest do
              ConTab.open(
                %{},
                :device_mgmt_con,
-               %IpFrame{
+               %KnipFrame{
                  control_endpoint: @control_endpoint,
                  data_endpoint: @data_endpoint
                }
@@ -92,7 +92,7 @@ defmodule Knx.KnxnetIp.ConTabTest do
              ConTab.open(
                %{:free_ids => []},
                :device_mgmt_con,
-               %IpFrame{
+               %KnipFrame{
                  control_endpoint: @control_endpoint,
                  data_endpoint: @data_endpoint
                }
@@ -104,7 +104,7 @@ defmodule Knx.KnxnetIp.ConTabTest do
              ConTab.open(
                @con_tab_0,
                :tunnel_con,
-               %IpFrame{
+               %KnipFrame{
                  control_endpoint: @control_endpoint,
                  data_endpoint: @data_endpoint,
                  con_knx_indv_addr: @knx_indv_addr
@@ -115,7 +115,7 @@ defmodule Knx.KnxnetIp.ConTabTest do
              ConTab.open(
                @con_tab_1,
                :tunnel_con,
-               %IpFrame{
+               %KnipFrame{
                  control_endpoint: @control_endpoint,
                  data_endpoint: @data_endpoint,
                  con_knx_indv_addr: @knx_indv_addr

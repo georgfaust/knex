@@ -2,7 +2,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
   alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Core
   alias Knx.KnxnetIp.Connection, as: C
@@ -226,7 +226,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "device management, successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_device_management_no_error_channel_0}},
@@ -235,13 +235,13 @@ defmodule Knx.KnxnetIp.CoreTest do
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
-                 %S{knxnetip: %IpState{con_tab: %{}}}
+                 %S{knxnetip: %KnipState{con_tab: %{}}}
                )
     end
 
     test "device management, error: no_more_connections" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_full}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_full}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_device_management_error_no_more_cons}}
@@ -249,13 +249,13 @@ defmodule Knx.KnxnetIp.CoreTest do
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connect_req_device_management}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_full}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_full}}
                )
     end
 
     test "tunnelling, successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_1}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_tunnelling_no_error_channel_1}},
@@ -265,13 +265,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "tunnelling, error: no_more_connections" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_1}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_no_more_cons}}
@@ -280,13 +280,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_linklayer}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_1}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_1}}
                )
     end
 
     test "tunnelling, error: connection_option" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_con_option}}
@@ -295,13 +295,13 @@ defmodule Knx.KnxnetIp.CoreTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_tunnel_con_raw}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: connection_type" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connect_resp_tunnelling_error_con_type}}
@@ -310,7 +310,7 @@ defmodule Knx.KnxnetIp.CoreTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_control_endpoint, @connect_req_tunnelling_remlog_con_linklayer}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end
@@ -328,7 +328,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connectionstate_resp_channel_0_no_error}},
@@ -337,13 +337,13 @@ defmodule Knx.KnxnetIp.CoreTest do
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_0}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: connection_id" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                [
                  {:ip, :transmit,
                   {@ets_control_endpoint, @connectionstate_resp_channel_27_error_con_id}}
@@ -351,7 +351,7 @@ defmodule Knx.KnxnetIp.CoreTest do
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @connectionstate_req_channel_27}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end
@@ -365,7 +365,7 @@ defmodule Knx.KnxnetIp.CoreTest do
 
     test "successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab}},
                [
                  {:ip, :transmit, {@ets_control_endpoint, @disconnect_resp_channel_0}},
                  {:timer, :stop, {:ip_connection, 0}}
@@ -373,18 +373,18 @@ defmodule Knx.KnxnetIp.CoreTest do
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_0}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: connection does not exist" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                []
              } =
                Knip.handle(
                  {:knip, :from_ip, {@ets_control_endpoint, @disconnect_req_channel_1}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end

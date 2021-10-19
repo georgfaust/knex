@@ -2,7 +2,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
   alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
@@ -210,7 +210,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
     test "m_propread.req, successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -226,13 +226,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_successful}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propread.req, error: property read, invalid pid" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -248,13 +248,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_invalid_pid}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propread.req, error: property read, invalid start" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -270,13 +270,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_invalid_start}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propread.con, successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -288,26 +288,26 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_con_successful}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: connection does not exist" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                []
              } =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_connection_inexistent}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propwrite.req, successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -323,13 +323,13 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propwrite_req_successful}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propwrite.req, error: property read, invalid pid" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_client_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_client_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:ip, :transmit,
@@ -345,26 +345,26 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propwrite_req_invalid_pid}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_propread.req, wrong seq number" do
-      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
+      assert {%S{knxnetip: %KnipState{con_tab: @con_tab_0}}, []} =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_req_propread_req_wrong_seq}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_reset.req" do
-      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
+      assert {%S{knxnetip: %KnipState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint, @device_configuration_req_reset_req}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end
@@ -384,7 +384,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                                                         )
     test "successful" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0_server_seq_1}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0_server_seq_1}},
                [
                  {:timer, :restart, {:ip_connection, 0}},
                  {:timer, :stop, {:device_management_req, 0}}
@@ -394,33 +394,33 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_0_seq_0_no_error}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: connection id does not exist" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                []
              } =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_45_seq_0_no_error}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "error: sequence counter wrong" do
       assert {
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
                []
              } =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_device_mgmt_data_endpoint,
                    @device_configuration_ack_channel_0_seq_21_no_error}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end
@@ -429,7 +429,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
 
   test("no matching handler") do
     assert {
-             %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+             %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
              []
            } =
              Knip.handle(
@@ -445,7 +445,7 @@ defmodule Knx.KnxnetIp.DeviceManagementTest do
                    0::8,
                    0::8
                  >>}},
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
              )
   end
 end

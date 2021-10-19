@@ -2,7 +2,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
   alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Endpoint, as: Ep
   alias Knx.KnxnetIp.LeakyBucket
@@ -94,16 +94,16 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
 
     test("routing busy count, incrementation") do
-      assert {%S{knxnetip: %IpState{routing_busy_count: 0}} = last_state, []} =
+      assert {%S{knxnetip: %KnipState{routing_busy_count: 0}} = last_state, []} =
                Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
-                 %S{knxnetip: %IpState{routing_busy_count: 0}}
+                 %S{knxnetip: %KnipState{routing_busy_count: 0}}
                )
 
       # if the next routing busy arrives after 10 ms, routing busy count is incremented
       :timer.sleep(15)
 
-      assert {%S{knxnetip: %IpState{routing_busy_count: 1}} = last_state, []} =
+      assert {%S{knxnetip: %KnipState{routing_busy_count: 1}} = last_state, []} =
                Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
                  last_state
@@ -112,7 +112,7 @@ defmodule Knx.KnxnetIp.RoutingTest do
       # if the next routing busy arrives within 10 ms, routing busy count is NOT incremented
       :timer.sleep(5)
 
-      assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
+      assert {%S{knxnetip: %KnipState{routing_busy_count: 1}}, []} =
                Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_100_control_0}},
                  last_state
@@ -120,16 +120,16 @@ defmodule Knx.KnxnetIp.RoutingTest do
     end
 
     test("routing busy count, decrementation") do
-      assert {%S{knxnetip: %IpState{routing_busy_count: 2}} = last_state, []} =
+      assert {%S{knxnetip: %KnipState{routing_busy_count: 2}} = last_state, []} =
                Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
-                 %S{knxnetip: %IpState{routing_busy_count: 2}}
+                 %S{knxnetip: %KnipState{routing_busy_count: 2}}
                )
 
       # reset_time_routing_busy_count <= now + 10 + 50 * 2 + 2 * 100
       :timer.sleep(310 + 2 * 5)
 
-      assert {%S{knxnetip: %IpState{routing_busy_count: 1}}, []} =
+      assert {%S{knxnetip: %KnipState{routing_busy_count: 1}}, []} =
                Knip.handle(
                  {:knip, :from_ip, {@router_endpoint, @routing_busy_wait_10_control_0}},
                  last_state

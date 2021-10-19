@@ -2,7 +2,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
   use ExUnit.Case
 
   alias Knx.State, as: S
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
   alias Knx.KnxnetIp.Knip
   alias Knx.KnxnetIp.Connection, as: C
   alias Knx.KnxnetIp.Endpoint, as: Ep
@@ -157,7 +157,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test("l_data.req, expected seq counter") do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0_client_seq_1,
                   last_data_cemi_frame: @cemi_frame_req
                 }
@@ -171,13 +171,13 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_0}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test("l_data.req, error: expected seq counter - 1") do
       assert {%S{
-                knxnetip: %IpState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
+                knxnetip: %KnipState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
               },
               [
                 {:ip, :transmit,
@@ -186,39 +186,39 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_255}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test("l_data.req, error: wrong seq counter") do
       assert {%S{
-                knxnetip: %IpState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
+                knxnetip: %KnipState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
               },
               []} =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_0_seq_22}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test("l_data.req, error: connection id does not exist") do
       assert {%S{
-                knxnetip: %IpState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
+                knxnetip: %KnipState{con_tab: @con_tab_0, last_data_cemi_frame: :none}
               },
               []} =
                Knip.handle(
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_req_data_req_channel_244_seq_0}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "m_reset.req" do
-      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
+      assert {%S{knxnetip: %KnipState{con_tab: @con_tab_0}}, [{:restart, :ind, :knip}]} =
                Knip.handle(
                  {:knip, :from_ip, {@ets_tunnelling_data_endpoint, @tunnelling_req_reset_req}},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
   end
@@ -249,7 +249,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "positive confirmation, empty queue" do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0,
                   last_data_cemi_frame: :none
                 }
@@ -262,7 +262,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0,
                      last_data_cemi_frame: @cemi_frame_req
                    }
@@ -272,7 +272,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "positive confirmation, non-empty queue" do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0,
                   tunnelling_queue: @tunnelling_queue,
                   tunnelling_queue_size: 0,
@@ -288,7 +288,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0,
                      tunnelling_queue:
                        :queue.in(
@@ -304,7 +304,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "negative confirmation" do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0,
                   last_data_cemi_frame: :none
                 }
@@ -313,7 +313,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_neg_con},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0,
                      last_data_cemi_frame: @cemi_frame_req
                    }
@@ -323,7 +323,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test "unexpected confirmation" do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0,
                   last_data_cemi_frame: @cemi_frame_req
                 }
@@ -332,7 +332,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_unexpected_con},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0,
                      last_data_cemi_frame: @cemi_frame_req
                    }
@@ -341,7 +341,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
     end
 
     test "indication" do
-      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}},
+      assert {%S{knxnetip: %KnipState{con_tab: @con_tab_0}},
               [
                 {:ip, :transmit,
                  {@ets_tunnelling_data_endpoint, @tunnelling_req_data_ind_channel_0_seq_0}},
@@ -349,14 +349,14 @@ defmodule Knx.KnxnetIp.TunnellingTest do
               ]} =
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_ind},
-                 %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+                 %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
                )
     end
 
     test "wrong primitive" do
-      assert {%S{knxnetip: %IpState{con_tab: @con_tab_0}}, []} =
+      assert {%S{knxnetip: %KnipState{con_tab: @con_tab_0}}, []} =
                Knip.handle({:knip, :from_knx, @cemi_frame_req}, %S{
-                 knxnetip: %IpState{con_tab: @con_tab_0}
+                 knxnetip: %KnipState{con_tab: @con_tab_0}
                })
     end
 
@@ -365,7 +365,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                Knip.handle(
                  {:knip, :from_knx, @cemi_frame_pos_con},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: %{tunnel_cons: %{}},
                      last_data_cemi_frame: @cemi_frame_req
                    }
@@ -382,7 +382,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test("successful") do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0_client_server_seq_1,
                   last_data_cemi_frame: :none
                 }
@@ -395,7 +395,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_0_seq_0}},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0_client_seq_1,
                      last_data_cemi_frame: :none
                    }
@@ -405,7 +405,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test("error: wrong seq counter") do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0_client_seq_1,
                   last_data_cemi_frame: :none
                 }
@@ -415,7 +415,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_0_seq_23}},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0_client_seq_1,
                      last_data_cemi_frame: :none
                    }
@@ -425,7 +425,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
     test("error: connection id does not exist") do
       assert {%S{
-                knxnetip: %IpState{
+                knxnetip: %KnipState{
                   con_tab: @con_tab_0_client_seq_1,
                   last_data_cemi_frame: :none
                 }
@@ -435,7 +435,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                  {:knip, :from_ip,
                   {@ets_tunnelling_data_endpoint, @tunnelling_ack_channel_3_seq_0}},
                  %S{
-                   knxnetip: %IpState{
+                   knxnetip: %KnipState{
                      con_tab: @con_tab_0_client_seq_1,
                      last_data_cemi_frame: :none
                    }
@@ -448,7 +448,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
 
   test("no matching handler") do
     assert {
-             %S{knxnetip: %IpState{con_tab: @con_tab_0}},
+             %S{knxnetip: %KnipState{con_tab: @con_tab_0}},
              []
            } =
              Knip.handle(
@@ -464,7 +464,7 @@ defmodule Knx.KnxnetIp.TunnellingTest do
                    0::8,
                    0::8
                  >>}},
-               %S{knxnetip: %IpState{con_tab: @con_tab_0}}
+               %S{knxnetip: %KnipState{con_tab: @con_tab_0}}
              )
   end
 end

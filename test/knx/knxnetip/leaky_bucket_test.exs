@@ -6,11 +6,10 @@ defmodule Knx.KnxnetIp.LeakyBucketTest do
   #            ConTab.open(
   #              %{},
   #              :device_mgmt_con,
-  #              %IpFrame{
+  #              %KnipFrame{
   #                control_endpoint: @control_endpoint,
   #                data_endpoint: @data_endpoint
   #              }
   #            )
   #             end
-
 end

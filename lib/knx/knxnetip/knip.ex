@@ -3,11 +3,11 @@ defmodule Knx.KnxnetIp.Knip do
   alias Knx.KnxnetIp.DeviceManagement
   alias Knx.KnxnetIp.Tunnelling
   alias Knx.KnxnetIp.Routing
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
   alias Knx.State, as: S
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
 
   import PureLogger
   require Knx.Defs
@@ -35,15 +35,15 @@ defmodule Knx.KnxnetIp.Knip do
   def handle(
         {:knip, :from_ip,
          {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>> = frame}},
-        %S{knxnetip: ip_state} = state
+        %S{knxnetip: knip_state} = state
       ) do
-    ip_frame = %IpFrame{ip_src_endpoint: ip_src_endpoint}
+    ip_frame = %KnipFrame{ip_src_endpoint: ip_src_endpoint}
 
     with {:ok, ip_frame} <- handle_header(ip_frame, header),
          :ok <- check_length(ip_frame, body),
-         :ok <- check_connection(ip_frame, body, ip_state),
-         {ip_state, impulses} <- handle_body(ip_frame, body, ip_state) do
-      {%{state | knxnetip: ip_state}, impulses}
+         :ok <- check_connection(ip_frame, body, knip_state),
+         {knip_state, impulses} <- handle_body(ip_frame, body, knip_state) do
+      {%{state | knxnetip: knip_state}, impulses}
     else
       {:error, error_reason} ->
         :logger.warning("[D: #{Process.get(:cache_id)}] #{error_reason}: #{frame}")
@@ -51,10 +51,10 @@ defmodule Knx.KnxnetIp.Knip do
     end
   end
 
-  def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: ip_state} = state) do
-    with :ok <- check_connection(ip_state) do
-      {ip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, ip_state)
-      {%{state | knxnetip: ip_state}, impulses}
+  def handle({:knip, :from_knx, data_cemi_frame}, %S{knxnetip: knip_state} = state) do
+    with :ok <- check_connection(knip_state) do
+      {knip_state, impulses} = Tunnelling.handle_up_frame(data_cemi_frame, knip_state)
+      {%{state | knxnetip: knip_state}, impulses}
     else
       :no_tunnelling_connection ->
         {state, []}
@@ -78,7 +78,7 @@ defmodule Knx.KnxnetIp.Knip do
            total_length::16
          >>
        ) do
-    ip_frame = %IpFrame{
+    ip_frame = %KnipFrame{
       ip_frame
       | service_family_id: service_family_id,
         service_type_id: service_type_id,
@@ -98,7 +98,7 @@ defmodule Knx.KnxnetIp.Knip do
   # Checks if total length field is equal to actual length of frame.
   #
   # Also fails for empty body.
-  defp check_length(%IpFrame{total_length: total_length}, body) do
+  defp check_length(%KnipFrame{total_length: total_length}, body) do
     cond do
       total_length != structure_length(:header) + byte_size(body) ->
         {:error, :invalid_total_length}
@@ -113,7 +113,7 @@ defmodule Knx.KnxnetIp.Knip do
 
   ### [private doc]
   # Checks if connection actually exists (only for device management and tunnelling).
-  defp check_connection(%IpState{con_tab: con_tab}) do
+  defp check_connection(%KnipState{con_tab: con_tab}) do
     props = Cache.get_obj(:knxnet_ip_parameter)
 
     if Map.has_key?(con_tab[:tunnel_cons], KnipParameter.get_knx_indv_addr(props)) do
@@ -124,24 +124,24 @@ defmodule Knx.KnxnetIp.Knip do
   end
 
   defp check_connection(
-         %IpFrame{service_family_id: service_family_id(:device_management)},
+         %KnipFrame{service_family_id: service_family_id(:device_management)},
          body,
-         %IpState{con_tab: con_tab}
+         %KnipState{con_tab: con_tab}
        ) do
     channel_id = extract_channel_id(body)
     if ConTab.is_open?(con_tab, channel_id), do: :ok, else: {:error, :no_connection}
   end
 
   defp check_connection(
-         %IpFrame{service_family_id: service_family_id(:tunnelling)},
+         %KnipFrame{service_family_id: service_family_id(:tunnelling)},
          body,
-         %IpState{con_tab: con_tab}
+         %KnipState{con_tab: con_tab}
        ) do
     channel_id = extract_channel_id(body)
     if ConTab.is_open?(con_tab, channel_id), do: :ok, else: {:error, :no_connection}
   end
 
-  defp check_connection(%IpFrame{}, _body, %IpState{}) do
+  defp check_connection(%KnipFrame{}, _body, %KnipState{}) do
     :ok
   end
 
@@ -150,40 +150,40 @@ defmodule Knx.KnxnetIp.Knip do
   ### [private doc]
   # Calls handle_body of respective module.
   defp handle_body(
-         %IpFrame{service_family_id: service_family_id(:core)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:core)} = ip_frame,
          body,
-         %IpState{} = ip_state
+         %KnipState{} = knip_state
        ) do
-    Core.handle_body(ip_frame, body, ip_state)
+    Core.handle_body(ip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %IpFrame{service_family_id: service_family_id(:device_management)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:device_management)} = ip_frame,
          body,
-         %IpState{} = ip_state
+         %KnipState{} = knip_state
        ) do
-    DeviceManagement.handle_body(ip_frame, body, ip_state)
+    DeviceManagement.handle_body(ip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %IpFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame,
          body,
-         %IpState{} = ip_state
+         %KnipState{} = knip_state
        ) do
-    Tunnelling.handle_body(ip_frame, body, ip_state)
+    Tunnelling.handle_body(ip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %IpFrame{service_family_id: service_family_id(:routing)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:routing)} = ip_frame,
          body,
-         %IpState{} = ip_state
+         %KnipState{} = knip_state
        ) do
-    Routing.handle_body(ip_frame, body, ip_state)
+    Routing.handle_body(ip_frame, body, knip_state)
   end
 
-  defp handle_body(%IpFrame{}, _body, %IpState{} = ip_state) do
+  defp handle_body(%KnipFrame{}, _body, %KnipState{} = knip_state) do
     warning(:invalid_service_familiy)
-    {ip_state, []}
+    {knip_state, []}
   end
 
   # ----------------------------------------------------------------------------

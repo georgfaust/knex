@@ -1,4 +1,4 @@
-defmodule Knx.KnxnetIp.IpFrame do
+defmodule Knx.KnxnetIp.KnipFrame do
   require Knx.Defs
   import Knx.Defs
 

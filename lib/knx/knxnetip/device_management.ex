@@ -1,10 +1,10 @@
 defmodule Knx.KnxnetIp.DeviceManagement do
   alias Knx.KnxnetIp.Knip
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
   alias Knx.KnxnetIp.MgmtCemiFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.Ail.Property, as: P
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
 
   require Knx.Defs
   import Knx.Defs
@@ -14,7 +14,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   The DeviceManagement module handles the body of KNXnet/IP-frames of the identically named
   service family.
 
-  As a result, the updated ip_state and a list of impulses/effects are returned.
+  As a result, the updated knip_state and a list of impulses/effects are returned.
   Impulses include the respective response frames.
   """
 
@@ -34,7 +34,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
   """
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
         <<
           structure_length(:connection_header_device_management)::8,
           channel_id::8,
@@ -48,7 +48,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           start::12,
           data::bits
         >>,
-        %IpState{con_tab: con_tab} = ip_state
+        %KnipState{con_tab: con_tab} = knip_state
       ) do
     if ConTab.client_seq_counter_equal?(con_tab, channel_id, client_seq_counter) do
       con_tab = ConTab.increment_client_seq_counter(con_tab, channel_id)
@@ -72,7 +72,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           cemi: mgmt_cemi_frame
       }
 
-      {%{ip_state | con_tab: con_tab},
+      {%{knip_state | con_tab: con_tab},
        [
          {:timer, :restart, {:ip_connection, channel_id}},
          device_configuration_ack(ip_frame)
@@ -80,12 +80,12 @@ defmodule Knx.KnxnetIp.DeviceManagement do
          device_configuration_req(ip_frame, con_tab)}
     else
       # [XXXI]
-      {ip_state, []}
+      {knip_state, []}
     end
   end
 
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:device_configuration_req)},
+        %KnipFrame{service_type_id: service_type_id(:device_configuration_req)},
         <<
           structure_length(:connection_header_device_management)::8,
           _channel_id::8,
@@ -93,37 +93,37 @@ defmodule Knx.KnxnetIp.DeviceManagement do
           knxnetip_constant(:reserved)::8,
           cemi_message_code(:m_reset_req)::8
         >>,
-        %IpState{} = ip_state
+        %KnipState{} = knip_state
       ) do
-    {ip_state, [{:restart, :ind, :knip}]}
+    {knip_state, [{:restart, :ind, :knip}]}
   end
 
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:device_configuration_ack)},
+        %KnipFrame{service_type_id: service_type_id(:device_configuration_ack)},
         <<
           structure_length(:connection_header_device_management)::8,
           channel_id::8,
           server_seq_counter::8,
           _status_code::8
         >>,
-        %IpState{con_tab: con_tab} = ip_state
+        %KnipState{con_tab: con_tab} = knip_state
       ) do
     if ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       con_tab = ConTab.increment_server_seq_counter(con_tab, channel_id)
 
-      {%{ip_state | con_tab: con_tab},
+      {%{knip_state | con_tab: con_tab},
        [
          {:timer, :restart, {:ip_connection, channel_id}},
          {:timer, :stop, {:device_management_req, server_seq_counter}}
        ]}
     else
-      {ip_state, []}
+      {knip_state, []}
     end
   end
 
-  def handle_body(_ip_frame, _frame, %IpState{} = ip_state) do
+  def handle_body(_ip_frame, _frame, %KnipState{} = knip_state) do
     warning(:no_matching_handler)
-    {ip_state, []}
+    {knip_state, []}
   end
 
   # ----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   # KNX specification:
   #   Document 03_08_02, section 2.3.2 (description) & 4.2.6 (structure)
   defp device_configuration_req(
-         %IpFrame{
+         %KnipFrame{
            channel_id: channel_id,
            data_endpoint: data_endpoint,
            cemi: received_cemi_frame
@@ -175,7 +175,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
   #
   # KNX specification:
   #   Document 03_08_02, section 2.3.2 (description) & 4.2.7 (structure)
-  defp device_configuration_ack(%IpFrame{
+  defp device_configuration_ack(%KnipFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
          status_code: status_code,

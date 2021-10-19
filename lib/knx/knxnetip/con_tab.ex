@@ -1,6 +1,6 @@
 defmodule Knx.KnxnetIp.ConTab do
   alias Knx.KnxnetIp.Connection, as: C
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
 
   @moduledoc """
   The ConTab module is used to manage connections with KNXnet/IP clients.
@@ -16,7 +16,7 @@ defmodule Knx.KnxnetIp.ConTab do
     {:error, :no_more_connections}
   end
 
-  def open(%{tunnel_cons_left: tunnel_cons_left} = con_tab, con_type, %IpFrame{} = ip_frame) do
+  def open(%{tunnel_cons_left: tunnel_cons_left} = con_tab, con_type, %KnipFrame{} = ip_frame) do
     case List.pop_at(con_tab[:free_ids], 0) do
       {nil, _} ->
         {:error, :no_more_connections}
@@ -51,7 +51,7 @@ defmodule Knx.KnxnetIp.ConTab do
     end
   end
 
-  def open(%{} = con_tab, con_type, %IpFrame{} = ip_frame) do
+  def open(%{} = con_tab, con_type, %KnipFrame{} = ip_frame) do
     # initialize map on first call
     con_tab = Map.put_new(con_tab, :free_ids, Enum.to_list(0..255))
     con_tab = Map.put_new(con_tab, :tunnel_cons, %{})

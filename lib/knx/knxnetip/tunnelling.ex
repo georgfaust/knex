@@ -1,9 +1,9 @@
 defmodule Knx.KnxnetIp.Tunnelling do
   alias Knx.KnxnetIp.Knip
-  alias Knx.KnxnetIp.IpFrame
+  alias Knx.KnxnetIp.KnipFrame
   alias Knx.KnxnetIp.ConTab
   alias Knx.KnxnetIp.Parameter, as: KnipParameter
-  alias Knx.State.KnxnetIp, as: IpState
+  alias Knx.State.KnxnetIp, as: KnipState
 
   require Knx.Defs
   import Knx.Defs
@@ -13,7 +13,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   The Tunnelling module handles the body of KNXnet/IP-frames of the identically named
   service family.
   
-  As a result, the updated ip_state and a list of impulses/effects are returned.
+  As a result, the updated knip_state and a list of impulses/effects are returned.
   Impulses include the respective response frames.
   """
 
@@ -33,7 +33,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   
   """
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:tunnelling_req)},
+        %KnipFrame{service_type_id: service_type_id(:tunnelling_req)},
         <<
           structure_length(:connection_header_tunnelling)::8,
           _channel_id::8,
@@ -41,13 +41,13 @@ defmodule Knx.KnxnetIp.Tunnelling do
           knxnetip_constant(:reserved)::8,
           cemi_message_code(:m_reset_req)::8
         >>,
-        %IpState{} = ip_state
+        %KnipState{} = knip_state
       ) do
-    {ip_state, [{:restart, :ind, :knip}]}
+    {knip_state, [{:restart, :ind, :knip}]}
   end
 
   def handle_body(
-        %IpFrame{
+        %KnipFrame{
           service_type_id: service_type_id(:tunnelling_req),
           ip_src_endpoint: ip_src_endpoint,
           total_length: total_length
@@ -59,12 +59,12 @@ defmodule Knx.KnxnetIp.Tunnelling do
           knxnetip_constant(:reserved)::8,
           data_cemi_frame::bits
         >> = body,
-        %IpState{
+        %KnipState{
           con_tab: con_tab,
           last_data_cemi_frame: last_data_cemi_frame,
           tunnelling_queue: tunnelling_queue,
           tunnelling_queue_size: tunnelling_queue_size
-        } = ip_state
+        } = knip_state
       ) do
     case last_data_cemi_frame do
       # no frame to be confirmed: send data_cemi_frame to knx if seq counter correct
@@ -87,7 +87,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
             data_cemi_frame = replace_src_addr(data_cemi_frame)
 
             {%{
-               ip_state
+               knip_state
                | con_tab: con_tab,
                  last_data_cemi_frame: data_cemi_frame
              },
@@ -105,7 +105,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
               "[D: #{Process.get(:cache_id)}] tunnelling.req: seq counter is off by -1"
             )
 
-            {ip_state, [tunnelling_ack(ip_frame)]}
+            {knip_state, [tunnelling_ack(ip_frame)]}
 
           # [XXXIII]
           :any_other_case ->
@@ -113,7 +113,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
               "[D: #{Process.get(:cache_id)}] tunnelling.req: received unexpected seq counter"
             )
 
-            {ip_state, []}
+            {knip_state, []}
         end
 
       # wait for another frame to be confirmed: enqueue data_cemi_frame
@@ -123,7 +123,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
         :logger.debug("[D: #{Process.get(:cache_id)}] tunnelling.req: enqueue data cemi frame")
 
         {%{
-           ip_state
+           knip_state
            | tunnelling_queue: :queue.in({ip_src_endpoint, frame}, tunnelling_queue),
              tunnelling_queue_size: tunnelling_queue_size + 1
          }, []}
@@ -131,31 +131,31 @@ defmodule Knx.KnxnetIp.Tunnelling do
   end
 
   def handle_body(
-        %IpFrame{service_type_id: service_type_id(:tunnelling_ack)},
+        %KnipFrame{service_type_id: service_type_id(:tunnelling_ack)},
         <<
           structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
           server_seq_counter::8,
           _status_code::8
         >>,
-        %IpState{con_tab: con_tab} = ip_state
+        %KnipState{con_tab: con_tab} = knip_state
       ) do
     if ConTab.server_seq_counter_equal?(con_tab, channel_id, server_seq_counter) do
       con_tab = ConTab.increment_server_seq_counter(con_tab, channel_id)
 
-      {%{ip_state | con_tab: con_tab},
+      {%{knip_state | con_tab: con_tab},
        [
          {:timer, :restart, {:ip_connection, channel_id}},
          {:timer, :stop, {:tunnelling_req, server_seq_counter}}
        ]}
     else
-      {ip_state, []}
+      {knip_state, []}
     end
   end
 
-  def handle_body(_ip_frame, _frame, %IpState{} = ip_state) do
+  def handle_body(_ip_frame, _frame, %KnipState{} = knip_state) do
     warning(:no_matching_handler)
-    {ip_state, []}
+    {knip_state, []}
   end
 
   # ----------------------------------------------------------------------------
@@ -175,25 +175,25 @@ defmodule Knx.KnxnetIp.Tunnelling do
   """
   def handle_up_frame(
         <<cemi_message_code::8, _rest::bits>> = data_cemi_frame,
-        %IpState{last_data_cemi_frame: last_data_cemi_frame} = ip_state
+        %KnipState{last_data_cemi_frame: last_data_cemi_frame} = knip_state
       ) do
     case cemi_message_code do
       cemi_message_code(:l_data_con) ->
         check_conf(data_cemi_frame, last_data_cemi_frame)
-        |> handle_conf(data_cemi_frame, ip_state)
+        |> handle_conf(data_cemi_frame, knip_state)
 
       cemi_message_code(:l_data_ind) ->
-        handle_ind(data_cemi_frame, ip_state)
+        handle_ind(data_cemi_frame, knip_state)
 
       _ ->
-        {ip_state, []}
+        {knip_state, []}
     end
   end
 
   def handle_conf(
         :pos_conf,
         data_cemi_frame,
-        %IpState{con_tab: con_tab, tunnelling_queue_size: 0} = ip_state
+        %KnipState{con_tab: con_tab, tunnelling_queue_size: 0} = knip_state
       ) do
     :logger.debug(
       "[D: #{Process.get(:cache_id)}] received positive conf (tunnelling queue is empty)"
@@ -201,7 +201,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
 
     server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
 
-    {%{ip_state | last_data_cemi_frame: :none},
+    {%{knip_state | last_data_cemi_frame: :none},
      [
        tunnelling_req(data_cemi_frame, con_tab),
        {:timer, :start, {:tunnelling_req, server_seq_counter}}
@@ -211,11 +211,11 @@ defmodule Knx.KnxnetIp.Tunnelling do
   def handle_conf(
         :pos_conf,
         data_cemi_frame,
-        %IpState{
+        %KnipState{
           con_tab: con_tab,
           tunnelling_queue: tunnelling_queue,
           tunnelling_queue_size: tunnelling_queue_size
-        } = ip_state
+        } = knip_state
       ) do
     :logger.debug(
       "[D: #{Process.get(:cache_id)}] received positive conf (tunnelling queue is non-empty)"
@@ -225,7 +225,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
     {{:value, {ip_src_endpoint, frame}}, tunnelling_queue} = :queue.out(tunnelling_queue)
 
     {%{
-       ip_state
+       knip_state
        | tunnelling_queue: tunnelling_queue,
          tunnelling_queue_size: tunnelling_queue_size - 1,
          last_data_cemi_frame: :none
@@ -240,32 +240,32 @@ defmodule Knx.KnxnetIp.Tunnelling do
   def handle_conf(
         :neg_conf,
         _data_cemi_frame,
-        %IpState{
+        %KnipState{
           # last_data_cemi_frame: last_data_cemi_frame
-        } = ip_state
+        } = knip_state
       ) do
     :logger.debug("[D: #{Process.get(:cache_id)}] received negative conf")
 
     # TODO could this be problematic? could driver be repeatedly unable to send frame?
-    # {ip_state, [{:driver, :transmit, last_data_cemi_frame}]}
-    {%{ip_state | last_data_cemi_frame: :none}, []}
+    # {knip_state, [{:driver, :transmit, last_data_cemi_frame}]}
+    {%{knip_state | last_data_cemi_frame: :none}, []}
   end
 
-  def handle_conf(:unexpected_conf, _data_cemi_frame, %IpState{} = ip_state) do
+  def handle_conf(:unexpected_conf, _data_cemi_frame, %KnipState{} = knip_state) do
     :logger.debug("[D: #{Process.get(:cache_id)}] received unexpected conf")
 
-    {ip_state, []}
+    {knip_state, []}
   end
 
   def handle_ind(
         data_cemi_frame,
-        %IpState{con_tab: con_tab} = ip_state
+        %KnipState{con_tab: con_tab} = knip_state
       ) do
     :logger.debug("[D: #{Process.get(:cache_id)}] received ind")
 
     server_seq_counter = ConTab.get_server_seq_counter(con_tab, get_channel_id(con_tab))
 
-    {ip_state,
+    {knip_state,
      [
        tunnelling_req(data_cemi_frame, con_tab),
        {:timer, :start, {:tunnelling_req, server_seq_counter}}
@@ -310,7 +310,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
   #
   # KNX specification:
   #   Document 03_08_04, sections 2.2, 2.6 (description) & 4.4.7 (structure)
-  defp tunnelling_ack(%IpFrame{
+  defp tunnelling_ack(%KnipFrame{
          channel_id: channel_id,
          client_seq_counter: client_seq_counter,
          data_endpoint: data_endpoint
