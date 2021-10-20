@@ -327,7 +327,8 @@ defmodule Telegram do
       protocol_version(:knxnetip)::8,
       service_family_id(:core)::8,
       service_type_id(:connect_resp)::8,
-      structure_length(:header) + 1::16,
+      structure_length(:header) + 2::16,
+      0::8,
       connect_response_status_code(error_type)::8
     >>
   end

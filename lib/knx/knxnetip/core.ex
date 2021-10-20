@@ -100,7 +100,6 @@ defmodule Knx.KnxnetIp.Core do
           con_type: con_type
       }
 
-      # TODO set timer timeout (120s)
       {%{knip_state | con_tab: con_tab},
        [connect_resp(knip_frame), {:timer, :start, {:ip_connection, channel_id}}]}
     else
@@ -308,9 +307,8 @@ defmodule Knx.KnxnetIp.Core do
 
         header <> body
       else
-        header = Knip.header(service_type_id(:connect_resp), structure_length(:header) + 1)
-        # TODO wireshark says a byte is missing here: pseudo connection id?
-        body = <<status_code::8>>
+        header = Knip.header(service_type_id(:connect_resp), structure_length(:header) + 2)
+        body = <<0::8, status_code::8>>
         header <> body
       end
 
