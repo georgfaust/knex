@@ -44,7 +44,7 @@ defmodule Knx.KnxnetIp.Core do
   ```
   """
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:search_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:search_req)} = knip_frame,
         <<
           discovery_hpai::bytes-structure_length(:hpai)
         >>,
@@ -52,27 +52,27 @@ defmodule Knx.KnxnetIp.Core do
       ) do
     discovery_endpoint = handle_hpai(discovery_hpai)
 
-    ip_frame = %{ip_frame | discovery_endpoint: discovery_endpoint}
+    knip_frame = %{knip_frame | discovery_endpoint: discovery_endpoint}
 
-    {knip_state, [search_resp(ip_frame)]}
+    {knip_state, [search_resp(knip_frame)]}
   end
 
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:description_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:description_req)} = knip_frame,
         <<
           control_hpai::bytes-structure_length(:hpai)
         >>,
         %KnipState{} = knip_state
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
+    control_endpoint = handle_hpai(control_hpai, knip_frame.ip_src_endpoint)
 
-    ip_frame = %{ip_frame | control_endpoint: control_endpoint}
+    knip_frame = %{knip_frame | control_endpoint: control_endpoint}
 
-    {knip_state, [description_resp(ip_frame)]}
+    {knip_state, [description_resp(knip_frame)]}
   end
 
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:connect_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:connect_req)} = knip_frame,
         <<
           control_hpai::bytes-structure_length(:hpai),
           data_hpai::bytes-structure_length(:hpai),
@@ -80,21 +80,21 @@ defmodule Knx.KnxnetIp.Core do
         >>,
         %KnipState{con_tab: con_tab} = knip_state
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
-    data_endpoint = handle_hpai(data_hpai, ip_frame.ip_src_endpoint)
+    control_endpoint = handle_hpai(control_hpai, knip_frame.ip_src_endpoint)
+    data_endpoint = handle_hpai(data_hpai, knip_frame.ip_src_endpoint)
     con_knx_indv_addr = KnipParameter.get_knx_indv_addr(Cache.get_obj(:knxnet_ip_parameter))
 
-    ip_frame = %{
-      ip_frame
+    knip_frame = %{
+      knip_frame
       | control_endpoint: control_endpoint,
         data_endpoint: data_endpoint,
         con_knx_indv_addr: con_knx_indv_addr
     }
 
     with {:ok, con_type} <- handle_cri(cri),
-         {:ok, con_tab, channel_id} <- ConTab.open(con_tab, con_type, ip_frame) do
-      ip_frame = %{
-        ip_frame
+         {:ok, con_tab, channel_id} <- ConTab.open(con_tab, con_type, knip_frame) do
+      knip_frame = %{
+        knip_frame
         | status_code: connect_response_status_code(:no_error),
           channel_id: channel_id,
           con_type: con_type
@@ -102,17 +102,17 @@ defmodule Knx.KnxnetIp.Core do
 
       # TODO set timer timeout (120s)
       {%{knip_state | con_tab: con_tab},
-       [connect_resp(ip_frame), {:timer, :start, {:ip_connection, channel_id}}]}
+       [connect_resp(knip_frame), {:timer, :start, {:ip_connection, channel_id}}]}
     else
       {:error, error_type} ->
-        ip_frame = %{ip_frame | status_code: connect_response_status_code(error_type)}
+        knip_frame = %{knip_frame | status_code: connect_response_status_code(error_type)}
 
-        {knip_state, [connect_resp(ip_frame)]}
+        {knip_state, [connect_resp(knip_frame)]}
     end
   end
 
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:connectionstate_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:connectionstate_req)} = knip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
@@ -120,28 +120,31 @@ defmodule Knx.KnxnetIp.Core do
         >>,
         %KnipState{con_tab: con_tab} = knip_state
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
+    control_endpoint = handle_hpai(control_hpai, knip_frame.ip_src_endpoint)
 
-    ip_frame = %{
-      ip_frame
+    knip_frame = %{
+      knip_frame
       | control_endpoint: control_endpoint,
         channel_id: channel_id
     }
 
     if ConTab.is_open?(con_tab, channel_id) do
-      ip_frame = %{ip_frame | status_code: connectionstate_response_status_code(:no_error)}
+      knip_frame = %{knip_frame | status_code: connectionstate_response_status_code(:no_error)}
 
       {knip_state,
-       [connectionstate_resp(ip_frame), {:timer, :restart, {:ip_connection, channel_id}}]}
+       [connectionstate_resp(knip_frame), {:timer, :restart, {:ip_connection, channel_id}}]}
     else
-      ip_frame = %{ip_frame | status_code: connectionstate_response_status_code(:connection_id)}
+      knip_frame = %{
+        knip_frame
+        | status_code: connectionstate_response_status_code(:connection_id)
+      }
 
-      {knip_state, [connectionstate_resp(ip_frame)]}
+      {knip_state, [connectionstate_resp(knip_frame)]}
     end
   end
 
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:disconnect_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:disconnect_req)} = knip_frame,
         <<
           channel_id::8,
           knxnetip_constant(:reserved)::8,
@@ -149,20 +152,20 @@ defmodule Knx.KnxnetIp.Core do
         >>,
         %KnipState{con_tab: con_tab} = knip_state
       ) do
-    control_endpoint = handle_hpai(control_hpai, ip_frame.ip_src_endpoint)
+    control_endpoint = handle_hpai(control_hpai, knip_frame.ip_src_endpoint)
 
-    ip_frame = %{
-      ip_frame
+    knip_frame = %{
+      knip_frame
       | control_endpoint: control_endpoint,
         channel_id: channel_id
     }
 
     case ConTab.close(con_tab, channel_id) do
       {:ok, con_tab} ->
-        ip_frame = %{ip_frame | status_code: common_error_code(:no_error)}
+        knip_frame = %{knip_frame | status_code: common_error_code(:no_error)}
 
         {%{knip_state | con_tab: con_tab},
-         [disconnect_resp(ip_frame), {:timer, :stop, {:ip_connection, ip_frame.channel_id}}]}
+         [disconnect_resp(knip_frame), {:timer, :stop, {:ip_connection, knip_frame.channel_id}}]}
 
       {:error, _error_reason} ->
         {knip_state, []}
@@ -288,7 +291,7 @@ defmodule Knx.KnxnetIp.Core do
            con_type: con_type,
            channel_id: channel_id,
            status_code: status_code
-         } = ip_frame
+         } = knip_frame
        ) do
     frame =
       if status_code == common_error_code(:no_error) do
@@ -301,7 +304,7 @@ defmodule Knx.KnxnetIp.Core do
         body =
           connection_header(channel_id, status_code) <>
             hpai(data_endpoint.protocol_code) <>
-            crd(ip_frame)
+            crd(knip_frame)
 
         header <> body
       else

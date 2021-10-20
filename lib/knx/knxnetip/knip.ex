@@ -37,12 +37,12 @@ defmodule Knx.KnxnetIp.Knip do
          {ip_src_endpoint, <<header::bytes-structure_length(:header), body::bits>> = frame}},
         %S{knxnetip: knip_state} = state
       ) do
-    ip_frame = %KnipFrame{ip_src_endpoint: ip_src_endpoint}
+    knip_frame = %KnipFrame{ip_src_endpoint: ip_src_endpoint}
 
-    with {:ok, ip_frame} <- handle_header(ip_frame, header),
-         :ok <- check_length(ip_frame, body),
-         :ok <- check_connection(ip_frame, body, knip_state),
-         {knip_state, impulses} <- handle_body(ip_frame, body, knip_state) do
+    with {:ok, knip_frame} <- handle_header(knip_frame, header),
+         :ok <- check_length(knip_frame, body),
+         :ok <- check_connection(knip_frame, body, knip_state),
+         {knip_state, impulses} <- handle_body(knip_frame, body, knip_state) do
       {%{state | knxnetip: knip_state}, impulses}
     else
       {:error, error_reason} ->
@@ -69,7 +69,7 @@ defmodule Knx.KnxnetIp.Knip do
   # A data packet with an unsupported version field or wrong structure length
   # is not accepted.
   defp handle_header(
-         ip_frame,
+         knip_frame,
          <<
            structure_length(:header)::8,
            protocol_version(:knxnetip)::8,
@@ -78,14 +78,14 @@ defmodule Knx.KnxnetIp.Knip do
            total_length::16
          >>
        ) do
-    ip_frame = %KnipFrame{
-      ip_frame
+    knip_frame = %KnipFrame{
+      knip_frame
       | service_family_id: service_family_id,
         service_type_id: service_type_id,
         total_length: total_length
     }
 
-    {:ok, ip_frame}
+    {:ok, knip_frame}
   end
 
   defp handle_header(_ip_frame, _frame) do
@@ -150,35 +150,35 @@ defmodule Knx.KnxnetIp.Knip do
   ### [private doc]
   # Calls handle_body of respective module.
   defp handle_body(
-         %KnipFrame{service_family_id: service_family_id(:core)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:core)} = knip_frame,
          body,
          %KnipState{} = knip_state
        ) do
-    Core.handle_body(ip_frame, body, knip_state)
+    Core.handle_body(knip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %KnipFrame{service_family_id: service_family_id(:device_management)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:device_management)} = knip_frame,
          body,
          %KnipState{} = knip_state
        ) do
-    DeviceManagement.handle_body(ip_frame, body, knip_state)
+    DeviceManagement.handle_body(knip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %KnipFrame{service_family_id: service_family_id(:tunnelling)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:tunnelling)} = knip_frame,
          body,
          %KnipState{} = knip_state
        ) do
-    Tunnelling.handle_body(ip_frame, body, knip_state)
+    Tunnelling.handle_body(knip_frame, body, knip_state)
   end
 
   defp handle_body(
-         %KnipFrame{service_family_id: service_family_id(:routing)} = ip_frame,
+         %KnipFrame{service_family_id: service_family_id(:routing)} = knip_frame,
          body,
          %KnipState{} = knip_state
        ) do
-    Routing.handle_body(ip_frame, body, knip_state)
+    Routing.handle_body(knip_frame, body, knip_state)
   end
 
   defp handle_body(%KnipFrame{}, _body, %KnipState{} = knip_state) do

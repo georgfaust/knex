@@ -51,7 +51,7 @@ defmodule Knx.KnxnetIp.Tunnelling do
           service_type_id: service_type_id(:tunnelling_req),
           ip_src_endpoint: ip_src_endpoint,
           total_length: total_length
-        } = ip_frame,
+        } = knip_frame,
         <<
           structure_length(:connection_header_tunnelling)::8,
           channel_id::8,
@@ -69,8 +69,8 @@ defmodule Knx.KnxnetIp.Tunnelling do
     case last_data_cemi_frame do
       # no frame to be confirmed: send data_cemi_frame to knx if seq counter correct
       :none ->
-        ip_frame = %{
-          ip_frame
+        knip_frame = %{
+          knip_frame
           | channel_id: channel_id,
             client_seq_counter: client_seq_counter,
             data_endpoint: ConTab.get_data_endpoint(con_tab, channel_id)
@@ -92,20 +92,20 @@ defmodule Knx.KnxnetIp.Tunnelling do
                  last_data_cemi_frame: data_cemi_frame
              },
              [
-               tunnelling_ack(ip_frame),
+               tunnelling_ack(knip_frame),
                {:driver, :transmit, data_cemi_frame},
                {:timer, :restart, {:ip_connection, channel_id}}
              ]}
 
           # [XXXII]
           :counter_off_by_minus_one ->
-            ip_frame = %{ip_frame | client_seq_counter: client_seq_counter}
+            knip_frame = %{knip_frame | client_seq_counter: client_seq_counter}
 
             :logger.debug(
               "[D: #{Process.get(:cache_id)}] tunnelling.req: seq counter is off by -1"
             )
 
-            {knip_state, [tunnelling_ack(ip_frame)]}
+            {knip_state, [tunnelling_ack(knip_frame)]}
 
           # [XXXIII]
           :any_other_case ->

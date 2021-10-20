@@ -8,7 +8,7 @@
   * CONNECTSTATE_REQUEST -> CONNECTSTATE_RESPONSE
   * DISCONNECT_REQUEST -> DISCONNECT_RESPONSE
   
---> [{:ip, :transmit, ip_frame}]
+--> [{:ip, :transmit, knip_frame}]
 
 ### Device Management
   * DEVICE_CONFIGURATION_REQUEST (.req) -> DEVICE_CONFIGURATION_ACK, DEVICE_CONFIGURATION_REQUEST (.con)
@@ -22,7 +22,7 @@
 ### Tunnelling
   * TUNNELING_REQUEST -> TUNNELING_ACK, tp_frame
 
---> [{:ip, :transmit, ip_frame}, {:dl, :req, %DataCemiFrame{}}]
+--> [{:ip, :transmit, knip_frame}, {:dl, :req, %DataCemiFrame{}}]
 
   * TUNNELING_ACK
   

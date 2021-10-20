@@ -34,7 +34,7 @@ defmodule Knx.KnxnetIp.DeviceManagement do
 
   """
   def handle_body(
-        %KnipFrame{service_type_id: service_type_id(:device_configuration_req)} = ip_frame,
+        %KnipFrame{service_type_id: service_type_id(:device_configuration_req)} = knip_frame,
         <<
           structure_length(:connection_header_device_management)::8,
           channel_id::8,
@@ -63,8 +63,8 @@ defmodule Knx.KnxnetIp.DeviceManagement do
         data: data
       }
 
-      ip_frame = %{
-        ip_frame
+      knip_frame = %{
+        knip_frame
         | channel_id: channel_id,
           status_code: common_error_code(:no_error),
           client_seq_counter: client_seq_counter,
@@ -75,9 +75,9 @@ defmodule Knx.KnxnetIp.DeviceManagement do
       {%{knip_state | con_tab: con_tab},
        [
          {:timer, :restart, {:ip_connection, channel_id}},
-         device_configuration_ack(ip_frame)
+         device_configuration_ack(knip_frame)
        ] ++
-         device_configuration_req(ip_frame, con_tab)}
+         device_configuration_req(knip_frame, con_tab)}
     else
       # [XXXI]
       {knip_state, []}

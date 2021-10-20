@@ -3,7 +3,7 @@ defmodule Knx.KnxnetIp.KnipFrame do
   import Knx.Defs
 
   @moduledoc """
-  Struct for information extracted from handled request frames..
+  Struct for information extracted from handled request frames.
 
   ip_src_endpoint:          endpoint of information from src ip package
   header_size:              header size of KNXnet/IP frame
