@@ -11,7 +11,7 @@ defmodule Helper do
   alias Knx.Ail.Property, as: P
   alias Knx.Ail.GroupObject, as: GO
 
-  use Bitwise
+  import Bitwise
 
   @addr_tab [-1, 1, 2, 3, 4, 5, 6]
 
@@ -105,7 +105,7 @@ defmodule Telegram do
   require Knx.Defs
   import Knx.Defs
 
-  @ip_interface_ip Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
+  @ip_interface_ip Application.compile_env(:knx, :ip_addr, {0, 0, 0, 0})
   @ip_interface_ip_num Knip.convert_ip_to_number(@ip_interface_ip)
   @ip_interface_port 3671
 
@@ -116,14 +116,14 @@ defmodule Telegram do
   @ets_port_device_mgmt_data 52252
   @ets_port_tunnelling_data 52252
 
-  @knx_medium knx_medium_code(Application.get_env(:knx, :knx_medium, :tp1))
+  @knx_medium knx_medium_code(Application.compile_env(:knx, :knx_medium, :tp1))
   @device_status 1
-  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
+  @knx_indv_addr Application.compile_env(:knx, :knx_indv_addr, 0x1101)
   @project_installation_id 0x0000
   @serial 0x112233445566
   @multicast_addr 0xE000170C
-  @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
-  @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
+  @mac_addr Application.compile_env(:knx, :mac_addr, 0x000000000000)
+  @friendly_name Application.compile_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
                  |> KnipParameter.convert_friendly_name()
 
   # ----------------------------------------------------------------------------

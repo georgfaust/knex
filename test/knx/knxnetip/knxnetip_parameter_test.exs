@@ -7,11 +7,11 @@ defmodule Knx.KnxnetIp.ParameterTest do
 
   @props KnipParameter.get_knxnetip_parameter_props()
 
-  @friendly_name Application.get_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
+  @friendly_name Application.compile_env(:knx, :friendly_name, "empty name (KNXnet/IP)")
                  |> KnipParameter.convert_friendly_name()
-  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
-  @mac_addr Application.get_env(:knx, :mac_addr, 0x000000000000)
-  @current_ip_addr Application.get_env(:knx, :ip_addr, {0, 0, 0, 0})
+  @knx_indv_addr Application.compile_env(:knx, :knx_indv_addr, 0x1101)
+  @mac_addr Application.compile_env(:knx, :mac_addr, 0x000000000000)
+  @current_ip_addr Application.compile_env(:knx, :ip_addr, {0, 0, 0, 0})
                    |> Knip.convert_ip_to_number()
 
   @ip_multicast_addr Knip.convert_ip_to_number({224, 0, 23, 12})

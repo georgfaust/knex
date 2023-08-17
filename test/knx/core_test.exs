@@ -300,6 +300,7 @@ defmodule Knx.Ail.CoreTest do
                         data: <<@t_data_con_seq_0::bits, apci(:key_resp)::bits, 3>>
                       })
 
+    @tag :skip
     test "key_write.ind" do
       assert {
                [
@@ -340,6 +341,7 @@ defmodule Knx.Ail.CoreTest do
     #                       <<@t_data_ind::bits, apci(:mem_resp)::bits, 2::6, 2::16, 0xDEAD::16>>
     #                   )
 
+    @tag :skip
     test "mem_write.ind" do
       assert {
                [

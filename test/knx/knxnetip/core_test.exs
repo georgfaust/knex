@@ -45,7 +45,7 @@ defmodule Knx.KnxnetIp.CoreTest do
   @device_object Helper.get_device_props(1)
   @knxnet_ip_parameter_object KnipParameter.get_knxnetip_parameter_props()
 
-  @knx_indv_addr Application.get_env(:knx, :knx_indv_addr, 0x1101)
+  @knx_indv_addr Application.compile_env(:knx, :knx_indv_addr, 0x1101)
 
   @list_0_255 Enum.to_list(0..255)
   @list_1_255 Enum.to_list(1..255)

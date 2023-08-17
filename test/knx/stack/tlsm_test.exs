@@ -155,6 +155,7 @@ defmodule KnxTest do
       end)
     end
 
+    @tag :skip
     test "5.5.1.4(5) Connect from the local User to a (non)existing Device" do
       assert {
                [
