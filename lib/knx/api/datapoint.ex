@@ -79,11 +79,14 @@ defmodule Knx.Datapoint do
     {:ok, utf8_binary}
   end
 
+  def decode(<<number::8>>, "5.001"), do: {:ok, number / 2.55}
+
+  def decode(<<number::8>>, "5.003"), do: {:ok, number * 360.0 / 255.0}
+
   def decode(<<_::7, prog_mode::1>>, "5.60001") do
     {:ok, prog_mode}
   end
 
-  # TODO warum??
   def decode(<<0::6>>, <<"5.", _::binary>>), do: {:ok, 0}
   def decode(<<number::8>>, <<"5.", _::binary>>), do: {:ok, number}
 
@@ -172,8 +175,16 @@ defmodule Knx.Datapoint do
     end
   end
 
+  def decode(<<0::2, scene_number::6>>, <<"17.", _::binary>>) do
+    {:ok, scene_number}
+  end
+
   def decode(<<c::1, _reserved::1, scene_number::6>>, <<"18.", _::binary>>) do
     {:ok, {c, scene_number}}
+  end
+
+  def decode(<<year::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6, 0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1, week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1, _reserved::5>>, <<"19.", _::binary>>) do
+    {:ok, {1900 + year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid, year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable}}
   end
 
   def decode(<<0::6>>, <<"20.", _::binary>>), do: {:ok, 0}
@@ -221,6 +232,10 @@ defmodule Knx.Datapoint do
     as_latin1 = :unicode.characters_to_binary(bytes, :utf8, :latin1)
     {:ok, as_latin1}
   end
+
+  def encode(number, "5.001"), do: {:ok, <<round(number * 2.55)::8>>}
+
+  def encode(number, "5.003"), do: {:ok, <<round(number / 360.0 * 255.0)::8>>}
 
   def encode(number, <<"5.", _::binary>>)
       when is_integer_between(number, 0, 255) do
@@ -320,9 +335,18 @@ defmodule Knx.Datapoint do
     end
   end
 
+  def encode(scene_number, <<"17.", _::binary>>)
+      when is_integer_between(scene_number, 0, 63) do
+    {:ok, <<0::2, scene_number::6>>}
+  end
+
   def encode({c, scene_number}, <<"18.", _::binary>>)
       when is_bit(c) and is_integer_between(scene_number, 0, 63) do
     {:ok, <<c::1, 0::1, scene_number::6>>}
+  end
+
+  def encode({year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid, year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable}, <<"19.", _::binary>>) do
+    {:ok, <<(year - 1900)::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6, 0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1, week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1, 0::5>>}
   end
 
   def encode(0, <<"20.", _::binary>>), do: {:ok, <<0::6>>}
