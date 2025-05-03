@@ -183,12 +183,41 @@ defmodule Knx.Datapoint do
     {:ok, {c, scene_number}}
   end
 
-  def decode(<<year::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6, 0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1, week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1, _reserved::5>>, <<"19.", _::binary>>) do
-    {:ok, {1900 + year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid, year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable}}
+  def decode(
+        <<year::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6,
+          0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1,
+          week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1,
+          _reserved::5>>,
+        <<"19.", _::binary>>
+      ) do
+    {:ok,
+     {1900 + year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid,
+      year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable}}
   end
 
   def decode(<<0::6>>, <<"20.", _::binary>>), do: {:ok, 0}
   def decode(<<enum::8>>, <<"20.", _::binary>>), do: {:ok, enum}
+
+  def decode(
+        <<_reserved::1, overHeatAlarm::1, frostAlarm::1, dewPointStatus::1, coolingDisabled::1,
+          statusPreCool::1, statusEcoC::1, heatCoolMode::1, heatingDisabled::1,
+          statusStopOptim::1, statusStartOptim::1, statusMorningBoostH::1, tempReturnLimit::1,
+          tempFlowLimit::1, statusEcoH::1, fault::1>>,
+        <<"22.", _::binary>>
+      ),
+      do:
+        {:ok,
+         {overHeatAlarm, frostAlarm, dewPointStatus, coolingDisabled, statusPreCool, statusEcoC,
+          heatCoolMode, heatingDisabled, statusStopOptim, statusStartOptim, statusMorningBoostH,
+          tempReturnLimit, tempFlowLimit, statusEcoH, fault}}
+
+  def decode(<<r::8, g::8, b::8>>, <<"232.", _::binary>>), do: {:ok, {r, g, b}}
+
+  def decode(
+        <<r::8, g::8, b::8, w::8, _reserved::12, r_valid::1, b_valid::1, g_valid::1, w_valid::1>>,
+        <<"251.", _::binary>>
+      ),
+      do: {:ok, {r, g, b, w, r_valid, g_valid, b_valid, w_valid}}
 
   def decode(value, datapoint_type) do
     {:error,
@@ -345,8 +374,15 @@ defmodule Knx.Datapoint do
     {:ok, <<c::1, 0::1, scene_number::6>>}
   end
 
-  def encode({year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid, year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable}, <<"19.", _::binary>>) do
-    {:ok, <<(year - 1900)::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6, 0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1, week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1, 0::5>>}
+  def encode(
+        {year, month, month_day, week_day, hour, minutes, seconds, fault, work, work_invalid,
+         year_invalid, date_invalid, week_day_invalid, time_invalid, summer, sync, src_reliable},
+        <<"19.", _::binary>>
+      ) do
+    {:ok,
+     <<year - 1900::8, 0::4, month::4, 0::3, month_day::5, week_day::3, hour::5, 0::2, minutes::6,
+       0::2, seconds::6, fault::1, work::1, work_invalid::1, year_invalid::1, date_invalid::1,
+       week_day_invalid::1, time_invalid::1, summer::1, sync::1, src_reliable::1, 0::5>>}
   end
 
   def encode(0, <<"20.", _::binary>>), do: {:ok, <<0::6>>}
@@ -355,6 +391,27 @@ defmodule Knx.Datapoint do
       when is_integer_between(enum, 1, 255) do
     {:ok, <<enum::8>>}
   end
+
+  def encode(
+        {overHeatAlarm, frostAlarm, dewPointStatus, coolingDisabled, statusPreCool, statusEcoC,
+         heatCoolMode, heatingDisabled, statusStopOptim, statusStartOptim, statusMorningBoostH,
+         tempReturnLimit, tempFlowLimit, statusEcoH, fault},
+        <<"22.", _::binary>>
+      ) do
+    {:ok,
+     <<0::1, overHeatAlarm::1, frostAlarm::1, dewPointStatus::1, coolingDisabled::1,
+       statusPreCool::1, statusEcoC::1, heatCoolMode::1, heatingDisabled::1, statusStopOptim::1,
+       statusStartOptim::1, statusMorningBoostH::1, tempReturnLimit::1, tempFlowLimit::1,
+       statusEcoH::1, fault::1>>}
+  end
+
+  def encode({r, g, b}, <<"232.", _::binary>>), do: {:ok, <<r::8, g::8, b::8>>}
+
+  def encode(
+        {r, g, b, w, r_valid, g_valid, b_valid, w_valid},
+        <<"251.", _::binary>>
+      ),
+      do: {:ok, <<r::8, g::8, b::8, w::8, 0::12, r_valid::1, b_valid::1, g_valid::1, w_valid::1>>}
 
   def encode(value, datapoint_type) do
     {:error,
